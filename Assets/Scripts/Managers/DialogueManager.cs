@@ -30,6 +30,11 @@ public class DialogueManager : MonoBehaviour
     private Coroutine typingCoroutine;
     private Coroutine autoAdvanceCoroutine;
     
+    private Canvas createdCanvas;
+    private GameObject createdDialoguePanel;
+    private GameObject createdTextObject;
+    private GameObject createdButtonObject;
+    
     private void Awake()
     {
         if (Instance == null)
@@ -54,26 +59,28 @@ public class DialogueManager : MonoBehaviour
             if (canvas == null)
             {
                 GameObject canvasObject = new GameObject("DialogueCanvas");
-                canvas = canvasObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                createdCanvas = canvasObject.AddComponent<Canvas>();
+                createdCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvasObject.AddComponent<CanvasScaler>();
                 canvasObject.AddComponent<GraphicRaycaster>();
+                canvas = createdCanvas;
             }
             
-            dialoguePanel = new GameObject("DialoguePanel");
-            dialoguePanel.transform.SetParent(canvas.transform, false);
-            Image panelImage = dialoguePanel.AddComponent<Image>();
+            createdDialoguePanel = new GameObject("DialoguePanel");
+            createdDialoguePanel.transform.SetParent(canvas.transform, false);
+            dialoguePanel = createdDialoguePanel;
+            Image panelImage = createdDialoguePanel.AddComponent<Image>();
             panelImage.color = new Color(0, 0, 0, 0.8f);
             
-            RectTransform panelRect = dialoguePanel.GetComponent<RectTransform>();
+            RectTransform panelRect = createdDialoguePanel.GetComponent<RectTransform>();
             panelRect.anchorMin = new Vector2(0.1f, 0.1f);
             panelRect.anchorMax = new Vector2(0.9f, 0.3f);
             panelRect.offsetMin = Vector2.zero;
             panelRect.offsetMax = Vector2.zero;
             
-            GameObject textObject = new GameObject("DialogueText");
-            textObject.transform.SetParent(dialoguePanel.transform, false);
-            dialogueText = textObject.AddComponent<TextMeshProUGUI>();
+            createdTextObject = new GameObject("DialogueText");
+            createdTextObject.transform.SetParent(createdDialoguePanel.transform, false);
+            dialogueText = createdTextObject.AddComponent<TextMeshProUGUI>();
             dialogueText.fontSize = 24;
             dialogueText.alignment = TextAlignmentOptions.TopLeft;
             dialogueText.color = Color.white;
@@ -84,21 +91,21 @@ public class DialogueManager : MonoBehaviour
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
             
-            GameObject buttonObject = new GameObject("ContinueButton");
-            buttonObject.transform.SetParent(dialoguePanel.transform, false);
+            createdButtonObject = new GameObject("ContinueButton");
+            createdButtonObject.transform.SetParent(createdDialoguePanel.transform, false);
             
-            continueButton = buttonObject.AddComponent<Button>();
-            Image buttonImage = buttonObject.AddComponent<Image>();
+            continueButton = createdButtonObject.AddComponent<Button>();
+            Image buttonImage = createdButtonObject.AddComponent<Image>();
             buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
             
-            RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+            RectTransform buttonRect = createdButtonObject.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(0.8f, 0.05f);
             buttonRect.anchorMax = new Vector2(0.95f, 0.18f);
             buttonRect.offsetMin = Vector2.zero;
             buttonRect.offsetMax = Vector2.zero;
             
             GameObject buttonTextObj = new GameObject("ButtonText");
-            buttonTextObj.transform.SetParent(buttonObject.transform, false);
+            buttonTextObj.transform.SetParent(createdButtonObject.transform, false);
             buttonText = buttonTextObj.AddComponent<TextMeshProUGUI>();
             buttonText.text = continueText;
             buttonText.fontSize = 18;
@@ -268,6 +275,27 @@ public class DialogueManager : MonoBehaviour
                 "Вы можете добавить несколько строк текста,",
                 "И они будут показаны последовательно."
             });
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Очищаем созданные объекты
+        if (createdButtonObject != null)
+        {
+            Destroy(createdButtonObject);
+        }
+        if (createdTextObject != null)
+        {
+            Destroy(createdTextObject);
+        }
+        if (createdDialoguePanel != null)
+        {
+            Destroy(createdDialoguePanel);
+        }
+        if (createdCanvas != null)
+        {
+            Destroy(createdCanvas.gameObject);
         }
     }
 } 

@@ -31,11 +31,21 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI promptText;
     [SerializeField] private KeyCode switchRealityKey = KeyCode.R;
     
+    [Header("UI")]
+    [SerializeField] private InteractionPromptUI interactionPromptUI;
+    [SerializeField] private Sprite interactionPromptSprite;
+    [SerializeField] private Vector2 promptSize = new Vector2(200, 50);
+    
     private CharacterController controller;
     private Vector3 velocity;
     private bool isGrounded;
     private float verticalRotation = 0f;
     private InteractableObject currentInteractable;
+    private bool isControlEnabled = true; // Флаг для блокировки управления
+    
+    private GameObject createdCamera;
+    private GameObject createdGroundCheck;
+    private Canvas createdCanvas;
     
     private void Awake()
     {
@@ -63,26 +73,26 @@ public class PlayerController : MonoBehaviour
             else
             {
                 // Создаем новую камеру
-                GameObject cameraObject = new GameObject("FirstPersonCamera");
-                cameraObject.transform.SetParent(transform);
-                cameraObject.transform.localPosition = new Vector3(0, 1.6f, 0);
-                playerCamera = cameraObject.transform;
+                createdCamera = new GameObject("FirstPersonCamera");
+                createdCamera.transform.SetParent(transform);
+                createdCamera.transform.localPosition = new Vector3(0, 1.6f, 0);
+                playerCamera = createdCamera.transform;
                 
-                Camera newCamera = cameraObject.AddComponent<Camera>();
+                Camera newCamera = createdCamera.AddComponent<Camera>();
                 newCamera.nearClipPlane = 0.1f;
                 
                 // Добавляем аудиослушатель
-                cameraObject.AddComponent<AudioListener>();
+                createdCamera.AddComponent<AudioListener>();
             }
         }
         
         // Настройка проверки земли
         if (groundCheck == null)
         {
-            GameObject groundCheckObj = new GameObject("GroundCheck");
-            groundCheckObj.transform.SetParent(transform);
-            groundCheckObj.transform.localPosition = new Vector3(0, -0.9f, 0);
-            groundCheck = groundCheckObj.transform;
+            createdGroundCheck = new GameObject("GroundCheck");
+            createdGroundCheck.transform.SetParent(transform);
+            createdGroundCheck.transform.localPosition = new Vector3(0, -0.9f, 0);
+            groundCheck = createdGroundCheck.transform;
         }
         
         // Настройка UI для взаимодействия
@@ -98,56 +108,52 @@ public class PlayerController : MonoBehaviour
     
     private void SetupInteractionUI()
     {
-        // Если UI подсказки не назначен, создаем его
-        if (interactionPrompt == null)
+        if (interactionPromptUI == null)
         {
             Canvas canvas = FindObjectOfType<Canvas>();
             
             if (canvas == null)
             {
                 GameObject canvasObject = new GameObject("PlayerCanvas");
-                canvas = canvasObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                createdCanvas = canvasObject.AddComponent<Canvas>();
+                createdCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvasObject.AddComponent<CanvasScaler>();
                 canvasObject.AddComponent<GraphicRaycaster>();
+                canvas = createdCanvas;
             }
             
-            interactionPrompt = new GameObject("InteractionPrompt");
-            interactionPrompt.transform.SetParent(canvas.transform, false);
+            // Создаем префаб подсказки
+            GameObject promptPrefab = new GameObject("InteractionPrompt");
+            promptPrefab.transform.SetParent(canvas.transform, false);
             
-            RectTransform promptRect = interactionPrompt.AddComponent<RectTransform>();
+            // Добавляем компоненты
+            promptPrefab.AddComponent<CanvasGroup>();
+            RectTransform promptRect = promptPrefab.AddComponent<RectTransform>();
             promptRect.anchorMin = new Vector2(0.5f, 0.2f);
             promptRect.anchorMax = new Vector2(0.5f, 0.2f);
-            promptRect.sizeDelta = new Vector2(400, 50);
+            promptRect.sizeDelta = promptSize;
             promptRect.anchoredPosition = Vector2.zero;
             
-            // Фон подсказки
-            Image promptBg = interactionPrompt.AddComponent<Image>();
-            promptBg.color = new Color(0, 0, 0, 0.7f);
+            // Фон
+            Image promptBg = promptPrefab.AddComponent<Image>();
+            promptBg.color = new Color(1, 1, 1, 1);
+            promptBg.sprite = interactionPromptSprite;
+            promptBg.type = Image.Type.Simple;
+            promptBg.preserveAspect = true;
+            promptBg.raycastTarget = false;
             
-            // Текст подсказки
-            GameObject textObject = new GameObject("PromptText");
-            textObject.transform.SetParent(interactionPrompt.transform, false);
+            // Добавляем компонент управления UI
+            interactionPromptUI = promptPrefab.AddComponent<InteractionPromptUI>();
+            interactionPromptUI.backgroundImage = promptBg;
             
-            promptText = textObject.AddComponent<TextMeshProUGUI>();
-            promptText.text = "Нажмите F для взаимодействия";
-            promptText.alignment = TextAlignmentOptions.Center;
-            promptText.color = Color.white;
-            promptText.fontSize = 24;
-            
-            RectTransform textRect = promptText.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = Vector2.zero;
-            textRect.offsetMax = Vector2.zero;
-            
-            // Скрываем подсказку по умолчанию
-            interactionPrompt.SetActive(false);
+            promptPrefab.SetActive(false);
         }
     }
     
     private void Update()
     {
+        if (!isControlEnabled) return; // Если управление отключено, пропускаем обновление
+
         // Проверка касания земли
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
         
@@ -171,9 +177,18 @@ public class PlayerController : MonoBehaviour
     
     private void ProcessMovementInput()
     {
+        if (!isControlEnabled) return; // Блокируем движение, если управление отключено
+        
         // Получаем ввод пользователя
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
+        
+        // Если управление отключено, обнуляем ввод
+        if (!isControlEnabled)
+        {
+            x = 0;
+            z = 0;
+        }
         
         // Определяем скорость в зависимости от спринта
         float speed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : walkSpeed;
@@ -185,7 +200,7 @@ public class PlayerController : MonoBehaviour
         controller.Move(move * speed * Time.deltaTime);
         
         // Прыжок
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        if (Input.GetButtonDown("Jump") && isGrounded && isControlEnabled)
         {
             velocity.y = Mathf.Sqrt(jumpForce * 2f * gravity);
         }
@@ -197,9 +212,18 @@ public class PlayerController : MonoBehaviour
     
     private void ProcessCameraRotation()
     {
+        if (!isControlEnabled) return; // Блокируем вращение камеры, если управление отключено
+        
         // Получаем ввод мыши
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        
+        // Если управление отключено, обнуляем ввод
+        if (!isControlEnabled)
+        {
+            mouseX = 0;
+            mouseY = 0;
+        }
         
         // Вращение вокруг вертикальной оси (поворот персонажа)
         transform.Rotate(Vector3.up * mouseX);
@@ -213,6 +237,8 @@ public class PlayerController : MonoBehaviour
     
     private void ProcessInteraction()
     {
+        if (!isControlEnabled) return; // Блокируем взаимодействие, если управление отключено
+        
         // Raycast для определения объекта под прицелом
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
         RaycastHit hit;
@@ -226,8 +252,7 @@ public class PlayerController : MonoBehaviour
             {
                 // Показываем подсказку
                 currentInteractable = interactable;
-                interactionPrompt.SetActive(true);
-                promptText.text = interactable.GetInteractionText();
+                UpdateInteractionPrompt();
                 
                 // Взаимодействие при нажатии клавиши
                 if (Input.GetKeyDown(interactionKey))
@@ -248,11 +273,11 @@ public class PlayerController : MonoBehaviour
         }
     }
     
-    private void HideInteractionPrompt()
+    public void HideInteractionPrompt()
     {
-        if (interactionPrompt.activeSelf)
+        if (interactionPromptUI != null && interactionPromptUI.gameObject.activeSelf)
         {
-            interactionPrompt.SetActive(false);
+            interactionPromptUI.HidePrompt();
             currentInteractable = null;
         }
     }
@@ -273,6 +298,25 @@ public class PlayerController : MonoBehaviour
         }
     }
     
+    private void UpdateInteractionPrompt()
+    {
+        if (currentInteractable != null)
+        {
+            if (!interactionPromptUI.gameObject.activeSelf)
+            {
+                interactionPromptUI.gameObject.SetActive(true);
+            }
+            interactionPromptUI.ShowPrompt(currentInteractable.GetInteractionText());
+        }
+        else
+        {
+            if (interactionPromptUI.gameObject.activeSelf)
+            {
+                interactionPromptUI.HidePrompt();
+            }
+        }
+    }
+    
     // Визуализация радиуса взаимодействия в редакторе
     private void OnDrawGizmosSelected()
     {
@@ -280,6 +324,90 @@ public class PlayerController : MonoBehaviour
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawRay(playerCamera.position, playerCamera.forward * interactionRange);
+        }
+    }
+
+    public void SetControlEnabled(bool enabled)
+    {
+        isControlEnabled = enabled;
+        
+        // Управление курсором
+        Cursor.visible = !enabled;
+        Cursor.lockState = enabled ? CursorLockMode.Locked : CursorLockMode.None;
+        
+        // Сбрасываем ввод при отключении управления
+        if (!enabled)
+        {
+            // Сбрасываем скорость движения
+            velocity = Vector3.zero;
+            
+            // Сбрасываем текущее взаимодействие
+            if (currentInteractable != null)
+            {
+                HideInteractionPrompt();
+            }
+            
+            // Сбрасываем ввод мыши
+            Input.ResetInputAxes();
+        }
+        
+        Debug.Log($"PlayerController: Управление {(enabled ? "включено" : "отключено")}");
+    }
+
+    // Получение текущей позиции камеры
+    public Vector3 GetCameraPosition()
+    {
+        if (playerCamera != null)
+        {
+            return playerCamera.position;
+        }
+        return Vector3.zero;
+    }
+
+    // Установка позиции камеры
+    public void SetCameraPosition(Vector3 position)
+    {
+        if (playerCamera != null)
+        {
+            playerCamera.position = position;
+        }
+    }
+
+    public Quaternion GetCameraRotation()
+    {
+        if (playerCamera != null)
+        {
+            return playerCamera.rotation;
+        }
+        return Quaternion.identity;
+    }
+
+    public void SetCameraRotation(Quaternion rotation)
+    {
+        if (playerCamera != null)
+        {
+            playerCamera.rotation = rotation;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Очищаем созданные объекты
+        if (createdCamera != null)
+        {
+            Destroy(createdCamera);
+        }
+        if (createdGroundCheck != null)
+        {
+            Destroy(createdGroundCheck);
+        }
+        if (createdCanvas != null)
+        {
+            Destroy(createdCanvas.gameObject);
+        }
+        if (interactionPromptUI != null)
+        {
+            Destroy(interactionPromptUI.gameObject);
         }
     }
 } 

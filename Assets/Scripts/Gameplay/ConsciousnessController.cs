@@ -85,6 +85,8 @@ public class ConsciousnessController : MonoBehaviour
     private float directionChangeTime = 0f;
     private bool isAbruptDirectionChange = false;
     private float abruptChangeTime = 0f;
+    private GameObject createdCamera;
+    private Canvas createdCanvas;
     
     private void Awake()
     {
@@ -141,11 +143,11 @@ public class ConsciousnessController : MonoBehaviour
             }
             else
             {
-                GameObject cameraObject = new GameObject("IsometricCamera");
-                cameraTransform = cameraObject.transform;
-                Camera newCamera = cameraObject.AddComponent<Camera>();
+                createdCamera = new GameObject("IsometricCamera");
+                cameraTransform = createdCamera.transform;
+                Camera newCamera = createdCamera.AddComponent<Camera>();
                 newCamera.nearClipPlane = 0.1f;
-                cameraObject.AddComponent<AudioListener>();
+                createdCamera.AddComponent<AudioListener>();
             }
         }
         
@@ -161,10 +163,11 @@ public class ConsciousnessController : MonoBehaviour
             if (canvas == null)
             {
                 GameObject canvasObject = new GameObject("ConsciousnessCanvas");
-                canvas = canvasObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                createdCanvas = canvasObject.AddComponent<Canvas>();
+                createdCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvasObject.AddComponent<CanvasScaler>();
                 canvasObject.AddComponent<GraphicRaycaster>();
+                canvas = createdCanvas;
             }
             
             interactionPrompt = new GameObject("InteractionPrompt");
@@ -630,5 +633,22 @@ public class ConsciousnessController : MonoBehaviour
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactionRange);
+    }
+
+    private void OnDestroy()
+    {
+        // Очищаем созданные объекты
+        if (createdCamera != null)
+        {
+            Destroy(createdCamera);
+        }
+        if (createdCanvas != null)
+        {
+            Destroy(createdCanvas.gameObject);
+        }
+        if (interactionPrompt != null)
+        {
+            Destroy(interactionPrompt);
+        }
     }
 } 
