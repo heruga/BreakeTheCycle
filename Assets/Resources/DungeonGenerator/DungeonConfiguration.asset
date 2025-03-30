@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7c09b7821a249c4d9569a0d7b0f0fc8, type: 3}
+  m_Name: DungeonConfiguration
+  m_EditorClassIdentifier: 
+  configName: My Dungeon
+  description: A procedurally generated dungeon with Hades-like progression.
+  useRandomSeed: 1
+  randomSeed: 0
+  floorRoomPools:
+  - {fileID: 11400000, guid: 3e0fe7b297bd66241bf74c39926d2854, type: 2}
+  minFloors: 3
+  maxFloors: 5
+  defaultDoorPrefab: {fileID: 1405299871180688092, guid: 071e14c0ca233a44f962fc50cec644c9, type: 3}
+  defaultTransitionType: 0
+  transitionDuration: 1
+  roomsToKeepLoaded: 1
+  unloadUnusedRooms: 1
+  roomUnloadDelay: 5
+  showDoorIndicators: 1
+  showMinimap: 1
+  showRoomNames: 1
+  roomNameDisplayDuration: 3
+  baseRareRewardChance: 0.15
+  rareRewardChanceIncreasePerFloor: 0.05
+  guaranteeShopBeforeBoss: 1
+  guaranteeHealingBeforeBoss: 0
+  preventConsecutiveSameRoomTypes: 1
