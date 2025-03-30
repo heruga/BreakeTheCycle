@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23c56785f092e054aaf49c927202ae3f, type: 3}
+  m_Name: RoomData_New Room
+  m_EditorClassIdentifier: 
+  roomId: bc568029
+  roomName: New Room
+  description: Description of this room.
+  roomType: {fileID: 11400000, guid: 931c72960e4a17d47a8390fea69475c2, type: 2}
+  roomPrefab: {fileID: 7362358811068589916, guid: 7409e5d50bd9dd447a5139fa245214c8, type: 3}
+  minDoorCount: 1
+  maxDoorCount: 3
+  possibleNextRoomTypes: []
+  difficulty: 1
+  uniquePerRun: 0
+  isEntryRoom: 1
+  isExitRoom: 0
+  minFloorDepth: 0
+  maxFloorDepth: 0

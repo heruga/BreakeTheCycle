@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f041dd9057d90d47977f746d7a2e23a, type: 3}
+  m_Name: RoomPool_Floor 1
+  m_EditorClassIdentifier: 
+  floorDepth: 1
+  floorName: Floor 1
+  entryRooms:
+  - roomData: {fileID: 11400000, guid: 15802afcd738cbc41b0f3525b53e9671, type: 2}
+    weight: 0
+  combatRooms: []
+  rewardRooms: []
+  shopRooms: []
+  specialRooms: []
+  bossRooms: []
+  exitRooms: []
+  minRoomsBeforeBoss: 10
+  maxRoomsInFloor: 15
+  limitedShops: 1
+  maxShopRooms: 2
+  limitedSpecialRooms: 1
+  maxSpecialRooms: 3
