@@ -69,6 +69,16 @@ public class InteractableObject : MonoBehaviour
     {
         if (!isInteractable) return;
         
+        // Проверяем, не открыт ли уже просмотрщик
+        if (ObjectViewer.Instance != null && ObjectViewer.Instance.IsViewerActive())
+        {
+            Debug.Log("InteractableObject: Просмотрщик уже открыт, игнорируем взаимодействие");
+            return;
+        }
+        
+        // Выводим сообщение в консоль
+        Debug.Log($"Игрок взаимодействует с объектом: {displayName}");
+        
         // Воспроизводим звук взаимодействия, если он задан
         if (interactionSound != null)
         {
@@ -82,6 +92,10 @@ public class InteractableObject : MonoBehaviour
         if (ObjectViewer.Instance != null)
         {
             ObjectViewer.Instance.ShowObject(gameObject, objectDescription);
+        }
+        else
+        {
+            Debug.LogWarning("ObjectViewer не найден! Окно просмотра не будет открыто.");
         }
     }
     
