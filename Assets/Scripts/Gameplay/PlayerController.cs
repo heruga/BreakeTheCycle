@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using BreakTheCycle;
 
 /// <summary>
 /// Контроллер игрока для режима "Реальность" с видом от первого лица

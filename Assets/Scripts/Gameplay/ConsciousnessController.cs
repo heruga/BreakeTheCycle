@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using BreakTheCycle;
 
 /// <summary>
 /// Контроллер игрока для режима "Сознание" с изометрическим видом
@@ -11,6 +12,9 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float rotationSpeed = 15f;
     [SerializeField] private LayerMask groundLayerMask;
+    [SerializeField] private float chaseDistance = 10f;
+    [SerializeField] private float attackDistance = 2f;
+    [SerializeField] private float stopDistance = 1f;
     
     [Header("Физика")]
     [SerializeField] private float mass = 1f;
@@ -70,6 +74,16 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI promptText;
     [SerializeField] private KeyCode switchRealityKey = KeyCode.R;
     
+    [Header("Бой")]
+    [SerializeField] private float attackDamage = 1f;
+    [SerializeField] private float attackSpeed = 1f;
+    [SerializeField] private float attackCooldown = 1f;
+    private float lastAttackTime;
+
+    [Header("Визуализация")]
+    [SerializeField] private Color chaseGizmoColor = Color.red;
+    [SerializeField] private Color attackGizmoColor = Color.yellow;
+    
     private Vector3 moveDirection;
     private Vector3 lastMoveDirection;
     private Vector3 smoothedMoveDirection;
@@ -111,7 +125,8 @@ public class ConsciousnessController : MonoBehaviour
         rb.angularDamping = angularDrag;
         rb.useGravity = useGravity;
         rb.isKinematic = isKinematic;
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        // Добавляем ограничение на движение по вертикали
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         
         // Настройка CapsuleCollider
         capsuleCollider = GetComponent<CapsuleCollider>();
@@ -124,6 +139,11 @@ public class ConsciousnessController : MonoBehaviour
         capsuleCollider.height = 2f;
         capsuleCollider.radius = 0.5f;
         capsuleCollider.center = new Vector3(0, 1f, 0);
+        
+        // Устанавливаем позицию персонажа на правильную высоту
+        Vector3 position = transform.position;
+        position.y = 1f; // Устанавливаем высоту равной половине высоты коллайдера
+        transform.position = position;
     }
     
     private void Start()
@@ -280,13 +300,19 @@ public class ConsciousnessController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed);
             
-            // Движение через velocity вместо MovePosition
+            // Движение через velocity
             rb.linearVelocity = moveDirection * moveSpeed;
         }
         else
         {
-            // Плавно останавливаем персонажа
-            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.fixedDeltaTime * drag);
+            // Плавно останавливаем персонажа с увеличенным сопротивлением
+            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.fixedDeltaTime * drag * 2f);
+            
+            // Если персонаж почти остановился, полностью сбрасываем скорость
+            if (rb.linearVelocity.magnitude < 0.1f)
+            {
+                rb.linearVelocity = Vector3.zero;
+            }
         }
     }
     
@@ -631,8 +657,17 @@ public class ConsciousnessController : MonoBehaviour
     
     private void OnDrawGizmosSelected()
     {
+        // Отрисовка радиуса взаимодействия
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactionRange);
+
+        // Отрисовка радиуса преследования
+        Gizmos.color = chaseGizmoColor;
+        Gizmos.DrawWireSphere(transform.position, chaseDistance);
+
+        // Отрисовка радиуса атаки
+        Gizmos.color = attackGizmoColor;
+        Gizmos.DrawWireSphere(transform.position, attackDistance);
     }
 
     private void OnDestroy()

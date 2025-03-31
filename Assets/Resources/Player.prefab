@@ -11,12 +11,11 @@ GameObject:
   - component: {fileID: 2042465162384516734}
   - component: {fileID: 6251439284646434283}
   - component: {fileID: 3934565416861735709}
-  - component: {fileID: 6564013040259588880}
   - component: {fileID: 8671887319805037559}
   - component: {fileID: 5100968570261082313}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -89,50 +88,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &6564013040259588880
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 821734946506246076}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0ccc27dca21c6c41bd4556dd10f8fb0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 10
-  rotationSpeed: 3
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 8
-  mass: 1
-  drag: 10
-  angularDrag: 0.05
-  useGravity: 0
-  isKinematic: 0
-  cameraTransform: {fileID: 0}
-  cameraHeight: 15
-  cameraAngleX: 45
-  cameraAngleY: 45
-  cameraSmoothSpeed: 5
-  cameraOffset: {x: -5, y: 15, z: -15}
-  adjustCameraDirection: 1
-  directionAdjustmentStrength: 4
-  cameraReturnTime: 1.5
-  directionIndicatorPrefab: {fileID: 0}
-  showDirectionIndicator: 1
-  indicatorOffset: 0.5
-  indicatorScale: 0.3
-  indicatorColor: {r: 1, g: 0, b: 0, a: 1}
-  interactionRange: 3
-  interactionKey: 102
-  interactionMask:
-    serializedVersion: 2
-    m_Bits: 64
-  interactionPrompt: {fileID: 0}
-  promptText: {fileID: 0}
-  switchRealityKey: 114
 --- !u!136 &8671887319805037559
 CapsuleCollider:
   m_ObjectHideFlags: 0

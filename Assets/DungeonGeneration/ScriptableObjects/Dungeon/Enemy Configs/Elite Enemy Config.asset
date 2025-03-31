@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2cde97c2633c14c87666f7099bde20, type: 3}
+  m_Name: Elite Enemy Config
+  m_EditorClassIdentifier: 
+  enemyName: Elite Enemy
+  enemyPrefab: {fileID: 6061985520564372758, guid: f4c5e6f458c9bf64f8d395fc3a873705, type: 3}
+  enemyIcon: {fileID: 0}
+  difficultyRating: 3
+  minDungeonLevel: 3
+  spawnWeight: 0.3
+  minGroupSize: 1
+  maxGroupSize: 1
+  possibleDrops: []
+  dropChance: 0
+  description: Stronger enemy that appears in later levels

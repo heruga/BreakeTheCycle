@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Enemy
+  - EnemySpawnPoint
+  - RewardSpawnPoint
   layers:
   - Default
   - TransparentFX
@@ -13,6 +16,7 @@ TagManager:
   - UI
   - Interactable
   - Player
+  - Enemy
   - 
   - 
   - 

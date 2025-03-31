@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using DG.Tweening;
+using BreakTheCycle;
 
 public class ObjectViewer : MonoBehaviour
 {
