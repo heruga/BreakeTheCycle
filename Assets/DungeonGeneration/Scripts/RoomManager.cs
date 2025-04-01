@@ -14,11 +14,18 @@ namespace DungeonGeneration
 
         private DungeonGenerator dungeonGenerator;
         private RoomNode roomNode;
-        private List<GameObject> activeEnemies = new List<GameObject>();
-        private bool isCleared = false;
+        public List<GameObject> activeEnemies = new List<GameObject>();
+        public bool isCleared = false;
+        public RoomTypeSO RoomType => roomType;
 
         private void Start()
         {
+            if (roomType == null)
+            {
+                Debug.LogError("RoomType не назначен в RoomManager! Пожалуйста, назначьте тип комнаты в инспекторе.");
+                return;
+            }
+
             dungeonGenerator = FindObjectOfType<DungeonGenerator>();
             if (dungeonGenerator == null)
             {
@@ -41,13 +48,14 @@ namespace DungeonGeneration
         private void SetupRoom()
         {
             // Спавним врагов
-            if (roomType.roomType == RoomType.Combat || roomType.roomType == RoomType.Boss)
+            if (roomType.roomType == DungeonGeneration.ScriptableObjects.RoomType.Combat || 
+                roomType.roomType == DungeonGeneration.ScriptableObjects.RoomType.Boss)
             {
                 SpawnEnemies();
             }
 
             // Спавним награды
-            if (roomType.roomType == RoomType.Reward)
+            if (roomType.roomType == DungeonGeneration.ScriptableObjects.RoomType.Reward)
             {
                 SpawnRewards();
             }
@@ -162,6 +170,28 @@ namespace DungeonGeneration
             {
                 Destroy(gameObject);
             }
+        }
+
+        public bool AreAllEnemiesDefeated()
+        {
+            return activeEnemies.Count == 0;
+        }
+
+        public void LoadNextRoom(string nextRoomId)
+        {
+            if (dungeonGenerator != null)
+            {
+                dungeonGenerator.LoadRoom(nextRoomId);
+            }
+            else
+            {
+                Debug.LogError("DungeonGenerator not found! Cannot load next room.");
+            }
+        }
+
+        public string GetRoomId()
+        {
+            return roomNode?.Id;
         }
     }
 } 

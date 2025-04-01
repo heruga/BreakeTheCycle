@@ -12,6 +12,7 @@ namespace DungeonGeneration
         public GameObject RoomInstance { get; set; }
         public List<RoomNode> ConnectedRooms { get; private set; }
         public bool IsCleared { get; set; }
+        public string Id { get; set; }
 
         public RoomNode(Vector2Int position, RoomTypeSO roomType, RoomTemplateSO roomTemplate)
         {
@@ -20,6 +21,7 @@ namespace DungeonGeneration
             RoomTemplate = roomTemplate;
             ConnectedRooms = new List<RoomNode>();
             IsCleared = false;
+            Id = System.Guid.NewGuid().ToString();
         }
 
         public void AddConnection(RoomNode other)

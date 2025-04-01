@@ -12,16 +12,6 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float rotationSpeed = 15f;
     [SerializeField] private LayerMask groundLayerMask;
-    [SerializeField] private float chaseDistance = 10f;
-    [SerializeField] private float attackDistance = 2f;
-    [SerializeField] private float stopDistance = 1f;
-    
-    [Header("Физика")]
-    [SerializeField] private float mass = 1f;
-    [SerializeField] private float drag = 5f;
-    [SerializeField] private float angularDrag = 0.05f;
-    [SerializeField] private bool useGravity = true;
-    [SerializeField] private bool isKinematic = false;
     
     [Header("Камера")]
     [SerializeField] private Transform cameraTransform;
@@ -54,18 +44,6 @@ public class ConsciousnessController : MonoBehaviour
     [Tooltip("Время сглаживания резкого изменения направления")]
     [SerializeField] private float abruptChangeSmoothing = 0.8f;
     
-    [Header("Индикатор направления")]
-    [Tooltip("Префаб индикатора направления (если не указан, будет создан простой индикатор)")]
-    [SerializeField] private GameObject directionIndicatorPrefab;
-    [Tooltip("Показывать индикатор направления")]
-    [SerializeField] private bool showDirectionIndicator = true;
-    [Tooltip("Смещение индикатора вперед от позиции игрока")]
-    [SerializeField] private float indicatorOffset = 0.5f;
-    [Tooltip("Размер индикатора")]
-    [SerializeField] private float indicatorScale = 0.3f;
-    [Tooltip("Цвет индикатора")]
-    [SerializeField] private Color indicatorColor = Color.red;
-    
     [Header("Взаимодействие")]
     [SerializeField] private float interactionRange = 3f;
     [SerializeField] private KeyCode interactionKey = KeyCode.F;
@@ -78,6 +56,9 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float attackDamage = 1f;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float attackCooldown = 1f;
+    [SerializeField] private float chaseDistance = 10f;
+    [SerializeField] private float attackDistance = 2f;
+    [SerializeField] private float stopDistance = 1f;
     private float lastAttackTime;
 
     [Header("Визуализация")]
@@ -93,7 +74,6 @@ public class ConsciousnessController : MonoBehaviour
     private Vector3 previousTargetPosition;
     private Rigidbody rb;
     private CapsuleCollider capsuleCollider;
-    private Transform directionIndicator;
     private float timeSinceLastMovement = 0f;
     private bool isReturningToStandardPosition = false;
     private float directionChangeTime = 0f;
@@ -107,7 +87,6 @@ public class ConsciousnessController : MonoBehaviour
         SetupPhysics();
         SetupCamera();
         SetupInteractionUI();
-        SetupDirectionIndicator();
         lastMoveDirection = transform.forward;
     }
     
@@ -120,13 +99,15 @@ public class ConsciousnessController : MonoBehaviour
             rb = gameObject.AddComponent<Rigidbody>();
         }
         
-        rb.mass = mass;
-        rb.linearDamping = drag;
-        rb.angularDamping = angularDrag;
-        rb.useGravity = useGravity;
-        rb.isKinematic = isKinematic;
-        // Добавляем ограничение на движение по вертикали
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
+        rb.mass = 1.5f;  // Увеличиваем массу для большей стабильности
+        rb.linearDamping = 5f;    // Значительно увеличиваем сопротивление для предотвращения скольжения
+        rb.angularDamping = 10f;  // Сильно увеличиваем сопротивление вращению
+        rb.useGravity = true;
+        rb.isKinematic = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate; // Интерполяция для плавного движения
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // Улучшаем определение коллизий
+        rb.freezeRotation = true;  // Полностью замораживаем вращение
+        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;  // Замораживаем все оси вращения и Y позицию
         
         // Настройка CapsuleCollider
         capsuleCollider = GetComponent<CapsuleCollider>();
@@ -139,6 +120,7 @@ public class ConsciousnessController : MonoBehaviour
         capsuleCollider.height = 2f;
         capsuleCollider.radius = 0.5f;
         capsuleCollider.center = new Vector3(0, 1f, 0);
+        capsuleCollider.isTrigger = false; // Убеждаемся, что коллайдер не триггер
         
         // Устанавливаем позицию персонажа на правильную высоту
         Vector3 position = transform.position;
@@ -221,64 +203,12 @@ public class ConsciousnessController : MonoBehaviour
         }
     }
     
-    private void SetupDirectionIndicator()
-    {
-        if (!showDirectionIndicator)
-        {
-            // Если индикатор отключен, выходим
-            return;
-        }
-    
-        if (directionIndicator == null)
-        {
-            // Создаем индикатор направления, если он не назначен
-            GameObject indicator;
-            if (directionIndicatorPrefab != null)
-            {
-                indicator = Instantiate(directionIndicatorPrefab, transform);
-            }
-            else
-            {
-                // Создаем простой индикатор в виде стрелки
-                indicator = new GameObject("DirectionIndicator");
-                indicator.transform.SetParent(transform);
-                
-                // Создаем стрелку из нескольких примитивов
-                GameObject arrowBody = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                arrowBody.transform.SetParent(indicator.transform);
-                arrowBody.transform.localScale = new Vector3(indicatorScale * 0.2f, indicatorScale * 0.5f, indicatorScale * 0.2f);
-                arrowBody.transform.localPosition = new Vector3(0, 0, indicatorScale * 0.25f);
-                arrowBody.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                
-                // Создаем конец стрелки в виде пирамиды
-                GameObject arrowHead = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                arrowHead.transform.SetParent(indicator.transform);
-                arrowHead.transform.localScale = new Vector3(indicatorScale * 0.4f, indicatorScale * 0.1f, indicatorScale * 0.4f);
-                arrowHead.transform.localPosition = new Vector3(0, 0, indicatorScale * 0.75f);
-                arrowHead.transform.localRotation = Quaternion.Euler(45f, 0f, 0f);
-                
-                // Устанавливаем цвет индикатора
-                Renderer[] renderers = indicator.GetComponentsInChildren<Renderer>();
-                foreach (Renderer renderer in renderers)
-                {
-                    renderer.material.color = indicatorColor;
-                }
-            }
-            
-            // Позиционируем индикатор перед персонажем
-            directionIndicator = indicator.transform;
-            directionIndicator.localPosition = new Vector3(0, 0.1f, indicatorOffset);
-            directionIndicator.localRotation = Quaternion.identity;
-        }
-    }
-    
     private void Update()
     {
         CalculateMovementDirection();
         ProcessInteraction();
         ProcessRealitySwitch();
         UpdateCameraPosition(false);
-        UpdateDirectionIndicator();
     }
     
     private void CalculateMovementDirection()
@@ -296,68 +226,22 @@ public class ConsciousnessController : MonoBehaviour
     {
         if (moveDirection != Vector3.zero)
         {
-            // Поворот персонажа
+            // Поворот персонажа только когда есть ввод от игрока
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed);
             
-            // Движение через velocity
+            // Движение через velocity с учетом текущего поворота персонажа
             rb.linearVelocity = moveDirection * moveSpeed;
         }
         else
         {
-            // Плавно останавливаем персонажа с увеличенным сопротивлением
-            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.fixedDeltaTime * drag * 2f);
+            // Плавно останавливаем персонажа
+            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.fixedDeltaTime * 10f);
             
             // Если персонаж почти остановился, полностью сбрасываем скорость
             if (rb.linearVelocity.magnitude < 0.1f)
             {
                 rb.linearVelocity = Vector3.zero;
-            }
-        }
-    }
-    
-    private void UpdateDirectionIndicator()
-    {
-        if (directionIndicator != null)
-        {
-            // Включаем/выключаем индикатор в зависимости от настройки
-            if (!showDirectionIndicator && directionIndicator.gameObject.activeSelf)
-            {
-                directionIndicator.gameObject.SetActive(false);
-                return;
-            }
-            else if (showDirectionIndicator && !directionIndicator.gameObject.activeSelf)
-            {
-                directionIndicator.gameObject.SetActive(true);
-            }
-            
-            // Индикатор всегда находится перед персонажем, указывая направление его взгляда
-            directionIndicator.localPosition = new Vector3(0, 0.1f, indicatorOffset);
-            
-            // Если персонаж движется, индикатор становится более заметным
-            if (moveDirection != Vector3.zero)
-            {
-                // Плавно делаем индикатор более видимым при движении
-                Renderer[] renderers = directionIndicator.GetComponentsInChildren<Renderer>();
-                foreach (Renderer renderer in renderers)
-                {
-                    Color targetColor = indicatorColor;
-                    // Увеличиваем яркость при движении
-                    targetColor.a = 1.0f; 
-                    renderer.material.color = Color.Lerp(renderer.material.color, targetColor, Time.deltaTime * 5f);
-                }
-            }
-            else
-            {
-                // Слегка приглушаем индикатор когда персонаж стоит на месте
-                Renderer[] renderers = directionIndicator.GetComponentsInChildren<Renderer>();
-                foreach (Renderer renderer in renderers)
-                {
-                    Color targetColor = indicatorColor;
-                    // Уменьшаем яркость в состоянии покоя
-                    targetColor.a = 0.6f;
-                    renderer.material.color = Color.Lerp(renderer.material.color, targetColor, Time.deltaTime * 3f);
-                }
             }
         }
     }
@@ -596,39 +480,58 @@ public class ConsciousnessController : MonoBehaviour
     
     private void ProcessInteraction()
     {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, interactionRange, interactionMask);
-        bool foundInteractable = false;
+        Vector3 halfExtents = new Vector3(interactionRange * 0.5f, interactionRange * 0.5f, interactionRange * 0.5f);
+        Collider[] colliders = Physics.OverlapBox(transform.position, halfExtents, Quaternion.identity, interactionMask);
+        
+        InteractableObject nearestInteractable = null;
+        float nearestDistance = float.MaxValue;
         
         foreach (Collider collider in colliders)
         {
-            InteractableObject interactable = collider.GetComponent<InteractableObject>();
-            if (interactable != null && interactable.IsPlayerInRange(transform))
+            // Пропускаем объекты с компонентом DoorInteraction
+            if (collider.GetComponent<DoorInteraction>() != null)
             {
-                currentInteractable = interactable;
-                foundInteractable = true;
-                
-                if (interactionPrompt != null)
+                continue;
+            }
+            
+            InteractableObject interactable = collider.GetComponent<InteractableObject>();
+            if (interactable != null)
+            {
+                float distance = Vector3.Distance(transform.position, collider.transform.position);
+                if (distance <= interactionRange && distance < nearestDistance)
                 {
-                    interactionPrompt.SetActive(true);
-                    if (promptText != null)
-                    {
-                        promptText.text = interactable.GetInteractionText();
-                    }
+                    nearestInteractable = interactable;
+                    nearestDistance = distance;
                 }
-                
-                if (Input.GetKeyDown(interactionKey))
-                {
-                    interactable.Interact();
-                }
-                
-                break;
             }
         }
         
-        if (!foundInteractable)
+        if (nearestInteractable != null)
+        {
+            currentInteractable = nearestInteractable;
+            ShowInteractionPrompt(nearestInteractable.GetInteractionText());
+            
+            if (Input.GetKeyDown(interactionKey))
+            {
+                nearestInteractable.Interact();
+            }
+        }
+        else
         {
             HideInteractionPrompt();
             currentInteractable = null;
+        }
+    }
+    
+    private void ShowInteractionPrompt(string text)
+    {
+        if (interactionPrompt != null)
+        {
+            interactionPrompt.SetActive(true);
+            if (promptText != null)
+            {
+                promptText.text = text;
+            }
         }
     }
     

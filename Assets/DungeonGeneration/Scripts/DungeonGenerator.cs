@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DungeonGeneration.ScriptableObjects;
 using System.Collections;
+using BreakTheCycle;
 
 namespace DungeonGeneration
 {
@@ -17,6 +18,11 @@ namespace DungeonGeneration
         private RoomNode bossRoom;
         private int currentDifficulty;
         private bool isGenerating = false;
+
+        public List<RoomNode> Rooms => rooms;
+        public RoomNode StartRoom => startRoom;
+        public RoomNode BossRoom => bossRoom;
+        public float RoomSpacing => dungeonConfig.roomSpacing;
 
         private void Start()
         {
@@ -77,6 +83,47 @@ namespace DungeonGeneration
                 GameObject roomInstance = Instantiate(room.RoomTemplate.roomPrefab, position, Quaternion.identity, dungeonContainer);
                 room.RoomInstance = roomInstance;
                 Debug.Log($"[DungeonGenerator] Создана комната типа {room.RoomType.name} на позиции {position}");
+                
+                // Проверяем содержимое комнаты
+                Debug.Log($"[DungeonGenerator] Содержимое комнаты {room.RoomType.name}:");
+                foreach (Transform child in roomInstance.transform)
+                {
+                    Debug.Log($"- {child.name} (тег: {child.tag})");
+                    // Проверяем дочерние объекты
+                    foreach (Transform grandChild in child)
+                    {
+                        Debug.Log($"  - {grandChild.name} (тег: {grandChild.tag})");
+                        // Проверяем компоненты на двери
+                        if (grandChild.name.Contains("Door"))
+                        {
+                            Debug.Log($"    Компоненты двери {grandChild.name}:");
+                            var doorInteraction = grandChild.GetComponent<DoorInteraction>();
+                            if (doorInteraction != null)
+                            {
+                                Debug.Log("    - Найден компонент DoorInteraction");
+                            }
+                            else
+                            {
+                                Debug.Log("    - Компонент DoorInteraction отсутствует!");
+                            }
+                            var collider = grandChild.GetComponent<Collider>();
+                            if (collider != null)
+                            {
+                                Debug.Log($"    - Найден коллайдер типа {collider.GetType().Name}");
+                                if (collider is BoxCollider boxCollider)
+                                {
+                                    Debug.Log($"    - Размер коллайдера: {boxCollider.size}");
+                                    Debug.Log($"    - Is Trigger: {boxCollider.isTrigger}");
+                                }
+                            }
+                            else
+                            {
+                                Debug.Log("    - Коллайдер отсутствует!");
+                            }
+                        }
+                    }
+                }
+                
                 yield return null;
             }
 
@@ -104,44 +151,87 @@ namespace DungeonGeneration
 
             // Создаем игрока в точке спавна
             Debug.Log("[DungeonGenerator] Создание игрока в точке спавна");
-            if (startRoom != null && startRoom.RoomInstance != null)
+            // Находим стартовую комнату
+            startRoom = rooms.FirstOrDefault(r => r.RoomType.roomType == RoomType.Start);
+            if (startRoom != null)
             {
+                Debug.Log($"[DungeonGenerator] Найдена стартовая комната: {startRoom.Id}");
+                Debug.Log($"[DungeonGenerator] Имя стартовой комнаты: {startRoom.RoomInstance.name}");
+                
+                // Находим точку спавна в стартовой комнате
                 Transform spawnPoint = startRoom.RoomInstance.transform.Find("Player Spawn Point");
                 if (spawnPoint != null)
                 {
-                    // Ищем существующего игрока в сцене
+                    Debug.Log($"[DungeonGenerator] Найдена точка спавна в стартовой комнате: {spawnPoint.position}");
+                    Debug.Log($"[DungeonGenerator] Имя точки спавна: {spawnPoint.name}");
+                    Debug.Log($"[DungeonGenerator] Тег точки спавна: {spawnPoint.tag}");
+                    
+                    // Находим существующего игрока или создаем нового
                     GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
                     if (existingPlayer != null)
                     {
-                        // Перемещаем существующего игрока в точку спавна
+                        Debug.Log($"[DungeonGenerator] Найден существующий игрок: {existingPlayer.name}, позиция: {existingPlayer.transform.position}");
+                        
+                        // Отключаем физику на время перемещения
+                        Rigidbody rb = existingPlayer.GetComponent<Rigidbody>();
+                        if (rb != null)
+                        {
+                            rb.isKinematic = true;
+                        }
+                        
+                        // Перемещаем игрока в точку спавна
                         existingPlayer.transform.position = spawnPoint.position;
                         existingPlayer.transform.rotation = spawnPoint.rotation;
-                        Debug.Log("[DungeonGenerator] Существующий игрок перемещен в точку спавна");
+                        
+                        // Принудительно обновляем позицию
+                        if (rb != null)
+                        {
+                            rb.position = spawnPoint.position;
+                            rb.rotation = spawnPoint.rotation;
+                            rb.isKinematic = false;
+                        }
+                        
+                        Debug.Log($"[DungeonGenerator] Игрок перемещен в позицию: {existingPlayer.transform.position}");
+                        
+                        // Проверяем, что перемещение действительно произошло
+                        if (Vector3.Distance(existingPlayer.transform.position, spawnPoint.position) > 0.1f)
+                        {
+                            Debug.LogError("[DungeonGenerator] Не удалось переместить игрока в нужную позицию!");
+                            // Пробуем еще раз через один кадр
+                            StartCoroutine(RetryPlayerPosition(existingPlayer, spawnPoint));
+                        }
                     }
                     else
                     {
-                        // Создаем нового игрока, если его нет
-                        GameObject playerPrefab = Resources.Load<GameObject>("Player");
+                        Debug.Log("[DungeonGenerator] Существующий игрок не найден, создаем нового");
+                        // Создаем нового игрока
+                        GameObject playerPrefab = Resources.Load<GameObject>("Prefabs/Player");
                         if (playerPrefab != null)
                         {
-                            GameObject player = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
-                            player.tag = "Player";
-                            Debug.Log("[DungeonGenerator] Новый игрок создан в точке спавна");
+                            GameObject newPlayer = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+                            newPlayer.tag = "Player";
+                            Debug.Log($"[DungeonGenerator] Создан новый игрок в позиции: {newPlayer.transform.position}");
                         }
                         else
                         {
-                            Debug.LogError("[DungeonGenerator] Не удалось загрузить префаб игрока из Resources");
+                            Debug.LogError("[DungeonGenerator] Не удалось загрузить префаб игрока!");
                         }
                     }
                 }
                 else
                 {
-                    Debug.LogError("[DungeonGenerator] Не найдена точка спавна игрока в стартовой комнате");
+                    Debug.LogError("[DungeonGenerator] Точка спавна не найдена в стартовой комнате!");
+                    // Выводим все дочерние объекты для отладки
+                    Debug.Log("[DungeonGenerator] Содержимое стартовой комнаты:");
+                    foreach (Transform child in startRoom.RoomInstance.transform)
+                    {
+                        Debug.Log($"- {child.name} (тег: {child.tag})");
+                    }
                 }
             }
             else
             {
-                Debug.LogError("[DungeonGenerator] Стартовая комната не создана");
+                Debug.LogError("[DungeonGenerator] Стартовая комната не найдена!");
             }
             yield return null;
 
@@ -325,6 +415,8 @@ namespace DungeonGeneration
 
         private void ConnectToNearestRoom(RoomNode newRoom)
         {
+            Debug.Log($"[DungeonGenerator] Поиск ближайшей комнаты для {newRoom.Id}");
+            
             RoomNode nearestRoom = null;
             float minDistance = float.MaxValue;
 
@@ -333,6 +425,8 @@ namespace DungeonGeneration
                 if (room == newRoom) continue;
 
                 float distance = Vector2Int.Distance(newRoom.Position, room.Position);
+                Debug.Log($"[DungeonGenerator] Расстояние до комнаты {room.Id}: {distance}");
+                
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -342,8 +436,23 @@ namespace DungeonGeneration
 
             if (nearestRoom != null)
             {
-                newRoom.AddConnection(nearestRoom);
-                nearestRoom.AddConnection(newRoom);
+                // Проверяем, что комнаты находятся на соседних позициях
+                Vector2Int diff = nearestRoom.Position - newRoom.Position;
+                if ((diff.x == 0 && Mathf.Abs(diff.y) == 1) || 
+                    (diff.y == 0 && Mathf.Abs(diff.x) == 1))
+                {
+                    newRoom.AddConnection(nearestRoom);
+                    nearestRoom.AddConnection(newRoom);
+                    Debug.Log($"[DungeonGenerator] Комната {newRoom.Id} соединена с {nearestRoom.Id}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[DungeonGenerator] Комнаты {newRoom.Id} и {nearestRoom.Id} не находятся на соседних позициях!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[DungeonGenerator] Не найдена ближайшая комната для {newRoom.Id}");
             }
         }
 
@@ -457,6 +566,134 @@ namespace DungeonGeneration
 
             // Ищем комнату с соответствующими координатами
             return rooms.FirstOrDefault(r => r.Position == gridPosition);
+        }
+
+        public void LoadRoom(string nextRoomId)
+        {
+            if (isGenerating)
+            {
+                Debug.LogWarning("[DungeonGenerator] Нельзя загрузить комнату во время генерации!");
+                return;
+            }
+
+            // Находим комнату по ID
+            RoomNode nextRoom = rooms.Find(r => r.Id == nextRoomId);
+            if (nextRoom == null)
+            {
+                Debug.LogError($"[DungeonGenerator] Комната с ID {nextRoomId} не найдена!");
+                return;
+            }
+
+            // Если комната уже создана, просто активируем её
+            if (nextRoom.RoomInstance != null)
+            {
+                nextRoom.RoomInstance.SetActive(true);
+                Debug.Log($"[DungeonGenerator] Комната {nextRoomId} активирована");
+                return;
+            }
+
+            // Если комната не создана, создаём её
+            Vector3 position = new Vector3(nextRoom.Position.x * dungeonConfig.roomSpacing, 0, nextRoom.Position.y * dungeonConfig.roomSpacing);
+            GameObject roomInstance = Instantiate(nextRoom.RoomTemplate.roomPrefab, position, Quaternion.identity, dungeonContainer);
+            nextRoom.RoomInstance = roomInstance;
+
+            // Настраиваем содержимое комнаты
+            if (nextRoom.RoomType.roomType == RoomType.Combat || nextRoom.RoomType.roomType == RoomType.Boss)
+            {
+                SetupEnemies(nextRoom);
+            }
+            else if (nextRoom.RoomType.roomType == RoomType.Reward)
+            {
+                SetupRewards(nextRoom);
+            }
+
+            Debug.Log($"[DungeonGenerator] Комната {nextRoomId} создана и настроена");
+        }
+
+        public string GetNextRoomId(Vector2Int currentPosition, Vector2Int direction)
+        {
+            Debug.Log($"[DungeonGenerator] Поиск следующей комнаты. Текущая позиция: {currentPosition}, Направление: {direction}");
+            
+            RoomNode currentRoom = GetRoomNodeAtPosition(new Vector3(currentPosition.x * dungeonConfig.roomSpacing, 0, currentPosition.y * dungeonConfig.roomSpacing));
+            if (currentRoom == null)
+            {
+                Debug.LogError("[DungeonGenerator] Текущая комната не найдена!");
+                return null;
+            }
+
+            Vector2Int nextPosition = currentPosition + direction;
+            Debug.Log($"[DungeonGenerator] Позиция следующей комнаты: {nextPosition}");
+
+            // Ищем комнату в списке соединенных комнат
+            foreach (var connectedRoom in currentRoom.ConnectedRooms)
+            {
+                if (connectedRoom.Position == nextPosition)
+                {
+                    Debug.Log($"[DungeonGenerator] Найдена следующая комната с ID: {connectedRoom.Id}");
+                    return connectedRoom.Id;
+                }
+            }
+
+            Debug.LogWarning("[DungeonGenerator] Следующая комната не найдена в списке соединенных комнат!");
+            return null;
+        }
+
+        private IEnumerator RetryPlayerPosition(GameObject player, Transform spawnPoint)
+        {
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+
+            // Находим существующего игрока или создаем нового
+            GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (existingPlayer != null)
+            {
+                Debug.Log($"[DungeonGenerator] Найден существующий игрок: {existingPlayer.name}, позиция: {existingPlayer.transform.position}");
+                
+                // Отключаем физику на время перемещения
+                Rigidbody rb = existingPlayer.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.isKinematic = true;
+                }
+                
+                // Перемещаем игрока в точку спавна
+                existingPlayer.transform.position = spawnPoint.position;
+                existingPlayer.transform.rotation = spawnPoint.rotation;
+                
+                // Принудительно обновляем позицию
+                if (rb != null)
+                {
+                    rb.position = spawnPoint.position;
+                    rb.rotation = spawnPoint.rotation;
+                    rb.isKinematic = false;
+                }
+                
+                Debug.Log($"[DungeonGenerator] Игрок перемещен в позицию: {existingPlayer.transform.position}");
+                
+                // Проверяем, что перемещение действительно произошло
+                if (Vector3.Distance(existingPlayer.transform.position, spawnPoint.position) > 0.1f)
+                {
+                    Debug.LogError("[DungeonGenerator] Не удалось переместить игрока в нужную позицию!");
+                    // Пробуем еще раз через один кадр
+                    StartCoroutine(RetryPlayerPosition(existingPlayer, spawnPoint));
+                }
+            }
+            else
+            {
+                Debug.Log("[DungeonGenerator] Существующий игрок не найден, создаем нового");
+                // Создаем нового игрока
+                GameObject playerPrefab = Resources.Load<GameObject>("Prefabs/Player");
+                if (playerPrefab != null)
+                {
+                    GameObject newPlayer = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+                    newPlayer.tag = "Player";
+                    Debug.Log($"[DungeonGenerator] Создан новый игрок в позиции: {newPlayer.transform.position}");
+                }
+                else
+                {
+                    Debug.LogError("[DungeonGenerator] Не удалось загрузить префаб игрока!");
+                }
+            }
         }
     }
 } 
