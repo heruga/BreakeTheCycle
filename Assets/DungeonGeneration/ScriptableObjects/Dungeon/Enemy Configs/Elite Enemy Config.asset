@@ -14,12 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Elite Enemy
   enemyPrefab: {fileID: 6061985520564372758, guid: f4c5e6f458c9bf64f8d395fc3a873705, type: 3}
-  enemyIcon: {fileID: 0}
+  isBoss: 0
+  isElite: 0
   difficultyRating: 3
-  minDungeonLevel: 3
-  spawnWeight: 0.3
+  spawnWeight: 1
   minGroupSize: 1
   maxGroupSize: 1
-  possibleDrops: []
-  dropChance: 0
+  lootTable: {fileID: 0}
   description: Stronger enemy that appears in later levels

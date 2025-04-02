@@ -9,12 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5212032192114772038}
+  - component: {fileID: 7562053696551056484}
   - component: {fileID: 5049948555680701840}
   - component: {fileID: 5566251066068377283}
   - component: {fileID: 2158784868679475605}
   - component: {fileID: 2441337104231710409}
-  - component: {fileID: 2421236047016020099}
-  - component: {fileID: 7562053696551056484}
   - component: {fileID: 6505588776206961800}
   m_Layer: 7
   m_Name: Player
@@ -39,6 +38,54 @@ Transform:
   - {fileID: 6790811079368833221}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7562053696551056484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6229333563870419022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0ccc27dca21c6c41bd4556dd10f8fb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 12
+  rotationSpeed: 2
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  cameraTransform: {fileID: 0}
+  cameraHeight: 15
+  cameraAngleX: 45
+  cameraAngleY: 45
+  cameraSmoothSpeed: 2.5
+  cameraOffset: {x: -5, y: 15, z: -15}
+  adjustCameraDirection: 1
+  directionAdjustmentStrength: 2
+  cameraReturnTime: 1.5
+  cameraDampingStrength: 0.9
+  directionChangeResponsiveness: 1.2
+  maxLookAheadDistance: 7
+  useSpringEffect: 1
+  directionChangeDotThreshold: 0.4
+  abruptChangeSmoothing: 1.2
+  interactionRange: 3
+  interactionKey: 102
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 64
+  interactionPrompt: {fileID: 0}
+  promptText: {fileID: 0}
+  switchRealityKey: 9
+  attackDamage: 80
+  attackSpeed: 3
+  attackCooldown: 1
+  chaseDistance: 10
+  attackDistance: 2
+  stopDistance: 1
+  chaseGizmoColor: {r: 1, g: 0, b: 0, a: 1}
+  attackGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!33 &5049948555680701840
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -140,68 +187,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &2421236047016020099
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6229333563870419022}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3f8916785fe9a742b77a17f19ee1253, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
---- !u!114 &7562053696551056484
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6229333563870419022}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0ccc27dca21c6c41bd4556dd10f8fb0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 12
-  rotationSpeed: 2
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 8
-  cameraTransform: {fileID: 0}
-  cameraHeight: 15
-  cameraAngleX: 45
-  cameraAngleY: 45
-  cameraSmoothSpeed: 2.5
-  cameraOffset: {x: -5, y: 15, z: -15}
-  adjustCameraDirection: 1
-  directionAdjustmentStrength: 2
-  cameraReturnTime: 1.5
-  cameraDampingStrength: 0.9
-  directionChangeResponsiveness: 1.2
-  maxLookAheadDistance: 7
-  useSpringEffect: 1
-  directionChangeDotThreshold: 0.4
-  abruptChangeSmoothing: 1.2
-  interactionRange: 3
-  interactionKey: 102
-  interactionMask:
-    serializedVersion: 2
-    m_Bits: 64
-  interactionPrompt: {fileID: 0}
-  promptText: {fileID: 0}
-  switchRealityKey: 9
-  attackDamage: 80
-  attackSpeed: 3
-  attackCooldown: 1
-  chaseDistance: 10
-  attackDistance: 2
-  stopDistance: 1
-  chaseGizmoColor: {r: 1, g: 0, b: 0, a: 1}
-  attackGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!54 &6505588776206961800
 Rigidbody:
   m_ObjectHideFlags: 0

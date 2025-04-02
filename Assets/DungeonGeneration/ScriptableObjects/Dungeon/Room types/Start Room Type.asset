@@ -14,12 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   typeName: Start Room
   roomType: 0
-  roomColor: {r: 0.6132076, g: 0.6132076, b: 0.6132076, a: 1}
-  roomIcon: {fileID: 0}
-  spawnWeight: 1
-  minDoorsCount: 1
-  maxDoorsCount: 3
-  possibleEnemyPrefabs: []
-  possibleRewardPrefabs: []
-  decorationPrefabs: []
+  canBeFirst: 1
+  canBeLast: 0
+  requiresCleaning: 0
   description: Starting room of the dungeon
+  minEnemies: 0
+  maxEnemies: 0
+  eliteEnemyChance: 0
+  bossEnemyChance: 0

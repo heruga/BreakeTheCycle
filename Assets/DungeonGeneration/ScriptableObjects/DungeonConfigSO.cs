@@ -1,55 +1,76 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System;
 
 namespace DungeonGeneration.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "New Dungeon Config", menuName = "Dungeon Generation/Dungeon Config")]
+    [CreateAssetMenu(fileName = "New Dungeon Config", menuName = "Dungeon/Dungeon Config")]
     public class DungeonConfigSO : ScriptableObject
     {
-        [Header("Room Templates")]
-        public RoomTemplateSO[] roomTemplates;
-
-        [Header("Enemy Configs")]
-        public EnemyConfigSO[] enemyConfigs;
-
-        [Header("Dungeon Structure")]
-        [Range(5, 20)]
-        public int minRoomsPerLevel = 5;
-        [Range(5, 20)]
-        public int maxRoomsPerLevel = 10;
-        public int totalLevels = 3;
-        public float roomSize = 10f;
+        [Header("Room Generation Settings")]
+        [Range(3, 10)]
+        public int minRooms = 5;
+        [Range(3, 10)]
+        public int maxRooms = 8;
         public float roomSpacing = 12f;
-        
-        [Header("Room Distribution")]
-        [Range(0, 1)]
-        public float combatRoomChance = 0.6f;
-        [Range(0, 1)]
-        public float rewardRoomChance = 0.2f;
-        [Range(0, 1)]
-        public float shopRoomChance = 0.1f;
-        
-        [Header("Door Settings")]
-        [Range(1, 3)]
-        public int minDoorsPerRoom = 1;
-        [Range(1, 3)]
-        public int maxDoorsPerRoom = 3;
-        
-        [Header("Difficulty Scaling")]
-        public AnimationCurve difficultyCurve = AnimationCurve.Linear(0, 1, 1, 2);
-        [Range(1, 10)]
-        public int startingDifficulty = 1;
-        [Range(1, 10)]
-        public int maxDifficulty = 10;
         
         [Header("Room Types")]
         public RoomTypeSO startRoomType;
-        public RoomTypeSO combatRoomType;
-        public RoomTypeSO rewardRoomType;
-        public RoomTypeSO shopRoomType;
+        public RoomTypeSO basicCombatRoomType;
+        public RoomTypeSO eliteCombatRoomType;
         public RoomTypeSO bossRoomType;
         
-        [TextArea(3, 5)]
-        public string dungeonDescription;
+        [Header("Room Spawn Weights")]
+        [Range(0f, 1f)]
+        public float basicCombatRoomWeight = 0.7f;
+        [Range(0f, 1f)]
+        public float eliteCombatRoomWeight = 0.3f;
+        
+        [Header("Room Templates")]
+        public RoomTemplateSO[] roomTemplates;
+        
+        [Header("Enemy Configurations")]
+        public EnemyConfigSO[] enemyConfigs;
+        
+        [Header("Generation Settings")]
+        public bool ensureBossRoom = true;
+        public bool ensureStartRoom = true;
+        public bool randomizeRoomOrder = true;
+
+        private void OnValidate()
+        {
+            // Проверяем, что максимальное количество комнат не меньше минимального
+            if (maxRooms < minRooms)
+            {
+                maxRooms = minRooms;
+                Debug.LogWarning($"Max rooms was less than min rooms in {name}. Adjusted to {minRooms}");
+            }
+
+            // Проверяем наличие всех необходимых типов комнат
+            if (startRoomType == null || basicCombatRoomType == null || 
+                eliteCombatRoomType == null || bossRoomType == null)
+            {
+                Debug.LogError($"Missing required room types in {name}!");
+            }
+
+            // Проверяем, что все типы комнат правильно настроены
+            if (startRoomType != null && !startRoomType.canBeFirst)
+            {
+                Debug.LogError($"Start room type in {name} is not configured to be first!");
+            }
+            if (bossRoomType != null && !bossRoomType.canBeLast)
+            {
+                Debug.LogError($"Boss room type in {name} is not configured to be last!");
+            }
+
+            // Проверяем, что сумма весов не превышает 1
+            float totalWeight = basicCombatRoomWeight + eliteCombatRoomWeight;
+            if (totalWeight > 1f)
+            {
+                Debug.LogWarning($"Total room spawn weights exceed 1 in {name}. Adjusted weights.");
+                float ratio = 1f / totalWeight;
+                basicCombatRoomWeight *= ratio;
+                eliteCombatRoomWeight *= ratio;
+            }
+        }
     }
 } 

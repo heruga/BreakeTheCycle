@@ -2,37 +2,31 @@ using UnityEngine;
 
 namespace DungeonGeneration.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "RoomType", menuName = "Dungeon/Room Type")]
+    [CreateAssetMenu(fileName = "New Room Type", menuName = "Dungeon/Room Type")]
     public class RoomTypeSO : ScriptableObject
     {
         [Header("Room Type Settings")]
-        public string typeName;
+        public string typeName = "New Room Type";
         public RoomType roomType;
-        public Color roomColor = Color.white; // For UI and visualization
-        public Sprite roomIcon;
+        public bool canBeFirst = false;
+        public bool canBeLast = false;
+        public bool requiresCleaning = true;
+        public string description;
         
         [Header("Spawn Settings")]
-        public float spawnWeight = 1f; // Relative probability of spawning
-        [Range(0, 3)]
-        public int minDoorsCount = 1; // Minimum number of doors this room can have
-        [Range(1, 3)]
-        public int maxDoorsCount = 3; // Maximum number of doors this room can have
-        
-        [Header("Content Settings")]
-        public GameObject[] possibleEnemyPrefabs; // Enemy prefabs that can spawn in this room
-        public GameObject[] possibleRewardPrefabs; // Reward prefabs that can spawn in this room
-        public GameObject[] decorationPrefabs; // Decoration prefabs
-        
-        [TextArea(3, 5)]
-        public string description;
-    }
+        public int minEnemies = 1;
+        public int maxEnemies = 3;
+        public float eliteEnemyChance = 0.2f;
+        public float bossEnemyChance = 0f;
 
-    public enum RoomType
-    {
-        Start,
-        Combat,
-        Reward,
-        Shop,
-        Boss
+        private void OnValidate()
+        {
+            // Проверяем, что максимальное количество врагов не меньше минимального
+            if (maxEnemies < minEnemies)
+            {
+                maxEnemies = minEnemies;
+                Debug.LogWarning($"Max enemies was less than min enemies in {name}. Adjusted to {minEnemies}");
+            }
+        }
     }
 } 

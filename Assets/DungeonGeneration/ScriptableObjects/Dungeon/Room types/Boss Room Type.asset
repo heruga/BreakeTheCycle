@@ -13,13 +13,12 @@ MonoBehaviour:
   m_Name: Boss Room Type
   m_EditorClassIdentifier: 
   typeName: Boss Room
-  roomType: 4
-  roomColor: {r: 0.22467358, g: 0.122552514, b: 0.3207547, a: 1}
-  roomIcon: {fileID: 0}
-  spawnWeight: 1
-  minDoorsCount: 1
-  maxDoorsCount: 3
-  possibleEnemyPrefabs: []
-  possibleRewardPrefabs: []
-  decorationPrefabs: []
+  roomType: 3
+  canBeFirst: 0
+  canBeLast: 1
+  requiresCleaning: 1
   description: 
+  minEnemies: 1
+  maxEnemies: 1
+  eliteEnemyChance: 0
+  bossEnemyChance: 1

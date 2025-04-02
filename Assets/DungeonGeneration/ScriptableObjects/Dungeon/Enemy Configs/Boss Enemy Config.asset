@@ -14,12 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Boss Enemy
   enemyPrefab: {fileID: 7057867871735091530, guid: af1334621776a6048ad74cd2065ff22c, type: 3}
-  enemyIcon: {fileID: 0}
+  isBoss: 0
+  isElite: 0
   difficultyRating: 5
-  minDungeonLevel: 6
-  spawnWeight: 0.1
+  spawnWeight: 1
   minGroupSize: 1
   maxGroupSize: 1
-  possibleDrops: []
-  dropChance: 0
+  lootTable: {fileID: 0}
   description: Boss enemy that appears at the end of each level

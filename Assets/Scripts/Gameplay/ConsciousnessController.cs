@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using BreakTheCycle;
+using UnityEngine.SceneManagement;
+using DungeonGeneration.Scripts;
 
 /// <summary>
 /// Контроллер игрока для режима "Сознание" с изометрическим видом
@@ -45,9 +47,10 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float abruptChangeSmoothing = 0.8f;
     
     [Header("Взаимодействие")]
-    [SerializeField] private float interactionRange = 3f;
-    [SerializeField] private KeyCode interactionKey = KeyCode.F;
+    [SerializeField] private float interactionRange = 2f;
+    [SerializeField] private Vector3 interactionBoxSize = new Vector3(2f, 2f, 2f);
     [SerializeField] private LayerMask interactionMask;
+    [SerializeField] private KeyCode interactionKey = KeyCode.F;
     [SerializeField] private GameObject interactionPrompt;
     [SerializeField] private TextMeshProUGUI promptText;
     [SerializeField] private KeyCode switchRealityKey = KeyCode.R;
@@ -205,8 +208,12 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Update()
     {
+        if (Input.GetKeyDown(interactionKey))
+        {
+            Debug.Log("[ConsciousnessController] Нажата клавиша F");
+            ProcessInteraction();
+        }
         CalculateMovementDirection();
-        ProcessInteraction();
         ProcessRealitySwitch();
         UpdateCameraPosition(false);
     }
@@ -480,46 +487,26 @@ public class ConsciousnessController : MonoBehaviour
     
     private void ProcessInteraction()
     {
-        Vector3 halfExtents = new Vector3(interactionRange * 0.5f, interactionRange * 0.5f, interactionRange * 0.5f);
-        Collider[] colliders = Physics.OverlapBox(transform.position, halfExtents, Quaternion.identity, interactionMask);
-        
-        InteractableObject nearestInteractable = null;
-        float nearestDistance = float.MaxValue;
-        
-        foreach (Collider collider in colliders)
+        // Поиск порталов без учета слоя
+        var portalColliders = Physics.OverlapSphere(transform.position, interactionRange);
+        foreach (var collider in portalColliders)
         {
-            // Пропускаем объекты с компонентом DoorInteraction
-            if (collider.GetComponent<DoorInteraction>() != null)
+            var portal = collider.GetComponent<InteractablePortal>();
+            if (portal == null)
             {
-                continue;
+                portal = collider.GetComponentInParent<InteractablePortal>();
             }
             
-            InteractableObject interactable = collider.GetComponent<InteractableObject>();
-            if (interactable != null)
+            if (portal != null)
             {
-                float distance = Vector3.Distance(transform.position, collider.transform.position);
-                if (distance <= interactionRange && distance < nearestDistance)
+                Debug.Log($"[ConsciousnessController] Найден портал: {collider.name}, слой: {collider.gameObject.layer}, расстояние: {Vector3.Distance(transform.position, collider.transform.position)}");
+                if (portal.CheckInteractionRange(transform.position))
                 {
-                    nearestInteractable = interactable;
-                    nearestDistance = distance;
+                    Debug.Log("[ConsciousnessController] Вызываем OnInteract() у портала");
+                    portal.OnInteract();
+                    return;
                 }
             }
-        }
-        
-        if (nearestInteractable != null)
-        {
-            currentInteractable = nearestInteractable;
-            ShowInteractionPrompt(nearestInteractable.GetInteractionText());
-            
-            if (Input.GetKeyDown(interactionKey))
-            {
-                nearestInteractable.Interact();
-            }
-        }
-        else
-        {
-            HideInteractionPrompt();
-            currentInteractable = null;
         }
     }
     

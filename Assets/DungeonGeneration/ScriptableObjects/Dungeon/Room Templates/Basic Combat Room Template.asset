@@ -14,13 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   templateName: Basic Combat Room
   roomPrefab: {fileID: 2382745273666017636, guid: ea826edef0a4bab40a14846326564f32, type: 3}
-  possibleDoorPositions: []
-  enemySpawnPoints: []
-  treasureSpawnPoints: []
-  decorationSpawnPoints: []
-  roomPreview: {fileID: 0}
-  difficultyRating: 1
-  compatibleRoomTypes:
-  - {fileID: 11400000, guid: e1a66fccf461dd9419e7edbe2f68702d, type: 2}
-  - {fileID: 11400000, guid: 46907f22fe954584fa484af7d13105e8, type: 2}
   description: 

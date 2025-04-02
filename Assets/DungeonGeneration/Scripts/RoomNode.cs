@@ -1,45 +1,66 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using DungeonGeneration.ScriptableObjects;
 
-namespace DungeonGeneration
+namespace DungeonGeneration.Scripts
 {
     public class RoomNode
     {
         public Vector2Int Position { get; private set; }
         public RoomTypeSO RoomType { get; private set; }
-        public RoomTemplateSO RoomTemplate { get; private set; }
-        public GameObject RoomInstance { get; set; }
+        public string Id { get; private set; }
+        public GameObject RoomInstance { get; private set; }
+        public bool IsCleared { get; private set; }
         public List<RoomNode> ConnectedRooms { get; private set; }
-        public bool IsCleared { get; set; }
-        public string Id { get; set; }
 
-        public RoomNode(Vector2Int position, RoomTypeSO roomType, RoomTemplateSO roomTemplate)
+        public RoomNode(Vector2Int position, RoomTypeSO roomType, string id)
         {
             Position = position;
             RoomType = roomType;
-            RoomTemplate = roomTemplate;
+            Id = id;
             ConnectedRooms = new List<RoomNode>();
             IsCleared = false;
-            Id = System.Guid.NewGuid().ToString();
         }
 
-        public void AddConnection(RoomNode other)
+        public void SetRoomInstance(GameObject instance)
         {
-            if (!ConnectedRooms.Contains(other))
+            RoomInstance = instance;
+        }
+
+        public void AddConnection(RoomNode room)
+        {
+            if (room != null && !ConnectedRooms.Contains(room))
             {
-                ConnectedRooms.Add(other);
+                ConnectedRooms.Add(room);
             }
         }
 
-        public void RemoveConnection(RoomNode other)
+        public void RemoveConnection(RoomNode room)
         {
-            ConnectedRooms.Remove(other);
+            if (room != null)
+            {
+                ConnectedRooms.Remove(room);
+            }
         }
 
-        public bool HasConnection(RoomNode other)
+        public bool IsConnectedTo(RoomNode room)
         {
-            return ConnectedRooms.Contains(other);
+            return room != null && ConnectedRooms.Contains(room);
+        }
+
+        public void ClearRoom()
+        {
+            IsCleared = true;
+        }
+
+        public void DestroyRoom()
+        {
+            if (RoomInstance != null)
+            {
+                Object.Destroy(RoomInstance);
+                RoomInstance = null;
+            }
         }
     }
 } 

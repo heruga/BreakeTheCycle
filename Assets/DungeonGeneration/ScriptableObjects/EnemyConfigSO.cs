@@ -8,28 +8,52 @@ namespace DungeonGeneration.ScriptableObjects
         [Header("Enemy Settings")]
         public string enemyName;
         public GameObject enemyPrefab;
-        public Sprite enemyIcon;
         
-        [Header("Difficulty Settings")]
-        [Range(1, 10)]
-        public int difficultyRating = 1; // How difficult this enemy is
-        [Range(1, 10)]
-        public int minDungeonLevel = 1; // Minimum dungeon level this enemy appears at
-        [Range(0f, 1f)]
-        public float spawnWeight = 1f; // Relative weight for random selection
+        [Header("Enemy Type")]
+        public bool isBoss = false;
+        public bool isElite = false;
         
         [Header("Spawn Settings")]
-        [Range(1, 10)]
-        public int minGroupSize = 1; // Minimum number to spawn together
-        [Range(1, 10)]
-        public int maxGroupSize = 3; // Maximum number to spawn together
-        
-        [Header("Reward Settings")]
-        public RewardItemSO[] possibleDrops; // Items this enemy can drop
         [Range(0f, 1f)]
-        public float dropChance = 0.3f; // Chance of dropping an item
+        public float spawnWeight = 1f;
+        [Range(1, 10)]
+        public int minGroupSize = 1;
+        [Range(1, 10)]
+        public int maxGroupSize = 3;
+        
+        [Header("Loot Table")]
+        public LootTableSO lootTable; // Reference to the enemy's loot table
         
         [TextArea(3, 5)]
         public string description;
+
+        private void OnValidate()
+        {
+            // Проверяем наличие префаба врага
+            if (enemyPrefab == null)
+            {
+                Debug.LogError($"Enemy prefab is missing in {name}!");
+            }
+
+            // Проверяем, что максимальный размер группы не меньше минимального
+            if (maxGroupSize < minGroupSize)
+            {
+                maxGroupSize = minGroupSize;
+                Debug.LogWarning($"Max group size was less than min group size in {name}. Adjusted to {minGroupSize}");
+            }
+
+            // Проверяем наличие таблицы дропа
+            if (lootTable == null)
+            {
+                Debug.LogWarning($"No loot table assigned in {name}!");
+            }
+
+            // Проверяем, что босс не может быть элитным врагом
+            if (isBoss && isElite)
+            {
+                isElite = false;
+                Debug.LogWarning($"Boss cannot be elite in {name}. Elite flag was removed.");
+            }
+        }
     }
 } 

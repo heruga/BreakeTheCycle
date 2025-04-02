@@ -14,12 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   templateName: Start Room
   roomPrefab: {fileID: 3742804089523387981, guid: 7c68607236e919542a588e32a18d5eef, type: 3}
-  possibleDoorPositions: []
-  enemySpawnPoints: []
-  treasureSpawnPoints: []
-  decorationSpawnPoints: []
-  roomPreview: {fileID: 0}
-  difficultyRating: 1
-  compatibleRoomTypes:
-  - {fileID: 11400000, guid: cd44e7a412c609e49b1080371da7e71e, type: 2}
   description: 

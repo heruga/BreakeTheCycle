@@ -12,6 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39e0fd27a87631549af8ffb6e387827e, type: 3}
   m_Name: DungeonConfig
   m_EditorClassIdentifier: 
+  minRooms: 3
+  maxRooms: 5
+  roomSpacing: 20
+  startRoomType: {fileID: 11400000, guid: cd44e7a412c609e49b1080371da7e71e, type: 2}
+  basicCombatRoomType: {fileID: 11400000, guid: e1a66fccf461dd9419e7edbe2f68702d, type: 2}
+  eliteCombatRoomType: {fileID: 11400000, guid: 46907f22fe954584fa484af7d13105e8, type: 2}
+  bossRoomType: {fileID: 11400000, guid: d1f5d3f9e52ccf9489f6d29555a40022, type: 2}
+  basicCombatRoomWeight: 0.7
+  eliteCombatRoomWeight: 0.3
   roomTemplates:
   - {fileID: 11400000, guid: c78a770799f122b4b8b38a80bf644fbb, type: 2}
   - {fileID: 11400000, guid: 1788646d634dbdf4ebbd0d2c93e33b2d, type: 2}
@@ -21,45 +30,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ad2d4c510f2d93147a16ac44ce1004b7, type: 2}
   - {fileID: 11400000, guid: 98fc39a88364b724cb60e9be4510dbe4, type: 2}
   - {fileID: 11400000, guid: 206906aa4de0ee64095605cdfe89e19c, type: 2}
-  minRoomsPerLevel: 5
-  maxRoomsPerLevel: 10
-  totalLevels: 1
-  roomSize: 10
-  roomSpacing: 12
-  combatRoomChance: 1
-  rewardRoomChance: 0
-  shopRoomChance: 0
-  minDoorsPerRoom: 1
-  maxDoorsPerRoom: 3
-  difficultyCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 2
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  startingDifficulty: 1
-  maxDifficulty: 10
-  startRoomType: {fileID: 11400000, guid: cd44e7a412c609e49b1080371da7e71e, type: 2}
-  combatRoomType: {fileID: 11400000, guid: e1a66fccf461dd9419e7edbe2f68702d, type: 2}
-  rewardRoomType: {fileID: 0}
-  shopRoomType: {fileID: 0}
-  bossRoomType: {fileID: 11400000, guid: d1f5d3f9e52ccf9489f6d29555a40022, type: 2}
-  dungeonDescription: 
+  ensureBossRoom: 1
+  ensureStartRoom: 1
+  randomizeRoomOrder: 0

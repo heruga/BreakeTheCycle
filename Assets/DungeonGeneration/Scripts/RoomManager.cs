@@ -1,39 +1,112 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using DungeonGeneration.ScriptableObjects;
+using System;
+using DungeonGeneration.Scripts.Enemies;
+using BreakTheCycle;
+using DungeonGeneration.Scripts.Health;
+using UnityEngine.AI;
+using Unity.AI.Navigation;
 
-namespace DungeonGeneration
+namespace DungeonGeneration.Scripts
 {
     public class RoomManager : MonoBehaviour
     {
         [Header("Room Settings")]
         [SerializeField] private RoomTypeSO roomType;
-        [SerializeField] private Transform[] doorPositions;
+        [SerializeField] private Transform playerSpawnPoint;
+        [SerializeField] private Transform[] portalPositions;
         [SerializeField] private Transform[] enemySpawnPoints;
         [SerializeField] private Transform[] rewardSpawnPoints;
+        
+        [Header("Prefabs")]
+        [SerializeField] private GameObject portalPrefab;
+        [SerializeField] private GameObject[] enemyPrefabs;
 
         private DungeonGenerator dungeonGenerator;
         private RoomNode roomNode;
-        public List<GameObject> activeEnemies = new List<GameObject>();
-        public bool isCleared = false;
+        private List<GameObject> activeEnemies = new List<GameObject>();
+        private List<GameObject> activePortals = new List<GameObject>();
+        private bool isRoomCleared = false;
+        
+        public event Action OnRoomCleared;
+        public event Action OnPlayerEnter;
+        public event Action OnPlayerExit;
+        
         public RoomTypeSO RoomType => roomType;
+        public bool IsRoomCleared => isRoomCleared;
+        public Transform PlayerSpawnPoint => playerSpawnPoint;
+
+        private void Awake()
+        {
+            ValidateReferences();
+        }
 
         private void Start()
         {
+            InitializeRoom();
+        }
+
+        private void ValidateReferences()
+        {
             if (roomType == null)
             {
-                Debug.LogError("RoomType не назначен в RoomManager! Пожалуйста, назначьте тип комнаты в инспекторе.");
+                Debug.LogError("RoomType не назначен!");
                 return;
             }
 
+            if (playerSpawnPoint == null)
+            {
+                Debug.LogError("PlayerSpawnPoint не назначен!");
+                return;
+            }
+
+            if (portalPositions == null || portalPositions.Length == 0)
+            {
+                Debug.LogError("PortalPositions не назначены!");
+                return;
+            }
+
+            if (portalPrefab == null)
+            {
+                Debug.LogError("PortalPrefab не назначен!");
+                return;
+            }
+
+            // Ищем DungeonGenerator в сцене
             dungeonGenerator = FindObjectOfType<DungeonGenerator>();
             if (dungeonGenerator == null)
             {
-                Debug.LogError("DungeonGenerator not found in scene!");
+                Debug.LogError("DungeonGenerator не найден в сцене!");
                 return;
             }
 
-            // Находим соответствующий RoomNode
+            // Проверяем точки спавна врагов только если комната требует очистки
+            if (roomType.requiresCleaning)
+            {
+                if (enemySpawnPoints == null || enemySpawnPoints.Length == 0)
+                {
+                    Debug.LogError($"Enemy spawn points not set in {gameObject.name}!");
+                    return;
+                }
+
+                if (enemyPrefabs == null || enemyPrefabs.Length == 0)
+                {
+                    Debug.LogError($"Enemy prefabs not set in {gameObject.name}!");
+                    return;
+                }
+            }
+        }
+
+        public void InitializeRoom()
+        {
+            if (dungeonGenerator == null)
+            {
+                Debug.LogError("DungeonGenerator not found! Please ensure ValidateReferences was called first.");
+                return;
+            }
+
             roomNode = dungeonGenerator.GetRoomNodeAtPosition(transform.position);
             if (roomNode == null)
             {
@@ -41,135 +114,148 @@ namespace DungeonGeneration
                 return;
             }
 
-            // Настраиваем комнату
             SetupRoom();
         }
 
         private void SetupRoom()
         {
-            // Спавним врагов
-            if (roomType.roomType == DungeonGeneration.ScriptableObjects.RoomType.Combat || 
-                roomType.roomType == DungeonGeneration.ScriptableObjects.RoomType.Boss)
+            if (IsCombatRoom())
             {
                 SpawnEnemies();
             }
 
-            // Спавним награды
-            if (roomType.roomType == DungeonGeneration.ScriptableObjects.RoomType.Reward)
-            {
-                SpawnRewards();
+            SetupPortals();
             }
 
-            // Настраиваем двери
-            SetupDoors();
+        private bool IsCombatRoom()
+        {
+            return roomType != null && roomType.minEnemies > 0;
         }
 
         private void SpawnEnemies()
         {
-            foreach (var spawnPoint in enemySpawnPoints)
+            if (roomType == null)
             {
-                if (roomType.possibleEnemyPrefabs.Length == 0) continue;
+                Debug.LogError($"Room type not set in {gameObject.name}!");
+                return;
+            }
 
-                GameObject enemyPrefab = roomType.possibleEnemyPrefabs[
-                    Random.Range(0, roomType.possibleEnemyPrefabs.Length)
-                ];
+            // Не спавним врагов в стартовой комнате
+            if (roomType.canBeFirst)
+            {
+                return;
+            }
 
-                GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
+            int enemyCount = UnityEngine.Random.Range(roomType.minEnemies, roomType.maxEnemies + 1);
+            List<Transform> availableSpawnPoints = new List<Transform>(enemySpawnPoints);
+
+            for (int i = 0; i < enemyCount; i++)
+            {
+                if (availableSpawnPoints.Count == 0) break;
+
+                int spawnIndex = UnityEngine.Random.Range(0, availableSpawnPoints.Count);
+                Transform spawnPoint = availableSpawnPoints[spawnIndex];
+                availableSpawnPoints.RemoveAt(spawnIndex);
+
+                // Выбираем врага в зависимости от типа комнаты
+                GameObject enemyPrefab;
+                if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.eliteCombatRoomType)
+                {
+                    // В элитной комнате всегда спавним элитного врага
+                    enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
+                }
+                else
+                {
+                    // В обычной комнате случайный враг
+                    enemyPrefab = enemyPrefabs[UnityEngine.Random.Range(0, enemyPrefabs.Length)];
+                }
+
+                GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity, transform);
                 activeEnemies.Add(enemy);
 
-                // Подписываемся на уничтожение врага
-                var enemyHealth = enemy.GetComponent<Health>();
+                var enemyHealth = enemy.GetComponent<EnemyHealth>();
                 if (enemyHealth != null)
                 {
-                    enemyHealth.OnDeath += OnEnemyDeath;
+                    enemyHealth.OnDeath += HandleEnemyDeath;
                 }
             }
         }
 
-        private void SpawnRewards()
+        private void SetupPortals()
         {
-            foreach (var spawnPoint in rewardSpawnPoints)
+            if (portalPositions == null || portalPositions.Length == 0)
             {
-                if (roomType.possibleRewardPrefabs.Length == 0) continue;
+                Debug.LogWarning("No portal positions set in room!");
+                return;
+            }
 
-                GameObject rewardPrefab = roomType.possibleRewardPrefabs[
-                    Random.Range(0, roomType.possibleRewardPrefabs.Length)
-                ];
+            // В стартовой комнате создаем портал
+            if (roomType == dungeonGenerator.DungeonConfig.startRoomType)
+            {
+                SpawnPortal(portalPositions[0].position);
+            }
+            // В обычных комнатах создаем портал
+            else if (roomType != dungeonGenerator.DungeonConfig.bossRoomType)
+            {
+                SpawnPortal(portalPositions[0].position);
+            }
+            // В боссовой комнате не создаем порталов
+        }
 
-                Instantiate(rewardPrefab, spawnPoint.position, spawnPoint.rotation);
+        private GameObject SpawnPortal(Vector3 position)
+        {
+            GameObject portal = Instantiate(portalPrefab, position, Quaternion.identity, transform);
+            activePortals.Add(portal);
+            
+            // Добавляем компонент InteractablePortal, если его нет
+            var interactablePortal = portal.GetComponent<InteractablePortal>();
+            if (interactablePortal == null)
+            {
+                interactablePortal = portal.AddComponent<InteractablePortal>();
+            }
+            
+            return portal;
+        }
+
+        private void HandleEnemyDeath(GameObject enemy)
+        {
+            if (enemy != null)
+            {
+                activeEnemies.Remove(enemy);
+            }
+            
+            if (activeEnemies.Count == 0 && roomNode != null)
+            {
+                roomNode.ClearRoom();
+                isRoomCleared = true;
+                OnRoomCleared?.Invoke();
             }
         }
 
-        private void SetupDoors()
+        private void OnTriggerEnter(Collider other)
         {
-            // Деактивируем все двери по умолчанию
-            foreach (var door in doorPositions)
+            if (other.CompareTag("Player"))
             {
-                door.gameObject.SetActive(false);
-            }
-
-            // Активируем только те двери, которые ведут к соединенным комнатам
-            foreach (var connectedRoom in roomNode.ConnectedRooms)
-            {
-                Vector3 direction = new Vector3(
-                    connectedRoom.Position.x - roomNode.Position.x,
-                    0,
-                    connectedRoom.Position.y - roomNode.Position.y
-                );
-
-                // Находим соответствующую дверь
-                foreach (var door in doorPositions)
-                {
-                    if (Vector3.Dot(door.forward, direction) > 0.5f)
-                    {
-                        door.gameObject.SetActive(true);
-                        break;
-                    }
-                }
+                OnPlayerEnter?.Invoke();
             }
         }
-
-        private void OnEnemyDeath(GameObject enemy)
+        
+        private void OnTriggerExit(Collider other)
         {
-            activeEnemies.Remove(enemy);
-            CheckRoomCleared();
-        }
-
-        private void CheckRoomCleared()
-        {
-            if (!isCleared && activeEnemies.Count == 0)
+            if (other.CompareTag("Player"))
             {
-                isCleared = true;
-                OnRoomCleared();
+                OnPlayerExit?.Invoke();
             }
         }
-
-        private void OnRoomCleared()
+        
+        public Vector3 GetPlayerSpawnPosition()
         {
-            // Уведомляем генератор о том, что комната очищена
-            dungeonGenerator.OnRoomCleared(roomNode);
-
-            // Активируем все двери
-            foreach (var door in doorPositions)
+            if (playerSpawnPoint == null)
             {
-                door.gameObject.SetActive(true);
+                Debug.LogError($"[RoomManager] Точка спавна игрока не назначена в комнате {gameObject.name}!");
+                return transform.position; // Возвращаем позицию комнаты как запасной вариант
             }
-        }
-
-        public void OnPlayerEnter()
-        {
-            // Здесь можно добавить логику при входе игрока в комнату
-            // Например, закрыть двери, запустить анимацию и т.д.
-        }
-
-        public void OnPlayerExit()
-        {
-            // Здесь можно добавить логику при выходе игрока из комнаты
-            // Например, уничтожить комнату, если она очищена
-            if (isCleared)
-            {
-                Destroy(gameObject);
-            }
+            return playerSpawnPoint.position;
         }
 
         public bool AreAllEnemiesDefeated()
@@ -179,19 +265,77 @@ namespace DungeonGeneration
 
         public void LoadNextRoom(string nextRoomId)
         {
-            if (dungeonGenerator != null)
+            if (string.IsNullOrEmpty(nextRoomId))
             {
-                dungeonGenerator.LoadRoom(nextRoomId);
+                Debug.LogError("Invalid room ID provided!");
+                return;
             }
-            else
-            {
-                Debug.LogError("DungeonGenerator not found! Cannot load next room.");
-            }
+
+            dungeonGenerator?.LoadRoom(nextRoomId);
         }
 
         public string GetRoomId()
         {
             return roomNode?.Id;
+        }
+
+        public void SetRoomType(RoomTypeSO type)
+        {
+            roomType = type;
+            InitializeRoom();
+        }
+
+        private void LoadRoom(RoomNode roomNode)
+        {
+            // Создаем NavMesh только для комнат, где могут быть враги
+            if (roomType.requiresCleaning)
+            {
+                var navMeshSurface = gameObject.GetComponent<NavMeshSurface>();
+                if (navMeshSurface != null)
+                {
+                    navMeshSurface.BuildNavMesh();
+                }
+                else
+                {
+                    Debug.LogError("[RoomManager] NavMeshSurface не найден на префабе комнаты!");
+                }
+            }
+        }
+
+        private void OnValidate()
+        {
+            // Проверяем и корректируем высоту точки спавна игрока
+            if (playerSpawnPoint != null)
+            {
+                // Получаем высоту пола (предполагая, что пол находится на Y = 0)
+                float floorHeight = 0f;
+                
+                // Проверяем, не слишком ли низко точка спавна
+                if (playerSpawnPoint.position.y <= floorHeight)
+                {
+                    // Поднимаем точку спавна на 1 единицу над полом
+                    Vector3 newPosition = playerSpawnPoint.position;
+                    newPosition.y = floorHeight + 1f;
+                    playerSpawnPoint.position = newPosition;
+                    Debug.LogWarning($"[RoomManager] Точка спавна игрока была слишком низко. Высота скорректирована на {newPosition.y}");
+                }
+            }
+
+            // Проверяем и корректируем высоту точек спавна врагов
+            if (enemySpawnPoints != null)
+            {
+                float floorHeight = 0f;
+                foreach (var spawnPoint in enemySpawnPoints)
+                {
+                    if (spawnPoint != null && spawnPoint.position.y <= floorHeight)
+                    {
+                        Vector3 newPosition = spawnPoint.position;
+                        newPosition.y = floorHeight + 1f;
+                        spawnPoint.position = newPosition;
+                        Debug.LogWarning($"[RoomManager] Точка спавна врага была слишком низко. Высота скорректирована на {newPosition.y}");
+                    }
+                }
+            }
         }
     }
 } 
