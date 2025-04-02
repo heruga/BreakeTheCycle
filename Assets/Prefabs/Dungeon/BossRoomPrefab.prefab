@@ -381,6 +381,7 @@ MonoBehaviour:
   enemySpawnPoints:
   - {fileID: 3749149632235796849}
   rewardSpawnPoints: []
+  isRoomCleared: 1
   portalPrefab: {fileID: 1679351524315778067, guid: c7ab2ba339d910e4ca51705e73aa9f6a, type: 3}
   enemyPrefabs:
   - {fileID: 7057867871735091530, guid: af1334621776a6048ad74cd2065ff22c, type: 3}
@@ -440,13 +441,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3341646909978949700}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.89, y: 0.5, z: 0}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 3.375, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7217287183946731317}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &4042885654478331179
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,7 +602,7 @@ Transform:
   m_GameObject: {fileID: 5916333622500514993}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.4285715, z: 0}
+  m_LocalPosition: {x: 0, y: 2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

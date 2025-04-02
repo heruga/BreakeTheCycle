@@ -165,6 +165,7 @@ MonoBehaviour:
   - {fileID: 1724704315736079335}
   enemySpawnPoints: []
   rewardSpawnPoints: []
+  isRoomCleared: 1
   portalPrefab: {fileID: 1679351524315778067, guid: c7ab2ba339d910e4ca51705e73aa9f6a, type: 3}
   enemyPrefabs: []
 --- !u!1 &3769130917514245958

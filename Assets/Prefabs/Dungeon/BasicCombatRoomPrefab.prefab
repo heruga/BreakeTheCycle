@@ -92,6 +92,7 @@ MonoBehaviour:
   - {fileID: 4079677412954146308}
   - {fileID: 961683248338102484}
   rewardSpawnPoints: []
+  isRoomCleared: 1
   portalPrefab: {fileID: 1679351524315778067, guid: c7ab2ba339d910e4ca51705e73aa9f6a, type: 3}
   enemyPrefabs:
   - {fileID: 750636426342510350, guid: f8f7d4ee1d9c6a643bcd3a4cc6486adf, type: 3}

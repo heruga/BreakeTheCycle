@@ -12,41 +12,29 @@ namespace DungeonGeneration.Scripts
         public string Id { get; private set; }
         public GameObject RoomInstance { get; private set; }
         public bool IsCleared { get; private set; }
-        public List<RoomNode> ConnectedRooms { get; private set; }
+        public bool WasVisited { get; private set; }
 
         public RoomNode(Vector2Int position, RoomTypeSO roomType, string id)
         {
             Position = position;
             RoomType = roomType;
             Id = id;
-            ConnectedRooms = new List<RoomNode>();
             IsCleared = false;
+            WasVisited = false;
         }
 
         public void SetRoomInstance(GameObject instance)
         {
             RoomInstance = instance;
-        }
-
-        public void AddConnection(RoomNode room)
-        {
-            if (room != null && !ConnectedRooms.Contains(room))
+            if (instance != null)
             {
-                ConnectedRooms.Add(room);
+                WasVisited = true;
             }
         }
 
-        public void RemoveConnection(RoomNode room)
+        public void SetRoomType(RoomTypeSO roomType)
         {
-            if (room != null)
-            {
-                ConnectedRooms.Remove(room);
-            }
-        }
-
-        public bool IsConnectedTo(RoomNode room)
-        {
-            return room != null && ConnectedRooms.Contains(room);
+            RoomType = roomType;
         }
 
         public void ClearRoom()

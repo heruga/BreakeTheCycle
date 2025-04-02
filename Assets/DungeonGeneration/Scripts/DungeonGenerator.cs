@@ -78,9 +78,9 @@ namespace DungeonGeneration
                     if (template == null)
                     {
                         Debug.LogWarning("[DungeonGenerator] Найден пустой шаблон комнаты!");
-                        continue;
-                    }
-                    
+                    continue;
+                }
+
                     Debug.Log($"[DungeonGenerator] Шаблон: {template.templateName}, Префаб: {(template.roomPrefab ? template.roomPrefab.name : "null")}");
                     
                     if (template.templateName.Contains("Start"))
@@ -89,9 +89,9 @@ namespace DungeonGeneration
                         Debug.Log($"[DungeonGenerator] Найден шаблон стартовой комнаты: {template.templateName}");
                     }
                 }
-            }
-            else
-            {
+                            }
+                            else
+                            {
                 Debug.LogError("[DungeonGenerator] roomTemplates не назначены в DungeonConfig!");
             }
             
@@ -103,35 +103,33 @@ namespace DungeonGeneration
 
         private IEnumerator GenerateDungeonAsync()
         {
-            // Очищаем предыдущий данж
+            isGenerating = true;
+            Debug.Log("[DungeonGenerator] Начало генерации подземелья");
+
+            // Очищаем старые данные
             ClearDungeon();
 
-            // Сразу после очистки
-            Debug.Log($"[DungeonGenerator] После ClearDungeon: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
+            // Создаем стартовую комнату
+            yield return StartCoroutine(CreateStartRoom());
+            Debug.Log($"[DungeonGenerator] После CreateStartRoom: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
 
-            // Последовательные этапы генерации
-            yield return StartCoroutine(GenerateDungeonStructure());
-            Debug.Log($"[DungeonGenerator] После GenerateDungeonStructure: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
+            // Создаем остальные комнаты
+            yield return StartCoroutine(CreateRooms());
+            Debug.Log($"[DungeonGenerator] После CreateRooms: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
 
-            yield return StartCoroutine(GenerateRooms());
-            Debug.Log($"[DungeonGenerator] После GenerateRooms: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
+            // Создаем босс-комнату
+            yield return StartCoroutine(CreateBossRoom());
+            Debug.Log($"[DungeonGenerator] После CreateBossRoom: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
 
-            yield return StartCoroutine(ConnectRooms());
-            Debug.Log($"[DungeonGenerator] После ConnectRooms: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
-
-            // Перед размещением игрока
-            Debug.Log($"[DungeonGenerator] Перед PlacePlayer: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
-            Debug.Log($"[DungeonGenerator] Перед PlacePlayer: Количество комнат в roomNodes = {roomNodes.Count}");
-            if (startRoomNode != null)
-            {
-                Debug.Log($"[DungeonGenerator] Перед PlacePlayer: RoomInstance стартовой комнаты = {(startRoomNode.RoomInstance == null ? "null" : startRoomNode.RoomInstance.name)}");
-                Debug.Log($"[DungeonGenerator] Перед PlacePlayer: Тип комнаты = {startRoomNode.RoomType.typeName}");
-            }
-
+            // Размещаем игрока
             yield return StartCoroutine(PlacePlayer());
+            Debug.Log($"[DungeonGenerator] После PlacePlayer: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
+
+            isGenerating = false;
+            Debug.Log("[DungeonGenerator] Генерация подземелья завершена");
         }
 
-        private IEnumerator GenerateDungeonStructure()
+        private IEnumerator CreateStartRoom()
         {
             roomNodes = new List<RoomNode>();
             Debug.Log("[DungeonGenerator] Начинаем генерацию расположения комнат");
@@ -190,38 +188,90 @@ namespace DungeonGeneration
 
             Debug.Log($"[DungeonGenerator] Всего создано комнат: {roomNodes.Count}");
             Debug.Log($"[DungeonGenerator] В конце GenerateDungeonStructure: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
-            yield return null;
-        }
+                yield return null;
+            }
 
-        private IEnumerator GenerateRooms()
+        private IEnumerator CreateRooms()
         {
             Debug.Log($"[DungeonGenerator] В начале GenerateRooms: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
             Debug.Log("[DungeonGenerator] Начинаем создание комнат");
             
-            foreach (var room in roomNodes)
+            // Создаем только стартовую комнату
+            if (startRoomNode != null)
             {
-                bool isStartRoom = (room == startRoomNode);
-                Debug.Log($"[DungeonGenerator] Создаю комнату {room.Id}, isStartRoom = {isStartRoom}");
-                
-                CreateRoomInstance(room);
-                
-                if (isStartRoom)
-                {
-                    Debug.Log($"[DungeonGenerator] После создания стартовой комнаты: RoomInstance = {(room.RoomInstance == null ? "null" : room.RoomInstance.name)}");
-                }
-                
+                Debug.Log($"[DungeonGenerator] Создаю стартовую комнату {startRoomNode.Id}");
+                CreateRoomInstance(startRoomNode);
                 yield return new WaitForSeconds(generationDelay);
+                            }
+                            else
+                            {
+                Debug.LogError("[DungeonGenerator] startRoomNode is null в CreateRooms!");
             }
             
             Debug.Log($"[DungeonGenerator] В конце GenerateRooms: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
             Debug.Log($"[DungeonGenerator] В конце GenerateRooms: startRoomNode.RoomInstance = {(startRoomNode?.RoomInstance == null ? "null" : startRoomNode.RoomInstance.name)}");
         }
 
-        private IEnumerator ConnectRooms()
+        private IEnumerator CreateBossRoom()
         {
-            Debug.Log("[DungeonGenerator] Начинаем соединение комнат");
-                yield return null;
+            // Находим самую дальнюю комнату от стартовой
+            RoomNode bossRoom = null;
+            float maxDistance = float.MinValue;
+
+            foreach (var room in roomNodes)
+            {
+                if (room == startRoomNode) continue;
+
+                float distance = Vector2.Distance(startRoomNode.Position, room.Position);
+                if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                    bossRoom = room;
+                }
             }
+
+            if (bossRoom != null)
+            {
+                // Устанавливаем тип комнаты как босс-комната
+                bossRoom.SetRoomType(dungeonConfig.bossRoomType);
+                Debug.Log($"[DungeonGenerator] Создана босс-комната на позиции {bossRoom.Position}");
+                            }
+                            else
+                            {
+                Debug.LogError("[DungeonGenerator] Не удалось создать босс-комнату!");
+            }
+
+            yield return null;
+        }
+
+        private void PlaceBossRoom()
+        {
+            // Находим самую дальнюю комнату от стартовой
+            RoomNode bossRoom = null;
+            float maxDistance = float.MinValue;
+
+            foreach (var room in roomNodes)
+            {
+                if (room == startRoomNode) continue;
+
+                float distance = Vector2.Distance(startRoomNode.Position, room.Position);
+                if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                    bossRoom = room;
+                }
+            }
+
+            if (bossRoom != null)
+            {
+                bossRoom.SetRoomType(dungeonConfig.bossRoomType);
+                Debug.Log($"[DungeonGenerator] Размещена босс-комната на позиции {bossRoom.Position}");
+            }
+            else
+            {
+                Debug.LogError("[DungeonGenerator] Не удалось разместить босс-комнату!");
+            }
+        }
 
         private IEnumerator PlacePlayer()
         {
@@ -317,17 +367,21 @@ namespace DungeonGeneration
             return roomInstance?.gameObject;
         }
 
-        private void ConnectRooms(RoomNode room1, RoomNode room2)
-        {
-            if (room1 == null || room2 == null) return;
-
-            room1.AddConnection(room2);
-            room2.AddConnection(room1);
-            Debug.Log($"[DungeonGenerator] Соединены комнаты: {room1.Id} и {room2.Id}");
-        }
-
         private void CreateRoomInstance(RoomNode room)
         {
+            if (room == null)
+            {
+                Debug.LogError("[DungeonGenerator] CreateRoomInstance: room is null!");
+                return;
+            }
+
+            // Проверяем, не существует ли уже инстанс
+            if (room.RoomInstance != null)
+            {
+                Debug.LogWarning($"[DungeonGenerator] CreateRoomInstance: Попытка создать уже существующую комнату {room.Id}!");
+                return;
+            }
+
             bool isStartRoom = (room == startRoomNode);
             Debug.Log($"[DungeonGenerator] CreateRoomInstance: создаю комнату {room.Id}, isStartRoom = {isStartRoom}, тип комнаты = {room.RoomType.typeName}");
             
@@ -345,36 +399,15 @@ namespace DungeonGeneration
                 return;
             }
 
-            // Проверяем, что для стартовой комнаты выбран правильный шаблон
-            if (isStartRoom && !template.templateName.Contains("Start"))
-            {
-                Debug.LogError($"[DungeonGenerator] Для стартовой комнаты выбран неправильный шаблон: {template.templateName}! Ищем правильный шаблон.");
-                
-                // Пытаемся найти шаблон стартовой комнаты принудительно
-                var startTemplate = dungeonConfig.roomTemplates.FirstOrDefault(t => t != null && t.templateName.Contains("Start"));
-                if (startTemplate != null)
-                {
-                    Debug.Log($"[DungeonGenerator] Найден шаблон стартовой комнаты: {startTemplate.templateName}");
-                    template = startTemplate;
-                }
-                else
-                {
-                    Debug.LogError("[DungeonGenerator] Не найден ни один шаблон стартовой комнаты! Проверьте конфигурацию DungeonConfig.");
-                }
-            }
-
-            Debug.Log($"[DungeonGenerator] Выбран шаблон: {template.templateName} для комнаты типа {room.RoomType.typeName}");
-
             // Создаем комнату
             Vector3 position = new Vector3(room.Position.x * dungeonConfig.roomSpacing, 0, room.Position.y * dungeonConfig.roomSpacing);
             GameObject roomInstance = Instantiate(template.roomPrefab, position, Quaternion.identity, dungeonContainer);
-            room.SetRoomInstance(roomInstance);
             
-            // Проверяем, если это стартовая комната
-            if (isStartRoom)
-            {
-                Debug.Log($"[DungeonGenerator] CreateRoomInstance: Стартовая комната создана: {roomInstance.name} на позиции {position}");
-            }
+            // Устанавливаем имя для удобства отладки
+            roomInstance.name = $"Room_{room.Id}";
+            
+            room.SetRoomInstance(roomInstance);
+            Debug.Log($"[DungeonGenerator] CreateRoomInstance: Создан инстанс комнаты {room.Id} на позиции {position}");
 
             // Настраиваем комнату
             var roomManager = roomInstance.GetComponent<RoomManager>();
@@ -383,27 +416,12 @@ namespace DungeonGeneration
                 roomManager.InitializeRoom();
                 roomManager.SetRoomType(room.RoomType);
                 
-                // Если это стартовая комната, делаем её активной, остальные деактивируем
-                if (isStartRoom)
-                {
-                    roomInstance.SetActive(true);
-                    Debug.Log($"[DungeonGenerator] Активирована стартовая комната: {room.RoomType.typeName}");
-                    
-                    // Дополнительная проверка
-                    if (startRoomNode == null || startRoomNode.RoomInstance == null)
-                    {
-                        Debug.LogError("[DungeonGenerator] startRoomNode или startRoomNode.RoomInstance == null после создания стартовой комнаты!");
-                    }
+                roomInstance.SetActive(isStartRoom);
+                Debug.Log($"[DungeonGenerator] Комната {room.Id} {(isStartRoom ? "активирована" : "деактивирована")}");
                 }
                 else
                 {
-                    roomInstance.SetActive(false);
-                    Debug.Log($"[DungeonGenerator] Создана и деактивирована комната: {room.RoomType.typeName}");
-                }
-            }
-            else
-            {
-                Debug.LogError($"[DungeonGenerator] RoomManager component not found on room instance {roomInstance.name}!");
+                Debug.LogError($"[DungeonGenerator] RoomManager не найден на префабе комнаты {template.templateName}!");
             }
         }
 
@@ -459,63 +477,8 @@ namespace DungeonGeneration
             }
 
             Debug.LogWarning("[DungeonGenerator] Не удалось найти свободную позицию после " + maxAttempts + " попыток");
-            return Vector2Int.zero;
-        }
-
-        private void EnsureBossRoomAccess()
-        {
-            // Находим боссовую комнату
-            RoomNode bossRoom = null;
-            foreach (var room in roomNodes)
-            {
-                if (room.RoomType != null && room.RoomType.canBeLast)
-                {
-                    bossRoom = room;
-                    break;
+                    return Vector2Int.zero;
                 }
-            }
-
-            if (bossRoom == null)
-            {
-                Debug.LogWarning("Боссовая комната не найдена!");
-                return;
-            }
-
-            // Находим ближайшую комнату к боссовой
-            RoomNode nearestRoom = null;
-            float minDistance = float.MaxValue;
-
-            foreach (var room in roomNodes)
-            {
-                if (room == bossRoom) continue;
-                
-                float distance = Vector2.Distance(bossRoom.Position, room.Position);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    nearestRoom = room;
-                }
-            }
-
-            if (nearestRoom != null)
-            {
-                // Проверяем, что комнаты находятся на соседних позициях
-                Vector2 diff = nearestRoom.Position - bossRoom.Position;
-                if ((diff.x == 0 && Mathf.Abs(diff.y) == 1) || 
-                    (diff.y == 0 && Mathf.Abs(diff.x) == 1))
-                {
-                    ConnectRooms(bossRoom, nearestRoom);
-                }
-                else
-                {
-                    Debug.LogWarning($"Боссовая комната и ближайшая комната не находятся на соседних позициях!");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Не найдена ближайшая комната к боссовой!");
-            }
-        }
 
         private void ClearDungeon()
         {
@@ -553,14 +516,125 @@ namespace DungeonGeneration
 
         public RoomNode GetRoomNodeAtPosition(Vector3 worldPosition)
         {
+            Debug.Log($"[DungeonGenerator] GetRoomNodeAtPosition: Получена позиция {worldPosition}");
+            
+            if (roomNodes == null || roomNodes.Count == 0)
+            {
+                Debug.LogError("[DungeonGenerator] GetRoomNodeAtPosition: roomNodes пуст или null!");
+                return null;
+            }
+
             // Преобразуем мировые координаты в координаты сетки
             Vector2Int gridPosition = new Vector2Int(
                 Mathf.RoundToInt(worldPosition.x / dungeonConfig.roomSpacing),
                 Mathf.RoundToInt(worldPosition.z / dungeonConfig.roomSpacing)
             );
+            
+            Debug.Log($"[DungeonGenerator] GetRoomNodeAtPosition: Преобразовано в координаты сетки {gridPosition}, roomSpacing = {dungeonConfig.roomSpacing}");
+            
+            // Логируем все комнаты и их позиции
+            Debug.Log($"[DungeonGenerator] GetRoomNodeAtPosition: Всего комнат: {roomNodes.Count}");
+            
+            // Ищем комнату с точным соответствием координат
+            var foundRoom = roomNodes.FirstOrDefault(r => r.Position == gridPosition);
+            
+            // Если точного соответствия нет, ищем ближайшую комнату в радиусе 1 клетки
+            if (foundRoom == null)
+            {
+                Debug.LogWarning($"[DungeonGenerator] GetRoomNodeAtPosition: Не найдена комната в точной позиции {gridPosition}, ищем в ближайших ячейках");
+                
+                float minDistance = float.MaxValue;
+                foreach (var room in roomNodes)
+                {
+                    float distance = Vector2.Distance(gridPosition, room.Position);
+                    if (distance < minDistance && distance <= 1.0f) // Проверяем расстояние до 1 (включая диагонали)
+                    {
+                        minDistance = distance;
+                        foundRoom = room;
+                    }
+                }
+                
+                if (foundRoom != null)
+                {
+                    Debug.LogWarning($"[DungeonGenerator] GetRoomNodeAtPosition: Найдена ближайшая комната {foundRoom.Id} в позиции {foundRoom.Position}, расстояние = {minDistance}");
+                }
+            }
+            else
+            {
+                Debug.Log($"[DungeonGenerator] GetRoomNodeAtPosition: Найдена комната {foundRoom.Id} в позиции {gridPosition}");
+            }
+            
+            if (foundRoom == null)
+            {
+                Debug.LogError($"[DungeonGenerator] GetRoomNodeAtPosition: Не найдена комната в позиции {gridPosition} или рядом с ней");
+            }
+            
+            return foundRoom;
+        }
 
-            // Ищем комнату с соответствующими координатами
-            return roomNodes.FirstOrDefault(r => r.Position == gridPosition);
+        private IEnumerator MovePlayerAndDestroyRoom(GameObject player, Transform spawnPoint, RoomNode currentRoom, string nextRoomId)
+        {
+            if (player == null || spawnPoint == null)
+            {
+                Debug.LogError("[DungeonGenerator] MovePlayerAndDestroyRoom: Неверные параметры (null)!");
+                yield break;
+            }
+            
+            // Перемещаем игрока
+            MovePlayerToSpawnPoint(player, spawnPoint);
+            
+            // Даем физике время обработать перемещение
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForEndOfFrame();
+            
+            // Проверяем, что игрок действительно переместился
+            float distance = Vector3.Distance(player.transform.position, spawnPoint.position);
+            Debug.Log($"[DungeonGenerator] MovePlayerAndDestroyRoom: Расстояние между игроком и точкой спавна: {distance}");
+            
+            if (distance <= 0.5f) // Увеличиваем допустимое расстояние
+            {
+                Debug.Log("[DungeonGenerator] Игрок успешно перемещен, начинаем процесс уничтожения старой комнаты");
+                
+                // Только после успешного перемещения удаляем старую комнату
+                if (currentRoom != null && currentRoom.Id != nextRoomId)
+                {
+                    DestroyRoom(currentRoom.Id);
+                }
+            }
+            else
+            {
+                Debug.LogError($"[DungeonGenerator] Не удалось переместить игрока! Текущая позиция: {player.transform.position}, целевая позиция: {spawnPoint.position}, расстояние: {distance}");
+                
+                // Пробуем еще раз принудительно
+                Debug.Log($"[DungeonGenerator] Повторная попытка переместить игрока в позицию {spawnPoint.position}");
+                player.transform.position = spawnPoint.position;
+                
+                if (player.TryGetComponent<Rigidbody>(out var rb))
+                {
+                    rb.position = spawnPoint.position;
+                    rb.linearVelocity = Vector3.zero;
+                }
+                
+                // Проверяем еще раз
+                yield return new WaitForFixedUpdate();
+                yield return new WaitForEndOfFrame();
+                
+                distance = Vector3.Distance(player.transform.position, spawnPoint.position);
+                if (distance <= 0.5f)
+                {
+                    Debug.Log("[DungeonGenerator] Игрок успешно перемещен после повторной попытки, уничтожаем старую комнату");
+                    
+                    if (currentRoom != null && currentRoom.Id != nextRoomId)
+                    {
+                        DestroyRoom(currentRoom.Id);
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"[DungeonGenerator] Не удалось переместить игрока даже после повторной попытки! Расстояние: {distance}. Старая комната не будет уничтожена.");
+                }
+            }
         }
 
         public void LoadRoom(string nextRoomId)
@@ -571,6 +645,87 @@ namespace DungeonGeneration
                 return;
             }
 
+            StartCoroutine(LoadRoomCoroutine(nextRoomId));
+        }
+
+        private Transform FindSpawnPoint(GameObject roomInstance, RoomManager roomManager)
+        {
+            if (roomInstance == null || roomManager == null)
+            {
+                Debug.LogError("[DungeonGenerator] FindSpawnPoint: Неверные параметры!");
+                return null;
+            }
+
+            // Сначала ищем через Transform
+            Transform spawnPoint = roomInstance.transform.Find("PlayerSpawnPoint");
+            if (spawnPoint != null)
+            {
+                Debug.Log($"[DungeonGenerator] FindSpawnPoint: Найдена точка спавна через Transform на позиции {spawnPoint.position}");
+                return spawnPoint;
+            }
+
+            // Если не нашли, пробуем через RoomManager
+            if (roomManager.PlayerSpawnPoint != null)
+            {
+                Debug.Log($"[DungeonGenerator] FindSpawnPoint: Найдена точка спавна через RoomManager на позиции {roomManager.PlayerSpawnPoint.position}");
+                return roomManager.PlayerSpawnPoint;
+            }
+
+            Debug.LogError("[DungeonGenerator] FindSpawnPoint: Точка спавна не найдена!");
+            return null;
+        }
+
+        private IEnumerator ActivateRoom(RoomNode room)
+        {
+            if (room == null || room.RoomInstance == null)
+            {
+                Debug.LogError("[DungeonGenerator] ActivateRoom: Неверные параметры!");
+                yield break;
+            }
+
+            // Активируем новую комнату
+            room.RoomInstance.SetActive(true);
+            Debug.Log($"[DungeonGenerator] Комната {room.Id} активирована");
+
+            // Ищем RoomManager
+            var roomManager = room.RoomInstance.GetComponent<RoomManager>();
+            if (roomManager == null)
+            {
+                Debug.LogError($"[DungeonGenerator] RoomManager не найден в комнате {room.Id}!");
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        private IEnumerator MovePlayerToNewRoom(RoomNode nextRoom, GameObject player, RoomNode currentRoom)
+        {
+            if (nextRoom == null || nextRoom.RoomInstance == null || player == null)
+            {
+                Debug.LogError("[DungeonGenerator] MovePlayerToNewRoom: Неверные параметры!");
+                yield break;
+            }
+
+            var roomManager = nextRoom.RoomInstance.GetComponent<RoomManager>();
+            if (roomManager == null)
+            {
+                Debug.LogError($"[DungeonGenerator] RoomManager не найден в комнате {nextRoom.Id}!");
+                yield break;
+            }
+
+            // Ищем точку спавна
+            Transform spawnPoint = FindSpawnPoint(nextRoom.RoomInstance, roomManager);
+            if (spawnPoint == null)
+            {
+                yield break;
+            }
+
+            // Перемещаем игрока и уничтожаем старую комнату
+            yield return StartCoroutine(MovePlayerAndDestroyRoom(player, spawnPoint, currentRoom, nextRoom.Id));
+        }
+
+        private IEnumerator LoadRoomCoroutine(string nextRoomId)
+        {
             Debug.Log($"[DungeonGenerator] LoadRoom: Начало загрузки комнаты {nextRoomId}");
 
             // Находим комнату по ID
@@ -578,177 +733,66 @@ namespace DungeonGeneration
             if (nextRoom == null)
             {
                 Debug.LogError($"[DungeonGenerator] Комната с ID {nextRoomId} не найдена!");
-                return;
+                yield break;
             }
-
-            Debug.Log($"[DungeonGenerator] LoadRoom: Найдена комната с ID {nextRoomId}, типа {nextRoom.RoomType.typeName}");
 
             // Находим текущую комнату игрока
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player == null)
             {
                 Debug.LogError("[DungeonGenerator] Игрок не найден!");
-                return;
+                yield break;
             }
-
-            Debug.Log($"[DungeonGenerator] LoadRoom: Найден игрок {player.name} на позиции {player.transform.position}");
 
             // Находим текущую комнату по позиции игрока
             var currentRoom = GetRoomNodeAtPosition(player.transform.position);
             if (currentRoom == null)
             {
                 Debug.LogError("[DungeonGenerator] Текущая комната не найдена!");
-                Debug.Log($"[DungeonGenerator] Позиция игрока: {player.transform.position}, преобразованная позиция: {Mathf.RoundToInt(player.transform.position.x / dungeonConfig.roomSpacing)}, {Mathf.RoundToInt(player.transform.position.z / dungeonConfig.roomSpacing)}");
-                // Пробуем использовать ближайшую комнату вместо текущей
-                float minDistance = float.MaxValue;
-                RoomNode closestRoom = null;
-                
-                foreach (var room in roomNodes)
-                {
-                    if (room.RoomInstance != null)
-                    {
-                        float distance = Vector3.Distance(player.transform.position, room.RoomInstance.transform.position);
-                        if (distance < minDistance)
-                        {
-                            minDistance = distance;
-                            closestRoom = room;
-                        }
-                    }
-                }
-                
-                if (closestRoom != null)
-                {
-                    Debug.Log($"[DungeonGenerator] Используем ближайшую комнату: {closestRoom.Id} на расстоянии {minDistance}");
-                    currentRoom = closestRoom;
-                }
-                else
-                {
-                    Debug.LogError("[DungeonGenerator] Не удалось найти ни одной ближайшей комнаты!");
-                    return;
-                }
+                yield break;
             }
 
-            Debug.Log($"[DungeonGenerator] LoadRoom: Текущая комната игрока: {currentRoom.Id}");
-
-            // Если комната уже создана, просто активируем её
-            if (nextRoom.RoomInstance != null)
+            // Создаем инстанс комнаты, если его еще нет
+            if (nextRoom.RoomInstance == null)
             {
-                Debug.Log($"[DungeonGenerator] LoadRoom: Комната {nextRoomId} уже создана, активируем её");
-                nextRoom.RoomInstance.SetActive(true);
-                var existingRoomManager = nextRoom.RoomInstance.GetComponent<RoomManager>();
-                if (existingRoomManager != null)
+                Debug.Log($"[DungeonGenerator] Создание инстанса комнаты {nextRoomId}");
+                CreateRoomInstance(nextRoom);
+                if (nextRoom.RoomInstance == null)
                 {
-                    Transform spawnPoint = nextRoom.RoomInstance.transform.Find("PlayerSpawnPoint");
-                    if (spawnPoint != null)
-                    {
-                        Debug.Log($"[DungeonGenerator] LoadRoom: Найдена точка спавна в комнате {nextRoomId} на позиции {spawnPoint.position}");
-                        // Перемещаем игрока
-                        MovePlayerToSpawnPoint(player, spawnPoint);
-                        // После успешного перемещения удаляем предыдущую комнату
-                        DestroyRoom(currentRoom.Id);
-                    }
-                    else
-                    {
-                        Debug.LogError($"[DungeonGenerator] LoadRoom: Точка спавна не найдена в комнате {nextRoomId}!");
-                        // Ищем PlayerSpawnPoint через RoomManager
-                        if (existingRoomManager.PlayerSpawnPoint != null)
-                        {
-                            Debug.Log($"[DungeonGenerator] LoadRoom: Найдена точка спавна через RoomManager на позиции {existingRoomManager.PlayerSpawnPoint.position}");
-                            MovePlayerToSpawnPoint(player, existingRoomManager.PlayerSpawnPoint);
-                            DestroyRoom(currentRoom.Id);
-                        }
-                        else
-                        {
-                            Debug.LogError("[DungeonGenerator] LoadRoom: Точка спавна не найдена даже через RoomManager!");
-                        }
-                    }
-                }
-                else
-                {
-                    Debug.LogError($"[DungeonGenerator] LoadRoom: RoomManager не найден в комнате {nextRoomId}!");
-                }
-                Debug.Log($"[DungeonGenerator] Комната {nextRoomId} активирована");
-                return;
-            }
-
-            Debug.Log($"[DungeonGenerator] LoadRoom: Комната {nextRoomId} не создана, создаём её");
-
-            // Если комната не создана, создаём её
-            Vector3 position = new Vector3(nextRoom.Position.x * dungeonConfig.roomSpacing, 0, nextRoom.Position.y * dungeonConfig.roomSpacing);
-            
-            // Получаем шаблон комнаты
-            RoomTemplateSO template = GetRandomCompatibleTemplate(nextRoom.RoomType);
-            if (template == null || template.roomPrefab == null)
-            {
-                Debug.LogError($"[DungeonGenerator] Не найден совместимый шаблон для комнаты типа {nextRoom.RoomType.typeName}");
-                return;
-            }
-
-            Debug.Log($"[DungeonGenerator] LoadRoom: Выбран шаблон {template.templateName} для комнаты {nextRoomId}");
-            
-            GameObject roomInstance = Instantiate(template.roomPrefab, position, Quaternion.identity, dungeonContainer);
-            nextRoom.SetRoomInstance(roomInstance);
-            Debug.Log($"[DungeonGenerator] LoadRoom: Создан экземпляр комнаты {roomInstance.name} на позиции {position}");
-
-            // Настраиваем содержимое комнаты через RoomManager
-            var newRoomManager = roomInstance.GetComponent<RoomManager>();
-            if (newRoomManager != null)
-            {
-                Debug.Log($"[DungeonGenerator] LoadRoom: Инициализация комнаты через RoomManager");
-                newRoomManager.InitializeRoom();
-                Transform spawnPoint = roomInstance.transform.Find("PlayerSpawnPoint");
-                if (spawnPoint != null)
-                {
-                    Debug.Log($"[DungeonGenerator] LoadRoom: Найдена точка спавна на позиции {spawnPoint.position}");
-                    // Перемещаем игрока в новую комнату
-                    MovePlayerToSpawnPoint(player, spawnPoint);
-                    // После успешного перемещения удаляем предыдущую комнату
-                    DestroyRoom(currentRoom.Id);
-                }
-                else if (newRoomManager.PlayerSpawnPoint != null)
-                {
-                    Debug.Log($"[DungeonGenerator] LoadRoom: Найдена точка спавна через RoomManager на позиции {newRoomManager.PlayerSpawnPoint.position}");
-                    MovePlayerToSpawnPoint(player, newRoomManager.PlayerSpawnPoint);
-                    DestroyRoom(currentRoom.Id);
-                }
-                else
-                {
-                    Debug.LogError("[DungeonGenerator] LoadRoom: Точка спавна не найдена!");
+                    Debug.LogError($"[DungeonGenerator] Не удалось создать инстанс комнаты {nextRoomId}!");
+                    yield break;
                 }
             }
-            else
-            {
-                Debug.LogError($"[DungeonGenerator] RoomManager не найден в комнате {nextRoomId}");
-            }
 
-            Debug.Log($"[DungeonGenerator] Комната {nextRoomId} создана и настроена");
+            // Активируем комнату
+            yield return StartCoroutine(ActivateRoom(nextRoom));
+
+            // Перемещаем игрока в новую комнату
+            yield return StartCoroutine(MovePlayerToNewRoom(nextRoom, player, currentRoom));
+
+            Debug.Log($"[DungeonGenerator] Загрузка комнаты {nextRoomId} завершена");
         }
 
-        public string GetNextRoomId(Vector2Int currentPosition, Vector2Int direction)
+        private string GetNextRoomId(RoomNode currentRoom, Vector2Int direction)
         {
-            Debug.Log($"[DungeonGenerator] Поиск следующей комнаты. Текущая позиция: {currentPosition}, Направление: {direction}");
-            
-            RoomNode currentRoom = GetRoomNodeAtPosition(new Vector3(currentPosition.x * dungeonConfig.roomSpacing, 0, currentPosition.y * dungeonConfig.roomSpacing));
             if (currentRoom == null)
             {
                 Debug.LogError("[DungeonGenerator] Текущая комната не найдена!");
                 return null;
             }
 
-            Vector2Int nextPosition = currentPosition + direction;
+            Vector2Int nextPosition = currentRoom.Position + direction;
             Debug.Log($"[DungeonGenerator] Позиция следующей комнаты: {nextPosition}");
 
-            // Ищем комнату в списке соединенных комнат
-            foreach (var connectedRoom in currentRoom.ConnectedRooms)
+            // Ищем комнату по позиции в списке всех комнат
+            var nextRoom = roomNodes.FirstOrDefault(r => r.Position == nextPosition);
+            if (nextRoom != null)
             {
-                if (connectedRoom.Position == nextPosition)
-                {
-                    Debug.Log($"[DungeonGenerator] Найдена следующая комната с ID: {connectedRoom.Id}");
-                    return connectedRoom.Id;
-                }
+                Debug.Log($"[DungeonGenerator] Найдена следующая комната с ID: {nextRoom.Id}");
+                return nextRoom.Id;
             }
 
-            Debug.LogWarning("[DungeonGenerator] Следующая комната не найдена в списке соединенных комнат!");
+            Debug.LogWarning("[DungeonGenerator] Следующая комната не найдена!");
             return null;
         }
 
@@ -768,61 +812,85 @@ namespace DungeonGeneration
 
             Debug.Log($"[DungeonGenerator] MovePlayerToSpawnPoint: Перемещение игрока {player.name} из позиции: {player.transform.position} в точку спавна: {spawnPoint.position}");
             
-            // Отключаем физику на время перемещения
-            Rigidbody rb = player.GetComponent<Rigidbody>();
-            bool hadRigidbody = rb != null;
-            bool wasKinematic = false;
-            
-            if (rb != null)
+            try 
             {
-                wasKinematic = rb.isKinematic;
-                rb.isKinematic = true;
-                Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Физика игрока временно отключена");
-            }
-            
-            // Запоминаем текущий коллайдер
-            Collider playerCollider = player.GetComponent<Collider>();
-            bool colliderWasEnabled = false;
-            
-            if (playerCollider != null)
-            {
-                colliderWasEnabled = playerCollider.enabled;
-                playerCollider.enabled = false;
-                Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Коллайдер игрока временно отключен");
-            }
-            
-            // Перемещаем игрока в точку спавна
-            player.transform.position = spawnPoint.position;
-            player.transform.rotation = spawnPoint.rotation;
-            
-            // Принудительно обновляем позицию Rigidbody
-            if (rb != null)
-            {
-                rb.position = spawnPoint.position;
-                rb.rotation = spawnPoint.rotation;
-                rb.linearVelocity = Vector3.zero; // Сбрасываем скорость
-                rb.angularVelocity = Vector3.zero; // Сбрасываем вращение
+                // Отключаем физику на время перемещения
+                Rigidbody rb = player.GetComponent<Rigidbody>();
+                bool hadRigidbody = rb != null;
+                bool wasKinematic = false;
                 
-                // Возвращаем исходное состояние Rigidbody
-                rb.isKinematic = wasKinematic;
-                Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Физика игрока восстановлена");
+                if (rb != null)
+                {
+                    wasKinematic = rb.isKinematic;
+                    rb.isKinematic = true;
+                    rb.detectCollisions = false; // Отключаем обнаружение коллизий
+                    Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Физика игрока временно отключена");
+                }
+                
+                // Запоминаем текущий коллайдер
+                Collider[] playerColliders = player.GetComponentsInChildren<Collider>();
+                bool[] collidersState = new bool[playerColliders.Length];
+                
+                for (int i = 0; i < playerColliders.Length; i++)
+                {
+                    collidersState[i] = playerColliders[i].enabled;
+                    playerColliders[i].enabled = false;
+                }
+                Debug.Log($"[DungeonGenerator] MovePlayerToSpawnPoint: Временно отключены {playerColliders.Length} коллайдеров");
+                
+                // Отключаем все скрипты, которые могут влиять на позицию
+                MonoBehaviour[] scripts = player.GetComponentsInChildren<MonoBehaviour>();
+                bool[] scriptsState = new bool[scripts.Length];
+                
+                for (int i = 0; i < scripts.Length; i++)
+                {
+                    if (scripts[i] != null && scripts[i] is not DungeonGenerator)
+                    {
+                        scriptsState[i] = scripts[i].enabled;
+                        scripts[i].enabled = false;
+                    }
+                }
+                
+                // Сначала обновляем трансформ
+                player.transform.position = spawnPoint.position;
+                player.transform.rotation = spawnPoint.rotation;
+                
+                // Принудительно обновляем позицию Rigidbody
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    rb.Sleep(); // Останавливаем все физические движения
+                    rb.position = spawnPoint.position;
+                    rb.rotation = spawnPoint.rotation;
+                    
+                    // Возвращаем исходное состояние Rigidbody
+                    rb.isKinematic = wasKinematic;
+                    rb.detectCollisions = true;
+                    Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Физика игрока восстановлена");
+                }
+                
+                // Восстанавливаем скрипты
+                for (int i = 0; i < scripts.Length; i++) 
+                {
+                    if (scripts[i] != null && scripts[i] is not DungeonGenerator)
+                    {
+                        scripts[i].enabled = scriptsState[i];
+                    }
+                }
+                
+                // Восстанавливаем коллайдеры после задержки
+                for (int i = 0; i < playerColliders.Length; i++)
+                {
+                    playerColliders[i].enabled = collidersState[i];
+                }
+                Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Коллайдеры игрока восстановлены");
+                
+                Debug.Log($"[DungeonGenerator] MovePlayerToSpawnPoint: Игрок успешно перемещен в позицию: {player.transform.position}");
             }
-            
-            // Восстанавливаем коллайдер
-            if (playerCollider != null)
+            catch (System.Exception e)
             {
-                playerCollider.enabled = colliderWasEnabled;
-                Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Коллайдер игрока восстановлен");
-            }
-            
-            Debug.Log($"[DungeonGenerator] MovePlayerToSpawnPoint: Игрок успешно перемещен в позицию: {player.transform.position}");
-            
-            // Проверяем, что перемещение действительно произошло
-            if (Vector3.Distance(player.transform.position, spawnPoint.position) > 0.1f)
-            {
-                Debug.LogError($"[DungeonGenerator] MovePlayerToSpawnPoint: Не удалось переместить игрока в нужную позицию! Текущая позиция: {player.transform.position}, целевая позиция: {spawnPoint.position}, разница: {Vector3.Distance(player.transform.position, spawnPoint.position)}");
-                // Пробуем еще раз через один кадр
-                StartCoroutine(RetryPlayerPosition(player, spawnPoint));
+                Debug.LogError($"[DungeonGenerator] MovePlayerToSpawnPoint: Ошибка при перемещении игрока: {e.Message}\n{e.StackTrace}");
             }
         }
 
@@ -944,25 +1012,160 @@ namespace DungeonGeneration
         public void DestroyRoom(string roomId)
         {
             var room = roomNodes.FirstOrDefault(r => r.Id == roomId);
-            if (room != null)
+            if (room == null)
             {
-                room.DestroyRoom();
-                roomNodes.Remove(room);
-                Debug.Log($"[DungeonGenerator] Комната {roomId} уничтожена");
+                Debug.LogWarning($"[DungeonGenerator] DestroyRoom: Комната с ID {roomId} не найдена!");
+                return;
             }
+
+            if (room.RoomInstance == null)
+            {
+                Debug.LogWarning($"[DungeonGenerator] DestroyRoom: RoomInstance комнаты {roomId} уже уничтожен!");
+                return;
+            }
+
+            Debug.Log($"[DungeonGenerator] DestroyRoom: Начало уничтожения комнаты {roomId}");
+            
+            // Сначала деактивируем
+            room.RoomInstance.SetActive(false);
+            
+            // Уничтожаем GameObject
+            Destroy(room.RoomInstance);
+            
+            // Очищаем ссылку
+            room.SetRoomInstance(null);
+            
+            Debug.Log($"[DungeonGenerator] DestroyRoom: Комната {roomId} успешно уничтожена");
         }
 
         public List<RoomNode> GetAvailableRooms()
         {
-            return roomNodes.Where(r => 
+            Debug.Log("[DungeonGenerator] GetAvailableRooms: Начало поиска доступных комнат");
+            
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player == null)
+            {
+                Debug.LogError("[DungeonGenerator] GetAvailableRooms: Игрок не найден!");
+                return new List<RoomNode>();
+            }
+
+            var currentRoom = GetRoomNodeAtPosition(player.transform.position);
+            if (currentRoom == null)
+            {
+                Debug.LogError("[DungeonGenerator] GetAvailableRooms: Текущая комната не найдена! Попытаемся продолжить со всеми непосещенными комнатами.");
+                // Возвращаем все непосещенные обычные комнаты даже если текущая комната не найдена
+                return roomNodes
+                    .Where(r => r.RoomType != dungeonConfig.bossRoomType && !r.WasVisited)
+                    .ToList();
+            }
+
+            Debug.Log($"[DungeonGenerator] GetAvailableRooms: Текущая комната: {currentRoom.Id}, всего комнат в подземелье: {roomNodes?.Count ?? 0}");
+
+            // Проверяем состояние каждой комнаты
+            foreach (var room in roomNodes)
+            {
+                string reason = "";
+                if (room.RoomType == dungeonConfig.bossRoomType)
+                    reason += "Это комната босса. ";
+                if (room.RoomType == dungeonConfig.startRoomType)
+                    reason += "Это стартовая комната. ";
+                if (room == currentRoom)
+                    reason += "Это текущая комната. ";
+                if (room.WasVisited)
+                {
+                    reason += "Комната уже была посещена. ";
+                    Debug.Log($"[DungeonGenerator] GetAvailableRooms: Комната {room.Id} в позиции {room.Position} была посещена");
+                }
+                
+                Debug.Log($"[DungeonGenerator] Комната {room.Id}: {(string.IsNullOrEmpty(reason) ? "Доступна для телепортации" : $"Недоступна потому что: {reason}")}");
+            }
+
+            // Проверяем, все ли обычные комнаты посещены
+            bool allRegularRoomsVisited = roomNodes
+                .Where(r => r.RoomType != dungeonConfig.bossRoomType && r.RoomType != dungeonConfig.startRoomType)
+                .All(r => r.WasVisited);
+
+            // Если все обычные комнаты посещены, даем доступ к комнате босса
+            if (allRegularRoomsVisited)
+            {
+                Debug.Log("[DungeonGenerator] Все обычные комнаты посещены, открываем доступ к комнате босса");
+                var bossRoom = roomNodes.FirstOrDefault(r => 
+                    r.RoomType == dungeonConfig.bossRoomType && 
+                    r != currentRoom && 
+                    !r.WasVisited);
+
+                if (bossRoom != null)
+                {
+                    Debug.Log($"[DungeonGenerator] GetAvailableRooms: Найдена комната босса {bossRoom.Id} для телепортации");
+                    return new List<RoomNode> { bossRoom };
+            }
+            else
+            {
+                    Debug.LogWarning("[DungeonGenerator] GetAvailableRooms: Не найдена непосещенная комната босса!");
+                }
+            }
+
+            // Возвращаем все непосещенные комнаты (кроме босса и стартовой)
+            var availableRooms = roomNodes.Where(r => 
                 r.RoomType != dungeonConfig.bossRoomType && 
                 r.RoomType != dungeonConfig.startRoomType && 
-                !r.IsCleared).ToList();
+                r != currentRoom && 
+                !r.WasVisited
+            ).ToList();
+
+            Debug.Log($"[DungeonGenerator] GetAvailableRooms: Найдено доступных комнат: {availableRooms.Count}");
+            foreach (var room in availableRooms)
+            {
+                Debug.Log($"[DungeonGenerator] GetAvailableRooms: Доступная комната: {room.Id} в позиции {room.Position}");
+            }
+            
+            // Если нет доступных комнат и не все посещены (странная ситуация)
+            if (availableRooms.Count == 0 && !allRegularRoomsVisited)
+            {
+                Debug.LogWarning("[DungeonGenerator] GetAvailableRooms: Нет доступных комнат, но не все комнаты посещены! Возвращаем все непосещенные обычные комнаты.");
+                return roomNodes
+                    .Where(r => r.RoomType != dungeonConfig.bossRoomType && !r.WasVisited)
+                    .ToList();
+            }
+            
+            return availableRooms;
         }
 
         public RoomNode GetBossRoom()
         {
             return roomNodes.FirstOrDefault(r => r.RoomType == dungeonConfig.bossRoomType);
+        }
+
+        private void UpdateRoomVisibility(RoomNode currentRoom)
+        {
+            if (currentRoom == null)
+            {
+                Debug.LogWarning("[DungeonGenerator] UpdateRoomVisibility: currentRoom is null");
+                return;
+            }
+
+            Debug.Log($"[DungeonGenerator] UpdateRoomVisibility: Обновление видимости комнат. Текущая комната: {currentRoom.Id}");
+
+            // Активируем текущую комнату
+            if (currentRoom.RoomInstance != null)
+            {
+                currentRoom.RoomInstance.SetActive(true);
+                Debug.Log($"[DungeonGenerator] UpdateRoomVisibility: Активирована комната {currentRoom.Id}");
+                }
+                else
+                {
+                Debug.LogWarning($"[DungeonGenerator] UpdateRoomVisibility: RoomInstance текущей комнаты {currentRoom.Id} не существует!");
+            }
+
+            // Деактивируем все остальные комнаты
+            foreach (var room in roomNodes)
+            {
+                if (room != currentRoom && room.RoomInstance != null)
+                {
+                    room.RoomInstance.SetActive(false);
+                    Debug.Log($"[DungeonGenerator] UpdateRoomVisibility: Деактивирована комната {room.Id}");
+                }
+            }
         }
     }
 } 

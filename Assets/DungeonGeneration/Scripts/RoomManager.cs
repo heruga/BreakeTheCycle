@@ -19,6 +19,7 @@ namespace DungeonGeneration.Scripts
         [SerializeField] private Transform[] portalPositions;
         [SerializeField] private Transform[] enemySpawnPoints;
         [SerializeField] private Transform[] rewardSpawnPoints;
+        [SerializeField] private bool isRoomCleared = false;
         
         [Header("Prefabs")]
         [SerializeField] private GameObject portalPrefab;
@@ -28,7 +29,6 @@ namespace DungeonGeneration.Scripts
         private RoomNode roomNode;
         private List<GameObject> activeEnemies = new List<GameObject>();
         private List<GameObject> activePortals = new List<GameObject>();
-        private bool isRoomCleared = false;
         
         public event Action OnRoomCleared;
         public event Action OnPlayerEnter;
@@ -125,7 +125,7 @@ namespace DungeonGeneration.Scripts
             }
 
             SetupPortals();
-            }
+        }
 
         private bool IsCombatRoom()
         {
@@ -159,18 +159,33 @@ namespace DungeonGeneration.Scripts
 
                 // Выбираем врага в зависимости от типа комнаты
                 GameObject enemyPrefab;
+                float yOffset = 0f; // Смещение по Y для разных типов врагов
+                
                 if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.eliteCombatRoomType)
                 {
                     // В элитной комнате всегда спавним элитного врага
                     enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
+                    yOffset = 1.0f; // Примерное смещение для элитного врага
+                }
+                else if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.bossRoomType)
+                {
+                    // В босс-комнате берем последнего врага (должен быть босс)
+                    enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
+                    yOffset = 1.5f; // Примерное смещение для босса (обычно больше)
                 }
                 else
                 {
                     // В обычной комнате случайный враг
-                    enemyPrefab = enemyPrefabs[UnityEngine.Random.Range(0, enemyPrefabs.Length)];
+                    int enemyIndex = UnityEngine.Random.Range(0, enemyPrefabs.Length);
+                    enemyPrefab = enemyPrefabs[enemyIndex];
+                    yOffset = 0.5f; // Примерное смещение для обычного врага
                 }
 
-                GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity, transform);
+                // Учитываем высоту врага для корректного позиционирования
+                Vector3 spawnPosition = spawnPoint.position;
+                spawnPosition.y += yOffset; // Применяем смещение по Y
+                
+                GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity, transform);
                 activeEnemies.Add(enemy);
 
                 var enemyHealth = enemy.GetComponent<EnemyHealth>();
@@ -178,6 +193,8 @@ namespace DungeonGeneration.Scripts
                 {
                     enemyHealth.OnDeath += HandleEnemyDeath;
                 }
+                
+                Debug.Log($"[RoomManager] Создан враг {enemy.name} на позиции {spawnPosition} (смещение по Y: {yOffset})");
             }
         }
 
@@ -194,12 +211,12 @@ namespace DungeonGeneration.Scripts
             {
                 SpawnPortal(portalPositions[0].position);
             }
-            // В обычных комнатах создаем портал
-            else if (roomType != dungeonGenerator.DungeonConfig.bossRoomType)
+            // В обычных комнатах и комнате босса создаем портал
+            else
             {
                 SpawnPortal(portalPositions[0].position);
+                Debug.Log($"[RoomManager] Создан портал в комнате типа {roomType.typeName}");
             }
-            // В боссовой комнате не создаем порталов
         }
 
         private GameObject SpawnPortal(Vector3 position)

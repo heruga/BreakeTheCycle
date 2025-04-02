@@ -1,6 +1,7 @@
 using UnityEngine;
 using BreakTheCycle;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 namespace DungeonGeneration.Scripts
 {
@@ -15,7 +16,8 @@ namespace DungeonGeneration.Scripts
         [SerializeField] private string notClearedRoomText = "Нужно победить всех врагов в комнате!";
         
         [Header("Portal Settings")]
-        [SerializeField] private string nextRoomId;
+        [SerializeField] private string nextRoomId; // Если задано, портал ведет в конкретную комнату
+        [SerializeField] private bool isRandomPortal = true; // Если true, выбирает случайную комнату
         [SerializeField] private float pushForce = 5f;
         [SerializeField] private float pushDuration = 0.5f;
 
@@ -78,10 +80,10 @@ namespace DungeonGeneration.Scripts
 
         private void CreateInteractionPrompt()
         {
-            // Создаем объект подсказки только если спрайт назначен
+            // Если спрайт не назначен, просто пропускаем создание визуальной подсказки
             if (interactionPromptSprite == null) 
             {
-                Debug.Log("[InteractablePortal] Спрайт подсказки не назначен!");
+                Debug.Log("[InteractablePortal] Спрайт подсказки не назначен, будет использоваться только текстовая подсказка");
                 return;
             }
 
@@ -101,7 +103,7 @@ namespace DungeonGeneration.Scripts
                 1f
             );
             
-            Debug.Log("[InteractablePortal] Создана подсказка взаимодействия");
+            Debug.Log("[InteractablePortal] Создана визуальная подсказка взаимодействия");
         }
 
         private void HandlePlayerCreated(GameObject playerObject)
@@ -131,10 +133,17 @@ namespace DungeonGeneration.Scripts
                 lastLogTime = Time.time;
             }
 
-            // Обновляем отображение подсказки в зависимости от расстояния
+            // Обновляем отображение подсказки в зависимости от расстояния и состояния комнаты
             if (isInRange && !wasInRange)
             {
-                ShowInteractionPrompt();
+                if (currentRoom != null && !currentRoom.IsRoomCleared)
+                {
+                    ShowInteractionPrompt(notClearedRoomText);
+                }
+                else
+                {
+                    ShowInteractionPrompt(defaultPromptText);
+                }
             }
             else if (!isInRange && wasInRange)
             {
@@ -165,7 +174,7 @@ namespace DungeonGeneration.Scripts
             if (currentRoom != null && !currentRoom.IsRoomCleared)
             {
                 Debug.Log("[InteractablePortal] Комната не зачищена! Нужно победить всех врагов.");
-                ShowInteractionPrompt();
+                ShowInteractionPrompt(notClearedRoomText);
                 return;
             }
 
@@ -179,22 +188,46 @@ namespace DungeonGeneration.Scripts
                 }
             }
 
-            // Если nextRoomId не назначен, выбираем случайную комнату
-            if (string.IsNullOrEmpty(nextRoomId))
+            string targetRoomId;
+            
+            if (isRandomPortal)
             {
+                // Для случайного портала выбираем комнату из доступных
                 var availableRooms = dungeonGenerator.GetAvailableRooms();
                 Debug.Log($"[InteractablePortal] Доступных комнат: {(availableRooms != null ? availableRooms.Count : 0)}");
                 
-                if (availableRooms != null && availableRooms.Count > 0)
+                if (availableRooms == null || availableRooms.Count == 0)
                 {
-                    nextRoomId = availableRooms[Random.Range(0, availableRooms.Count)].Id;
-                    Debug.Log($"[InteractablePortal] Выбрана случайная комната с ID: {nextRoomId}");
-                }
-                else
-                {
-                    Debug.LogError("[InteractablePortal] Нет доступных комнат для телепортации!");
+                    Debug.Log("[InteractablePortal] Нет доступных комнат для телепортации, возвращаемся в реальность");
+                    if (GameManager.Instance == null)
+                    {
+                        Debug.LogWarning("[InteractablePortal] GameManager.Instance не найден, пытаемся найти GameManager в сцене");
+                        var gameManager = FindObjectOfType<GameManager>();
+                        if (gameManager == null)
+                        {
+                            Debug.LogError("[InteractablePortal] GameManager не найден в сцене! Загружаем сцену Reality напрямую");
+                            SceneManager.LoadScene("Reality");
+                            return;
+                        }
+                    }
+                    GameManager.Instance.SwitchGameState();
                     return;
                 }
+
+                targetRoomId = availableRooms[Random.Range(0, availableRooms.Count)].Id;
+                Debug.Log($"[InteractablePortal] Выбрана случайная комната с ID: {targetRoomId}");
+            }
+            else
+            {
+                // Для фиксированного портала используем заданную комнату
+                if (string.IsNullOrEmpty(nextRoomId))
+                {
+                    Debug.LogError("[InteractablePortal] Не задан ID комнаты для фиксированного портала!");
+                    ShowInteractionPrompt("Портал не настроен!");
+                    return;
+                }
+                targetRoomId = nextRoomId;
+                Debug.Log($"[InteractablePortal] Используется фиксированная комната с ID: {targetRoomId}");
             }
 
             // Проверяем игрока
@@ -208,8 +241,9 @@ namespace DungeonGeneration.Scripts
                 }
             }
 
-            Debug.Log($"[InteractablePortal] Попытка телепортации в комнату: {nextRoomId}, игрок: {player.name}, текущая позиция: {player.transform.position}");
-            dungeonGenerator.LoadRoom(nextRoomId);
+            Debug.Log($"[InteractablePortal] Попытка телепортации в комнату: {targetRoomId}, игрок: {player.name}, текущая позиция: {player.transform.position}");
+            dungeonGenerator.LoadRoom(targetRoomId);
+            
             Debug.Log("[InteractablePortal] Вызов телепортации завершен");
         }
 
@@ -220,6 +254,10 @@ namespace DungeonGeneration.Scripts
 
         public void ShowInteractionPrompt(string text)
         {
+            // Всегда выводим текст в консоль
+            Debug.Log($"[InteractablePortal] Подсказка: {text}");
+
+            // Если есть визуальная подсказка, показываем её
             if (interactionPrompt != null)
             {
                 interactionPrompt.SetActive(true);

@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using DungeonGeneration;
+using DungeonGeneration.Scripts;
 
 /// <summary>
 /// Менеджер игры, управляющий состояниями и переходами между "Реальностью" и "Сознанием"
@@ -87,7 +89,54 @@ public class GameManager : MonoBehaviour
 
         string targetScene = isInReality ? realitySceneName : consciousnessSceneName;
         Debug.Log($"[GameManager] Целевая сцена: {targetScene}");
+        
+        // Очищаем текущую сцену перед загрузкой новой
+        CleanupCurrentScene();
+        
         StartCoroutine(LoadSceneAsync(targetScene));
+    }
+
+    private void CleanupCurrentScene()
+    {
+        Debug.Log("[GameManager] Начало очистки текущей сцены");
+        
+        // Находим всех игроков в сцене
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        foreach (GameObject player in players)
+        {
+            Debug.Log($"[GameManager] Уничтожаем игрока: {player.name}");
+            Destroy(player);
+        }
+        
+        // Очищаем все объекты DungeonGenerator
+        DungeonGenerator[] dungeonGenerators = FindObjectsOfType<DungeonGenerator>();
+        foreach (DungeonGenerator generator in dungeonGenerators)
+        {
+            Debug.Log($"[GameManager] Уничтожаем DungeonGenerator: {generator.name}");
+            Destroy(generator.gameObject);
+        }
+        
+        // Очищаем все порталы
+        var portals = FindObjectsOfType<InteractablePortal>();
+        foreach (var portal in portals)
+        {
+            Debug.Log($"[GameManager] Уничтожаем портал: {portal.name}");
+            Destroy(portal.gameObject);
+        }
+        
+        // Очищаем все комнаты
+        var rooms = FindObjectsOfType<RoomManager>();
+        foreach (var room in rooms)
+        {
+            Debug.Log($"[GameManager] Уничтожаем комнату: {room.name}");
+            Destroy(room.gameObject);
+        }
+        
+        // Принудительно запускаем сборщик мусора
+        System.GC.Collect();
+        Resources.UnloadUnusedAssets();
+        
+        Debug.Log("[GameManager] Очистка сцены завершена");
     }
 
     private IEnumerator LoadSceneAsync(string sceneName)
