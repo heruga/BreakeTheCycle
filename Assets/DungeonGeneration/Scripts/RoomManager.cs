@@ -159,33 +159,26 @@ namespace DungeonGeneration.Scripts
 
                 // Выбираем врага в зависимости от типа комнаты
                 GameObject enemyPrefab;
-                float yOffset = 0f; // Смещение по Y для разных типов врагов
                 
                 if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.eliteCombatRoomType)
                 {
                     // В элитной комнате всегда спавним элитного врага
                     enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
-                    yOffset = 1.0f; // Примерное смещение для элитного врага
                 }
                 else if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.bossRoomType)
                 {
                     // В босс-комнате берем последнего врага (должен быть босс)
                     enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
-                    yOffset = 1.5f; // Примерное смещение для босса (обычно больше)
                 }
                 else
                 {
                     // В обычной комнате случайный враг
                     int enemyIndex = UnityEngine.Random.Range(0, enemyPrefabs.Length);
                     enemyPrefab = enemyPrefabs[enemyIndex];
-                    yOffset = 0.5f; // Примерное смещение для обычного врага
                 }
 
-                // Учитываем высоту врага для корректного позиционирования
-                Vector3 spawnPosition = spawnPoint.position;
-                spawnPosition.y += yOffset; // Применяем смещение по Y
-                
-                GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity, transform);
+                // Спавним врага на позиции точки спавна
+                GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity, transform);
                 activeEnemies.Add(enemy);
 
                 var enemyHealth = enemy.GetComponent<EnemyHealth>();
@@ -194,7 +187,7 @@ namespace DungeonGeneration.Scripts
                     enemyHealth.OnDeath += HandleEnemyDeath;
                 }
                 
-                Debug.Log($"[RoomManager] Создан враг {enemy.name} на позиции {spawnPosition} (смещение по Y: {yOffset})");
+                Debug.Log($"[RoomManager] Создан враг {enemy.name} на позиции {spawnPoint.position}");
             }
         }
 
@@ -206,31 +199,15 @@ namespace DungeonGeneration.Scripts
                 return;
             }
 
-            // В стартовой комнате создаем портал
-            if (roomType == dungeonGenerator.DungeonConfig.startRoomType)
-            {
-                SpawnPortal(portalPositions[0].position);
-            }
-            // В обычных комнатах и комнате босса создаем портал
-            else
-            {
-                SpawnPortal(portalPositions[0].position);
-                Debug.Log($"[RoomManager] Создан портал в комнате типа {roomType.typeName}");
-            }
+            // Создаем портал в комнате
+            SpawnPortal(portalPositions[0].position);
+            Debug.Log($"[RoomManager] Создан портал в комнате типа {roomType.typeName}");
         }
 
         private GameObject SpawnPortal(Vector3 position)
         {
             GameObject portal = Instantiate(portalPrefab, position, Quaternion.identity, transform);
             activePortals.Add(portal);
-            
-            // Добавляем компонент InteractablePortal, если его нет
-            var interactablePortal = portal.GetComponent<InteractablePortal>();
-            if (interactablePortal == null)
-            {
-                interactablePortal = portal.AddComponent<InteractablePortal>();
-            }
-            
             return portal;
         }
 
@@ -304,54 +281,38 @@ namespace DungeonGeneration.Scripts
 
         private void LoadRoom(RoomNode roomNode)
         {
-            // Создаем NavMesh только для комнат, где могут быть враги
-            if (roomType.requiresCleaning)
+            Debug.Log($"[RoomManager] Загрузка комнаты {roomNode?.Id ?? "null"}");
+            
+            // Проверяем наличие NavMeshSurface в любом случае
+            var navMeshSurface = gameObject.GetComponent<NavMeshSurface>();
+            if (navMeshSurface == null)
             {
-                var navMeshSurface = gameObject.GetComponent<NavMeshSurface>();
-                if (navMeshSurface != null)
+                Debug.LogError("[RoomManager] NavMeshSurface не найден на префабе комнаты! Добавляем компонент.");
+                navMeshSurface = gameObject.AddComponent<NavMeshSurface>();
+                
+                // Устанавливаем базовые настройки
+                navMeshSurface.collectObjects = CollectObjects.All;
+                navMeshSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+                navMeshSurface.layerMask = -1; // Все слои
+            }
+
+            // Строим NavMesh для всех комнат, где могут быть враги
+            if (roomType != null && roomType.requiresCleaning)
+            {
+                Debug.Log($"[RoomManager] Начинаем построение NavMesh для комнаты {roomNode?.Id ?? "null"}");
+                try
                 {
                     navMeshSurface.BuildNavMesh();
+                    Debug.Log("[RoomManager] NavMesh успешно построен");
                 }
-                else
+                catch (System.Exception e)
                 {
-                    Debug.LogError("[RoomManager] NavMeshSurface не найден на префабе комнаты!");
+                    Debug.LogError($"[RoomManager] Ошибка при построении NavMesh: {e.Message}");
                 }
             }
-        }
-
-        private void OnValidate()
-        {
-            // Проверяем и корректируем высоту точки спавна игрока
-            if (playerSpawnPoint != null)
+            else
             {
-                // Получаем высоту пола (предполагая, что пол находится на Y = 0)
-                float floorHeight = 0f;
-                
-                // Проверяем, не слишком ли низко точка спавна
-                if (playerSpawnPoint.position.y <= floorHeight)
-                {
-                    // Поднимаем точку спавна на 1 единицу над полом
-                    Vector3 newPosition = playerSpawnPoint.position;
-                    newPosition.y = floorHeight + 1f;
-                    playerSpawnPoint.position = newPosition;
-                    Debug.LogWarning($"[RoomManager] Точка спавна игрока была слишком низко. Высота скорректирована на {newPosition.y}");
-                }
-            }
-
-            // Проверяем и корректируем высоту точек спавна врагов
-            if (enemySpawnPoints != null)
-            {
-                float floorHeight = 0f;
-                foreach (var spawnPoint in enemySpawnPoints)
-                {
-                    if (spawnPoint != null && spawnPoint.position.y <= floorHeight)
-                    {
-                        Vector3 newPosition = spawnPoint.position;
-                        newPosition.y = floorHeight + 1f;
-                        spawnPoint.position = newPosition;
-                        Debug.LogWarning($"[RoomManager] Точка спавна врага была слишком низко. Высота скорректирована на {newPosition.y}");
-                    }
-                }
+                Debug.Log("[RoomManager] Пропускаем построение NavMesh - комната не требует очистки");
             }
         }
     }

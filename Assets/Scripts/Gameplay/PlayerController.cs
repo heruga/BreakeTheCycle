@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour
     [Header("Вращение камеры")]
     [SerializeField] private float mouseSensitivity = 2f;
     [SerializeField] private float verticalRotationLimit = 80f;
+    [SerializeField] private float rotationSmoothSpeed = 15f; // Скорость сглаживания поворота
     [SerializeField] private Transform playerCamera;
     
     [Header("Проверка земли")]
@@ -41,6 +42,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity;
     private bool isGrounded;
     private float verticalRotation = 0f;
+    private float targetVerticalRotation = 0f;
+    private float targetHorizontalRotation = 0f;
     private InteractableObject currentInteractable;
     private bool isControlEnabled = true; // Флаг для блокировки управления
     
@@ -48,10 +51,33 @@ public class PlayerController : MonoBehaviour
     private GameObject createdGroundCheck;
     private Canvas createdCanvas;
     
+    private Vector2 mouseInput;
+
+    private Transform cachedTransform;
+    private Vector3 currentEulerAngles;
+    private float currentVerticalRotation;
+
+    private float nextGroundCheck = 0f;
+    private float groundCheckInterval = 0.1f; // Проверяем землю каждые 0.1 секунды
+    private float nextInteractionCheck = 0f;
+    private float interactionCheckInterval = 0.1f; // Проверяем взаимодействие каждые 0.1 секунды
+
+    private Vector3 moveDirection;
+    private Vector3 cachedRight;
+    private Vector3 cachedForward;
+
     private void Awake()
     {
-        // Получаем компоненты
+        // Кэшируем компоненты
+        cachedTransform = transform;
         controller = GetComponent<CharacterController>();
+        currentEulerAngles = transform.eulerAngles;
+        targetHorizontalRotation = currentEulerAngles.y;
+        
+        // Кэшируем векторы для движения
+        moveDirection = Vector3.zero;
+        cachedRight = Vector3.right;
+        cachedForward = Vector3.forward;
         
         // Создаем компоненты, если их нет
         if (controller == null)
@@ -153,123 +179,145 @@ public class PlayerController : MonoBehaviour
     
     private void Update()
     {
-        if (!isControlEnabled) return; // Если управление отключено, пропускаем обновление
-
-        // Проверка касания земли
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+        if (!isControlEnabled) return;
         
-        if (isGrounded && velocity.y < 0)
+        float currentTime = Time.time;
+        
+        // Проверка касания земли с интервалом
+        if (currentTime >= nextGroundCheck)
         {
-            velocity.y = -2f;
+            isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+            nextGroundCheck = currentTime + groundCheckInterval;
+            
+            if (isGrounded && velocity.y < 0)
+            {
+                velocity.y = -2f;
+            }
         }
+        
+        // Обработка вращения камеры
+        ProcessCameraRotation();
         
         // Обработка ввода для движения
         ProcessMovementInput();
         
-        // Обработка ввода для вращения камеры
-        ProcessCameraRotation();
-        
-        // Обработка взаимодействия с объектами
-        ProcessInteraction();
+        // Проверка взаимодействия с интервалом
+        if (currentTime >= nextInteractionCheck)
+        {
+            ProcessInteraction();
+            nextInteractionCheck = currentTime + interactionCheckInterval;
+        }
         
         // Обработка переключения реальностей
-        ProcessRealitySwitch();
+        if (Input.GetKeyDown(switchRealityKey))
+        {
+            ProcessRealitySwitch();
+        }
+    }
+    
+    private void FixedUpdate()
+    {
+        if (!isControlEnabled) return;
     }
     
     private void ProcessMovementInput()
     {
-        if (!isControlEnabled) return; // Блокируем движение, если управление отключено
-        
+        if (!isControlEnabled) return;
+
         // Получаем ввод пользователя
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
-        
-        // Если управление отключено, обнуляем ввод
-        if (!isControlEnabled)
-        {
-            x = 0;
-            z = 0;
-        }
-        
+
         // Определяем скорость в зависимости от спринта
         float speed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : walkSpeed;
-        
-        // Создаем вектор движения относительно направления взгляда
-        Vector3 move = transform.right * x + transform.forward * z;
-        
-        // Применяем движение
-        controller.Move(move * speed * Time.deltaTime);
-        
-        // Прыжок
-        if (Input.GetButtonDown("Jump") && isGrounded && isControlEnabled)
+
+        // Обновляем направление движения без создания новых векторов
+        moveDirection.x = x;
+        moveDirection.z = z;
+        moveDirection.y = 0;
+
+        if (moveDirection.x != 0 || moveDirection.z != 0)
+        {
+            // Нормализуем вектор движения только если он не нулевой
+            moveDirection.Normalize();
+            
+            // Применяем поворот и скорость
+            moveDirection = cachedTransform.TransformDirection(moveDirection) * speed * Time.deltaTime;
+            
+            // Добавляем вертикальную составляющую
+            moveDirection.y = velocity.y * Time.deltaTime;
+            
+            // Применяем движение
+            controller.Move(moveDirection);
+        }
+        else if (velocity.y != 0)
+        {
+            // Если нет горизонтального движения, но есть вертикальное
+            moveDirection.x = 0;
+            moveDirection.z = 0;
+            moveDirection.y = velocity.y * Time.deltaTime;
+            controller.Move(moveDirection);
+        }
+
+        // Обработка прыжка
+        if (Input.GetButtonDown("Jump") && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpForce * 2f * gravity);
         }
-        
+
         // Применяем гравитацию
         velocity.y -= gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
     }
     
     private void ProcessCameraRotation()
     {
-        if (!isControlEnabled) return; // Блокируем вращение камеры, если управление отключено
-        
-        // Получаем ввод мыши
+        if (!isControlEnabled) return;
+
+        // Получаем ввод мыши и масштабируем его
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-        
-        // Если управление отключено, обнуляем ввод
-        if (!isControlEnabled)
-        {
-            mouseX = 0;
-            mouseY = 0;
-        }
-        
-        // Вращение вокруг вертикальной оси (поворот персонажа)
-        transform.Rotate(Vector3.up * mouseX);
-        
-        // Вращение вокруг горизонтальной оси (наклон камеры)
-        verticalRotation -= mouseY;
-        verticalRotation = Mathf.Clamp(verticalRotation, -verticalRotationLimit, verticalRotationLimit);
-        
-        playerCamera.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+
+        // Обновляем целевые углы поворота
+        targetHorizontalRotation += mouseX;
+        targetVerticalRotation = Mathf.Clamp(targetVerticalRotation - mouseY, -verticalRotationLimit, verticalRotationLimit);
+
+        // Плавно интерполируем текущие углы к целевым
+        currentEulerAngles.y = Mathf.LerpAngle(currentEulerAngles.y, targetHorizontalRotation, Time.deltaTime * rotationSmoothSpeed);
+        currentVerticalRotation = Mathf.Lerp(currentVerticalRotation, targetVerticalRotation, Time.deltaTime * rotationSmoothSpeed);
+
+        // Применяем повороты без создания новых векторов
+        cachedTransform.eulerAngles = currentEulerAngles;
+        playerCamera.localRotation = Quaternion.Euler(currentVerticalRotation, 0f, 0f);
     }
     
     private void ProcessInteraction()
     {
-        if (!isControlEnabled) return; // Блокируем взаимодействие, если управление отключено
+        if (!isControlEnabled || interactionPromptUI == null) return;
         
-        // Raycast для определения объекта под прицелом
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
         RaycastHit hit;
+        InteractableObject interactable = null;
         
-        if (Physics.Raycast(ray, out hit, interactionRange, interactionMask))
+        bool hasInteractable = Physics.Raycast(ray, out hit, interactionRange, interactionMask) &&
+                              hit.collider.TryGetComponent(out interactable) &&
+                              interactable != null &&
+                              interactable.IsPlayerInRange(transform);
+        
+        if (hasInteractable)
         {
-            // Проверяем, есть ли у объекта компонент InteractableObject
-            InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
-            
-            if (interactable != null && interactable.IsPlayerInRange(transform))
+            if (currentInteractable != interactable)
             {
-                // Показываем подсказку
                 currentInteractable = interactable;
                 UpdateInteractionPrompt();
-                
-                // Взаимодействие при нажатии клавиши
-                if (Input.GetKeyDown(interactionKey))
-                {
-                    interactable.Interact();
-                }
             }
-            else
+            
+            if (Input.GetKeyDown(interactionKey))
             {
-                // Скрываем подсказку, если объект не интерактивный
-                HideInteractionPrompt();
+                interactable.Interact();
             }
         }
-        else
+        else if (currentInteractable != null)
         {
-            // Скрываем подсказку, если нет объекта под прицелом
             HideInteractionPrompt();
         }
     }
@@ -286,21 +334,20 @@ public class PlayerController : MonoBehaviour
     private void ProcessRealitySwitch()
     {
         // Переключение между реальностями
-        if (Input.GetKeyDown(switchRealityKey))
+        if (GameManager.Instance != null)
         {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.SwitchGameState();
-            }
-            else
-            {
-                Debug.LogWarning("GameManager не найден! Переключение реальностей невозможно.");
-            }
+            GameManager.Instance.SwitchGameState();
+        }
+        else
+        {
+            Debug.LogWarning("GameManager не найден! Переключение реальностей невозможно.");
         }
     }
     
     private void UpdateInteractionPrompt()
     {
+        if (interactionPromptUI == null) return;
+        
         if (currentInteractable != null)
         {
             if (!interactionPromptUI.gameObject.activeSelf)
@@ -309,12 +356,9 @@ public class PlayerController : MonoBehaviour
             }
             interactionPromptUI.ShowPrompt(currentInteractable.GetInteractionText());
         }
-        else
+        else if (interactionPromptUI.gameObject.activeSelf)
         {
-            if (interactionPromptUI.gameObject.activeSelf)
-            {
-                interactionPromptUI.HidePrompt();
-            }
+            interactionPromptUI.HidePrompt();
         }
     }
     

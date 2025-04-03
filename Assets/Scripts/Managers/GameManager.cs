@@ -85,15 +85,45 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("[GameManager] Начало переключения мира");
         isTransitioning = true;
-        isInReality = !isInReality;
 
-        string targetScene = isInReality ? realitySceneName : consciousnessSceneName;
+        string targetScene = !isInReality ? realitySceneName : consciousnessSceneName;
         Debug.Log($"[GameManager] Целевая сцена: {targetScene}");
         
-        // Очищаем текущую сцену перед загрузкой новой
+        StartCoroutine(SwitchWorldCoroutine(targetScene));
+    }
+
+    private IEnumerator SwitchWorldCoroutine(string targetScene)
+    {
+        // Начинаем загрузку новой сцены
+        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(targetScene);
+        if (loadOperation == null)
+        {
+            Debug.LogError($"[GameManager] Не удалось начать загрузку сцены {targetScene}");
+            isTransitioning = false;
+            yield break;
+        }
+
+        loadOperation.allowSceneActivation = false;
+
+        // Очищаем текущую сцену
         CleanupCurrentScene();
+
+        // Ждем загрузки сцены
+        while (loadOperation.progress < 0.9f)
+        {
+            Debug.Log($"[GameManager] Прогресс загрузки: {loadOperation.progress:P0}");
+            yield return null;
+        }
+
+        // Активируем новую сцену
+        loadOperation.allowSceneActivation = true;
+        yield return loadOperation;
+
+        // Меняем состояние только после успешной загрузки
+        isInReality = !isInReality;
         
-        StartCoroutine(LoadSceneAsync(targetScene));
+        Debug.Log("[GameManager] Сцена активирована, переключение завершено");
+        isTransitioning = false;
     }
 
     private void CleanupCurrentScene()

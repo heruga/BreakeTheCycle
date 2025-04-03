@@ -7,24 +7,61 @@ namespace DungeonGeneration.Scripts.Enemies
 {
     public class EnemyController : MonoBehaviour
     {
-        [Header("Combat Settings")]
+        [Header("Настройки навигации")]
+        [SerializeField] private float pathUpdateInterval = 0.5f;
+        [SerializeField] private float rotationSpeed = 5f;
+        [SerializeField] private float minPathUpdateDistance = 1f; // Минимальное расстояние для обновления пути
+        
+        [Header("Настройки боя")]
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private float attackDamage = 10f;
-        [SerializeField] private float updateTargetInterval = 0.5f;
+        [SerializeField] private float attackCooldown = 1f;
+        [SerializeField] private float aggroRange = 10f;
+
+        [Header("Оптимизация")]
+        [SerializeField] private float updateIntervalOutsideView = 1f; // Интервал обновления вне поля зрения
+        [SerializeField] private float maxPathUpdateRange = 30f; // Максимальная дистанция для обновления пути
+        
+        [Header("Отладка")]
+        [SerializeField] private bool showDebugLogs = true;
 
         private NavMeshAgent agent;
         private GameObject player;
         private bool isInitialized = false;
-        private float lastUpdateTime;
-        private bool isAttacking = false;
-        private DungeonGenerator dungeonGenerator;
+        private float lastPathUpdateTime;
+        private float lastAttackTime;
+        private EnemyState currentState = EnemyState.Idle;
+        private Vector3 startPosition;
+        private float nextPlayerSearchTime = 0f;
+        private const float PLAYER_SEARCH_INTERVAL = 0.5f;
+        private Vector3 lastTargetPosition;
+        private Camera mainCamera;
+        private bool isInViewport;
+        private Renderer enemyRenderer;
+        
+        private enum EnemyState
+        {
+            Idle,
+            Chasing,
+            Attacking,
+            Returning
+        }
 
         private void Start()
         {
-            // Подписываемся на событие создания игрока
             DungeonGenerator.OnPlayerCreated += HandlePlayerCreated;
+            InitializeAgent();
+            startPosition = transform.position;
+            lastTargetPosition = startPosition;
+            mainCamera = Camera.main;
+            enemyRenderer = GetComponentInChildren<Renderer>();
+            DebugLog($"Враг создан на позиции: {startPosition}");
             
-            // Получаем компонент NavMeshAgent
+            FindPlayer();
+        }
+
+        private void InitializeAgent()
+        {
             agent = GetComponent<NavMeshAgent>();
             if (agent == null)
             {
@@ -32,78 +69,253 @@ namespace DungeonGeneration.Scripts.Enemies
                 return;
             }
 
-            // Изначально деактивируем агента
-            agent.enabled = false;
+            // Оптимизация настроек NavMeshAgent
+            agent.acceleration = 12f; // Быстрее достигает целевой скорости
+            agent.angularSpeed = 360f; // Быстрее поворачивается
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance; // Менее точное, но более быстрое избегание препятствий
+            
+            DebugLog($"Параметры NavMeshAgent:" +
+                    $"\n - Speed: {agent.speed}" +
+                    $"\n - Acceleration: {agent.acceleration}" +
+                    $"\n - Angular Speed: {agent.angularSpeed}" +
+                    $"\n - Obstacle Avoidance: {agent.obstacleAvoidanceType}");
 
-            // Получаем ссылку на DungeonGenerator
-            dungeonGenerator = FindObjectOfType<DungeonGenerator>();
-            if (dungeonGenerator == null)
+            StartCoroutine(WaitForNavMesh());
+        }
+
+        private void FindPlayer()
+        {
+            if (player == null)
             {
-                Debug.LogError("[EnemyController] DungeonGenerator не найден!");
+                player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    DebugLog($"Игрок найден на позиции: {player.transform.position}");
+                    isInitialized = agent != null && agent.isOnNavMesh;
+                }
             }
         }
 
-        private void OnDestroy()
+        private IEnumerator WaitForNavMesh()
         {
-            // Отписываемся от события при уничтожении
-            DungeonGenerator.OnPlayerCreated -= HandlePlayerCreated;
+            DebugLog("Ожидание инициализации NavMesh...");
+            int attempts = 0;
+            while (!agent.isOnNavMesh && attempts < 50)
+            {
+                attempts++;
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(transform.position, out hit, 5f, NavMesh.AllAreas))
+                {
+                    transform.position = hit.position;
+                    DebugLog($"Найдена позиция на NavMesh: {hit.position}");
+                    break;
+                }
+                DebugLog($"Попытка {attempts}: Не удалось найти позицию на NavMesh");
+                yield return new WaitForSeconds(0.1f);
+            }
+            
+            if (agent.isOnNavMesh)
+            {
+                isInitialized = player != null;
+                DebugLog("NavMeshAgent успешно инициализирован");
+            }
+            else
+            {
+                Debug.LogError($"[EnemyController] {gameObject.name}: Не удалось разместить на NavMesh после {attempts} попыток");
+            }
         }
 
         private void HandlePlayerCreated(GameObject playerObject)
         {
             player = playerObject;
-            StartCoroutine(WaitForNavMesh());
+            DebugLog($"Игрок обнаружен через событие на позиции: {player.transform.position}");
+            isInitialized = agent != null && agent.isOnNavMesh;
         }
 
-        private IEnumerator WaitForNavMesh()
+        private void OnDestroy()
         {
-            // Ждем пока NavMesh будет готов
-            while (!NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 1f, NavMesh.AllAreas))
-            {
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            // Активируем агента
-            agent.enabled = true;
-            isInitialized = true;
+            DungeonGenerator.OnPlayerCreated -= HandlePlayerCreated;
         }
 
         private void Update()
         {
-            if (!isInitialized || player == null) return;
+            // Периодически пытаемся найти игрока, если он не найден
+            if (player == null && Time.time >= nextPlayerSearchTime)
+            {
+                FindPlayer();
+                nextPlayerSearchTime = Time.time + PLAYER_SEARCH_INTERVAL;
+                return;
+            }
 
-            // Проверяем дистанцию до игрока
+            if (!isInitialized || player == null || !agent.isOnNavMesh)
+            {
+                if (!isInitialized) DebugLog("Ожидание инициализации...");
+                if (player == null) DebugLog("Игрок не найден");
+                if (!agent.isOnNavMesh) DebugLog("Агент не на NavMesh");
+                return;
+            }
+
+            UpdateEnemyState();
+            HandleCurrentState();
+        }
+
+        private void UpdateEnemyState()
+        {
+            if (player == null) return;
+
             float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+            bool hasLineOfSight = HasLineOfSightToPlayer();
+            EnemyState previousState = currentState;
 
-            // Обновляем цель только если прошло достаточно времени
-            if (Time.time - lastUpdateTime >= updateTargetInterval)
+            if (distanceToPlayer <= attackRange && hasLineOfSight)
             {
-                if (distanceToPlayer <= attackRange)
-                {
-                    // Если в диапазоне атаки, останавливаемся
+                currentState = EnemyState.Attacking;
+            }
+            else if (distanceToPlayer <= aggroRange && hasLineOfSight)
+            {
+                currentState = EnemyState.Chasing;
+            }
+            else if (currentState == EnemyState.Chasing && distanceToPlayer > aggroRange)
+            {
+                currentState = EnemyState.Returning;
+            }
+            else if (currentState == EnemyState.Returning && 
+                     Vector3.Distance(transform.position, startPosition) < 0.5f)
+            {
+                currentState = EnemyState.Idle;
+            }
+
+            if (previousState != currentState)
+            {
+                DebugLog($"Смена состояния: {previousState} -> {currentState}" +
+                        $"\n - Дистанция до игрока: {distanceToPlayer:F2}" +
+                        $"\n - Видимость игрока: {hasLineOfSight}" +
+                        $"\n - Позиция врага: {transform.position}" +
+                        $"\n - Позиция игрока: {player.transform.position}");
+            }
+        }
+
+        private void HandleCurrentState()
+        {
+            switch (currentState)
+            {
+                case EnemyState.Idle:
+                    HandleIdleState();
+                    break;
+                case EnemyState.Chasing:
+                    HandleChasingState();
+                    break;
+                case EnemyState.Attacking:
+                    HandleAttackingState();
+                    break;
+                case EnemyState.Returning:
+                    HandleReturningState();
+                    break;
+            }
+        }
+
+        private void HandleIdleState()
+        {
+            if (!agent.isStopped)
+            {
                     agent.isStopped = true;
-                    isAttacking = true;
+                agent.ResetPath();
+                DebugLog("Переход в бездействие, сброс пути");
+            }
                 }
-                else
-                {
-                    // Если вне диапазона атаки, преследуем
-                    agent.isStopped = false;
-                    agent.SetDestination(player.transform.position);
-                    isAttacking = false;
-                }
-                lastUpdateTime = Time.time;
+
+        private bool ShouldUpdatePath()
+        {
+            if (player == null) return false;
+
+            // Проверяем, находится ли враг в поле зрения камеры
+            if (enemyRenderer != null)
+            {
+                isInViewport = GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(mainCamera), 
+                                                            enemyRenderer.bounds);
             }
 
-            // Если атакуем, наносим урон
-            if (isAttacking)
+            float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+            
+            // Если враг слишком далеко, не обновляем путь
+            if (distanceToPlayer > maxPathUpdateRange) return false;
+
+            // Проверяем, достаточно ли сместился игрок для обновления пути
+            float targetMovement = Vector3.Distance(player.transform.position, lastTargetPosition);
+            
+            // Используем разные интервалы обновления в зависимости от видимости
+            float currentUpdateInterval = isInViewport ? pathUpdateInterval : updateIntervalOutsideView;
+            
+            return Time.time - lastPathUpdateTime >= currentUpdateInterval && 
+                   (targetMovement > minPathUpdateDistance || currentState == EnemyState.Returning);
+        }
+
+        private void HandleChasingState()
+        {
+            if (!ShouldUpdatePath()) return;
+
+            agent.isStopped = false;
+            Vector3 targetPos = player.transform.position;
+            agent.SetDestination(targetPos);
+            lastTargetPosition = targetPos;
+            lastPathUpdateTime = Time.time;
+        }
+
+        private void HandleAttackingState()
+        {
+            if (!agent.isStopped)
             {
-                // TODO: Реализовать нанесение урона
-                Debug.Log($"[EnemyController] {gameObject.name} атакует игрока");
+                agent.isStopped = true;
+                agent.ResetPath();
             }
+            
+            RotateTowardsPlayer();
+
+            if (Time.time - lastAttackTime >= attackCooldown)
+            {
+                AttackPlayer();
+                lastAttackTime = Time.time;
+            }
+        }
+
+        private void HandleReturningState()
+        {
+            if (Time.time - lastPathUpdateTime >= updateIntervalOutsideView)
+            {
+                agent.isStopped = false;
+                agent.SetDestination(startPosition);
+                lastPathUpdateTime = Time.time;
+            }
+        }
+
+        private void RotateTowardsPlayer()
+        {
+            if (player == null) return;
+            
+            Vector3 direction = (player.transform.position - transform.position).normalized;
+            if (direction != Vector3.zero)
+            {
+                Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
+            }
+        }
+
+        private bool HasLineOfSightToPlayer()
+        {
+            if (player == null) return false;
+
+            Vector3 directionToPlayer = player.transform.position - transform.position;
+            RaycastHit hit;
+            bool hasLineOfSight = Physics.Raycast(transform.position, directionToPlayer, out hit, aggroRange) 
+                                && hit.collider.gameObject == player;
+            
+            return hasLineOfSight;
         }
 
         private void AttackPlayer()
         {
+            if (player == null) return;
+            
             var playerHealth = player.GetComponent<PlayerHealth>();
             if (playerHealth != null)
             {
@@ -111,12 +323,43 @@ namespace DungeonGeneration.Scripts.Enemies
             }
         }
 
-        // Визуализация в редакторе Unity
+        private void DebugLog(string message, bool forceShow = false)
+        {
+            if ((showDebugLogs || forceShow) && Debug.isDebugBuild)
+            {
+                Debug.Log($"[{gameObject.name}] {message}");
+            }
+        }
+
         private void OnDrawGizmosSelected()
         {
-            // Отображаем радиус атаки
+            // Радиус атаки
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
+            
+            // Радиус агро
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, aggroRange);
+            
+            // Путь
+            if (agent != null && agent.hasPath)
+            {
+                Gizmos.color = Color.cyan;
+                var path = agent.path;
+                Vector3 previousCorner = transform.position;
+                foreach (Vector3 corner in path.corners)
+                {
+                    Gizmos.DrawLine(previousCorner, corner);
+                    previousCorner = corner;
+                }
+            }
+
+            // Текущее состояние
+            if (Application.isPlaying)
+            {
+                Vector3 textPosition = transform.position + Vector3.up * 2f;
+                UnityEditor.Handles.Label(textPosition, $"State: {currentState}");
+            }
         }
     }
 } 

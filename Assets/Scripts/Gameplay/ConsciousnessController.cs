@@ -56,12 +56,13 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private KeyCode switchRealityKey = KeyCode.R;
     
     [Header("Бой")]
-    [SerializeField] private float attackDamage = 1f;
+    [SerializeField] private float attackDamage = 80f;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float attackCooldown = 1f;
     [SerializeField] private float chaseDistance = 10f;
     [SerializeField] private float attackDistance = 2f;
-    [SerializeField] private float stopDistance = 1f;
+    [SerializeField] private float attackRadius = 2f; // Радиус области атаки
+    [SerializeField] private LayerMask enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
     private float lastAttackTime;
 
     [Header("Визуализация")]
@@ -75,8 +76,7 @@ public class ConsciousnessController : MonoBehaviour
     private Vector3 targetCameraPosition;
     private Vector3 cameraVelocity = Vector3.zero;
     private Vector3 previousTargetPosition;
-    private Rigidbody rb;
-    private CapsuleCollider capsuleCollider;
+    private CharacterController characterController;
     private float timeSinceLastMovement = 0f;
     private bool isReturningToStandardPosition = false;
     private float directionChangeTime = 0f;
@@ -91,50 +91,35 @@ public class ConsciousnessController : MonoBehaviour
         SetupCamera();
         SetupInteractionUI();
         lastMoveDirection = transform.forward;
+        enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
     }
     
     private void SetupPhysics()
     {
-        // Настройка Rigidbody
-        rb = GetComponent<Rigidbody>();
-        if (rb == null)
+        // Получаем CharacterController
+        characterController = GetComponent<CharacterController>();
+        if (characterController == null)
         {
-            rb = gameObject.AddComponent<Rigidbody>();
+            characterController = gameObject.AddComponent<CharacterController>();
         }
         
-        rb.mass = 1.5f;  // Увеличиваем массу для большей стабильности
-        rb.linearDamping = 5f;    // Значительно увеличиваем сопротивление для предотвращения скольжения
-        rb.angularDamping = 10f;  // Сильно увеличиваем сопротивление вращению
-        rb.useGravity = true;
-        rb.isKinematic = false;
-        rb.interpolation = RigidbodyInterpolation.Interpolate; // Интерполяция для плавного движения
-        rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // Улучшаем определение коллизий
-        rb.freezeRotation = true;  // Полностью замораживаем вращение
-        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;  // Замораживаем все оси вращения и Y позицию
-        
-        // Настройка CapsuleCollider
-        capsuleCollider = GetComponent<CapsuleCollider>();
-        if (capsuleCollider == null)
-        {
-            capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
-        }
-        
-        // Настраиваем размеры коллайдера под размер игрока
-        capsuleCollider.height = 2f;
-        capsuleCollider.radius = 0.5f;
-        capsuleCollider.center = new Vector3(0, 1f, 0);
-        capsuleCollider.isTrigger = false; // Убеждаемся, что коллайдер не триггер
+        // Настраиваем размеры CharacterController
+        characterController.height = 2f;
+        characterController.radius = 0.5f;
+        characterController.center = new Vector3(0, 1f, 0);
+        characterController.slopeLimit = 45f;
+        characterController.stepOffset = 0.3f;
         
         // Устанавливаем позицию персонажа на правильную высоту
         Vector3 position = transform.position;
-        position.y = 1f; // Устанавливаем высоту равной половине высоты коллайдера
+        position.y = 1f;
         transform.position = position;
     }
     
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
     
     private void SetupCamera()
@@ -213,6 +198,12 @@ public class ConsciousnessController : MonoBehaviour
             Debug.Log("[ConsciousnessController] Нажата клавиша F");
             ProcessInteraction();
         }
+
+        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
+        {
+            Attack();
+        }
+
         CalculateMovementDirection();
         ProcessRealitySwitch();
         UpdateCameraPosition(false);
@@ -233,23 +224,12 @@ public class ConsciousnessController : MonoBehaviour
     {
         if (moveDirection != Vector3.zero)
         {
-            // Поворот персонажа только когда есть ввод от игрока
+            // Поворот персонажа
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed);
             
-            // Движение через velocity с учетом текущего поворота персонажа
-            rb.linearVelocity = moveDirection * moveSpeed;
-        }
-        else
-        {
-            // Плавно останавливаем персонажа
-            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, Vector3.zero, Time.fixedDeltaTime * 10f);
-            
-            // Если персонаж почти остановился, полностью сбрасываем скорость
-            if (rb.linearVelocity.magnitude < 0.1f)
-            {
-                rb.linearVelocity = Vector3.zero;
-            }
+            // Движение через CharacterController
+            characterController.Move(moveDirection * moveSpeed * Time.fixedDeltaTime);
         }
     }
     
@@ -545,6 +525,32 @@ public class ConsciousnessController : MonoBehaviour
         }
     }
     
+    private void Attack()
+    {
+        lastAttackTime = Time.time;
+
+        // Получаем всех врагов в радиусе атаки
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, attackRadius, enemyLayerMask);
+
+        foreach (var hitCollider in hitColliders)
+        {
+            // Сначала проверяем компонент на самом объекте
+            var enemyHealth = hitCollider.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
+            if (enemyHealth == null)
+            {
+                // Если на самом объекте нет, ищем в родителе
+                enemyHealth = hitCollider.GetComponentInParent<DungeonGeneration.Scripts.Health.EnemyHealth>();
+            }
+
+            if (enemyHealth != null)
+            {
+                float previousHealth = enemyHealth.GetCurrentHealth();
+                enemyHealth.TakeDamage(attackDamage);
+                Debug.Log($"<color=red>Нанесен урон {attackDamage} врагу {hitCollider.transform.parent.name}. Здоровье: {previousHealth} -> {enemyHealth.GetCurrentHealth()}</color>");
+            }
+        }
+    }
+    
     private void OnDrawGizmosSelected()
     {
         // Отрисовка радиуса взаимодействия
@@ -557,7 +563,7 @@ public class ConsciousnessController : MonoBehaviour
 
         // Отрисовка радиуса атаки
         Gizmos.color = attackGizmoColor;
-        Gizmos.DrawWireSphere(transform.position, attackDistance);
+        Gizmos.DrawWireSphere(transform.position, attackRadius);
     }
 
     private void OnDestroy()

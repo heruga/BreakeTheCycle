@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5566251066068377283}
   - component: {fileID: 2158784868679475605}
   - component: {fileID: 2441337104231710409}
-  - component: {fileID: 6505588776206961800}
+  - component: {fileID: 1429142399911187340}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -31,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 6229333563870419022}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -50,8 +50,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0ccc27dca21c6c41bd4556dd10f8fb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 12
-  rotationSpeed: 2
+  moveSpeed: 10
+  rotationSpeed: 6
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 8
@@ -71,10 +71,11 @@ MonoBehaviour:
   directionChangeDotThreshold: 0.4
   abruptChangeSmoothing: 1.2
   interactionRange: 3
-  interactionKey: 102
+  interactionBoxSize: {x: 2, y: 2, z: 2}
   interactionMask:
     serializedVersion: 2
     m_Bits: 64
+  interactionKey: 102
   interactionPrompt: {fileID: 0}
   promptText: {fileID: 0}
   switchRealityKey: 9
@@ -83,7 +84,10 @@ MonoBehaviour:
   attackCooldown: 1
   chaseDistance: 10
   attackDistance: 2
-  stopDistance: 1
+  attackRadius: 2
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
   chaseGizmoColor: {r: 1, g: 0, b: 0, a: 1}
   attackGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!33 &5049948555680701840
@@ -187,33 +191,21 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!54 &6505588776206961800
-Rigidbody:
+--- !u!114 &1429142399911187340
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6229333563870419022}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 10
-  m_AngularDrag: 10
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 84
-  m_CollisionDetection: 1
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9db83465e3bb35a469a80f1ad5c15d3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 200
+  currentHealth: 200
+  deathEffectPrefab: {fileID: 0}
 --- !u!1 &7892552270533140890
 GameObject:
   m_ObjectHideFlags: 0

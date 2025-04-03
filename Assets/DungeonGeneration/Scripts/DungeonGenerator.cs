@@ -816,18 +816,17 @@ namespace DungeonGeneration
             {
                 // Отключаем физику на время перемещения
                 Rigidbody rb = player.GetComponent<Rigidbody>();
-                bool hadRigidbody = rb != null;
                 bool wasKinematic = false;
                 
                 if (rb != null)
                 {
                     wasKinematic = rb.isKinematic;
                     rb.isKinematic = true;
-                    rb.detectCollisions = false; // Отключаем обнаружение коллизий
+                    rb.detectCollisions = false;
                     Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Физика игрока временно отключена");
                 }
                 
-                // Запоминаем текущий коллайдер
+                // Запоминаем и отключаем коллайдеры
                 Collider[] playerColliders = player.GetComponentsInChildren<Collider>();
                 bool[] collidersState = new bool[playerColliders.Length];
                 
@@ -836,9 +835,8 @@ namespace DungeonGeneration
                     collidersState[i] = playerColliders[i].enabled;
                     playerColliders[i].enabled = false;
                 }
-                Debug.Log($"[DungeonGenerator] MovePlayerToSpawnPoint: Временно отключены {playerColliders.Length} коллайдеров");
                 
-                // Отключаем все скрипты, которые могут влиять на позицию
+                // Отключаем все скрипты
                 MonoBehaviour[] scripts = player.GetComponentsInChildren<MonoBehaviour>();
                 bool[] scriptsState = new bool[scripts.Length];
                 
@@ -851,23 +849,27 @@ namespace DungeonGeneration
                     }
                 }
                 
-                // Сначала обновляем трансформ
+                // Перемещаем игрока
                 player.transform.position = spawnPoint.position;
                 player.transform.rotation = spawnPoint.rotation;
                 
-                // Принудительно обновляем позицию Rigidbody
+                // Обновляем Rigidbody
                 if (rb != null)
                 {
-                    rb.linearVelocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                    rb.Sleep(); // Останавливаем все физические движения
+                    // Сбрасываем скорости только если тело не кинематическое
+                    if (!wasKinematic)
+                    {
+                        rb.linearVelocity = Vector3.zero;
+                        rb.angularVelocity = Vector3.zero;
+                    }
+                    
                     rb.position = spawnPoint.position;
                     rb.rotation = spawnPoint.rotation;
+                    rb.Sleep();
                     
-                    // Возвращаем исходное состояние Rigidbody
+                    // Восстанавливаем исходное состояние
                     rb.isKinematic = wasKinematic;
                     rb.detectCollisions = true;
-                    Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Физика игрока восстановлена");
                 }
                 
                 // Восстанавливаем скрипты
@@ -879,12 +881,11 @@ namespace DungeonGeneration
                     }
                 }
                 
-                // Восстанавливаем коллайдеры после задержки
+                // Восстанавливаем коллайдеры
                 for (int i = 0; i < playerColliders.Length; i++)
                 {
                     playerColliders[i].enabled = collidersState[i];
                 }
-                Debug.Log("[DungeonGenerator] MovePlayerToSpawnPoint: Коллайдеры игрока восстановлены");
                 
                 Debug.Log($"[DungeonGenerator] MovePlayerToSpawnPoint: Игрок успешно перемещен в позицию: {player.transform.position}");
             }

@@ -18,7 +18,7 @@ MonoBehaviour:
   canBeLast: 0
   requiresCleaning: 1
   description: 
-  minEnemies: 3
-  maxEnemies: 5
+  minEnemies: 1
+  maxEnemies: 1
   eliteEnemyChance: 0.5
   bossEnemyChance: 0
