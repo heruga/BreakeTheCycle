@@ -50,11 +50,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0ccc27dca21c6c41bd4556dd10f8fb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
-  rotationSpeed: 6
+  moveSpeed: 6
+  rotationSpeed: 4
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 8
+  accelerationSpeed: 8
+  decelerationSpeed: 12
+  dashSpeed: 20
+  dashDuration: 0.2
+  dashCooldown: 1
   cameraTransform: {fileID: 0}
   cameraHeight: 15
   cameraAngleX: 45

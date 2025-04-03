@@ -14,6 +14,15 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float rotationSpeed = 15f;
     [SerializeField] private LayerMask groundLayerMask;
+    [SerializeField] private float accelerationSpeed = 8f; // Скорость ускорения
+    [SerializeField] private float decelerationSpeed = 12f; // Скорость замедления
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 20f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 1f;
+    private bool isDashing = false;
+    private float dashTimeLeft = 0f;
+    private float lastDashTime = -10f;
     
     [Header("Камера")]
     [SerializeField] private Transform cameraTransform;
@@ -84,6 +93,8 @@ public class ConsciousnessController : MonoBehaviour
     private float abruptChangeTime = 0f;
     private GameObject createdCamera;
     private Canvas createdCanvas;
+    private Vector3 currentVelocity;
+    private Vector3 targetVelocity;
     
     private void Awake()
     {
@@ -217,19 +228,52 @@ public class ConsciousnessController : MonoBehaviour
         Vector3 forward = Quaternion.Euler(0, cameraAngleY, 0) * Vector3.forward;
         Vector3 right = Quaternion.Euler(0, cameraAngleY, 0) * Vector3.right;
         
-        moveDirection = (forward * vertical + right * horizontal).normalized;
+        Vector3 targetDirection = (forward * vertical + right * horizontal).normalized;
+        
+        // Плавное изменение направления движения
+        moveDirection = Vector3.Lerp(moveDirection, targetDirection, Time.deltaTime * 10f);
     }
     
     private void FixedUpdate()
     {
-        if (moveDirection != Vector3.zero)
+        // Вычисляем целевую скорость
+        targetVelocity = moveDirection * (isDashing ? dashSpeed : moveSpeed);
+
+        // Плавное ускорение/замедление
+        float speedToUse = targetVelocity.magnitude > currentVelocity.magnitude ? accelerationSpeed : decelerationSpeed;
+        currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Time.fixedDeltaTime * speedToUse);
+
+        if (currentVelocity.magnitude > 0.1f)
         {
             // Поворот персонажа
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed);
             
             // Движение через CharacterController
-            characterController.Move(moveDirection * moveSpeed * Time.fixedDeltaTime);
+            characterController.Move(currentVelocity * Time.fixedDeltaTime);
+        }
+
+        // Обработка dash
+        if (isDashing)
+        {
+            dashTimeLeft -= Time.fixedDeltaTime;
+            if (dashTimeLeft <= 0)
+            {
+                isDashing = false;
+                // Плавное замедление после dash
+                currentVelocity = currentVelocity.normalized * moveSpeed;
+            }
+        }
+        else if (moveDirection.magnitude > 0.1f)
+        {
+            // Проверяем возможность выполнить dash
+            if (Input.GetKey(KeyCode.LeftShift) && Time.time >= lastDashTime + dashCooldown)
+            {
+                isDashing = true;
+                dashTimeLeft = dashDuration;
+                lastDashTime = Time.time;
+                Debug.Log("[ConsciousnessController] Выполняем dash!");
+            }
         }
     }
     
