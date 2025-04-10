@@ -3,6 +3,10 @@ using DungeonGeneration.Scripts.Health;
 using UnityEngine.AI;
 using System.Collections;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace DungeonGeneration.Scripts.Enemies
 {
     public class EnemyController : MonoBehaviour
@@ -331,25 +335,26 @@ namespace DungeonGeneration.Scripts.Enemies
             }
         }
 
-        private void OnDrawGizmosSelected()
+        #if UNITY_EDITOR
+        private void OnDrawGizmos()
         {
             // Радиус атаки
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, attackRange);
+            Handles.color = Color.red;
+            Handles.DrawWireDisc(transform.position, Vector3.up, attackRange);
             
             // Радиус агро
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, aggroRange);
+            Handles.color = Color.yellow;
+            Handles.DrawWireDisc(transform.position, Vector3.up, aggroRange);
             
             // Путь
             if (agent != null && agent.hasPath)
             {
-                Gizmos.color = Color.cyan;
+                Handles.color = Color.cyan;
                 var path = agent.path;
                 Vector3 previousCorner = transform.position;
                 foreach (Vector3 corner in path.corners)
                 {
-                    Gizmos.DrawLine(previousCorner, corner);
+                    Handles.DrawLine(previousCorner, corner);
                     previousCorner = corner;
                 }
             }
@@ -358,8 +363,9 @@ namespace DungeonGeneration.Scripts.Enemies
             if (Application.isPlaying)
             {
                 Vector3 textPosition = transform.position + Vector3.up * 2f;
-                UnityEditor.Handles.Label(textPosition, $"State: {currentState}");
+                Handles.Label(textPosition, $"State: {currentState}");
             }
         }
+        #endif
     }
 } 

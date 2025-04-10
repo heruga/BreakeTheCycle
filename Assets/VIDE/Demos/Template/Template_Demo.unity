@@ -93,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: b8823b2165606ae469f31343ad153b37, type: 2}
   m_LightingSettings: {fileID: 4890085278179872738, guid: 6369dbb8542d6be458eb44d5b5a21ab1, type: 2}
 --- !u!196 &5
 NavMeshSettings:
@@ -2253,12 +2253,14 @@ MonoBehaviour:
   - CrazyCap
   - DEMO_Condition
   - demo_Narration
+  - DialogueWithNPC
   - Example3Dialogue
   - Example4_dialogue
   - Item_LookUp
   - Laura
   - MrCube
   - NPCOnly
+  - PlayerMonologues
   - QuestChartDemo
   - TriggeredDude
   - Witch

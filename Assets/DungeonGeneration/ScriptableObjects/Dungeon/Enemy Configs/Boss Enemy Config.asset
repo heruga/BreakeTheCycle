@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Boss Enemy
   enemyPrefab: {fileID: 7057867871735091530, guid: af1334621776a6048ad74cd2065ff22c, type: 3}
-  isBoss: 0
+  isBoss: 1
   isElite: 0
-  difficultyRating: 5
   spawnWeight: 1
   minGroupSize: 1
   maxGroupSize: 1
