@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DungeonGeneration.ScriptableObjects;
 using System.Collections;
-using BreakTheCycle;
 using DungeonGeneration.Scripts;
 
 namespace DungeonGeneration
@@ -345,12 +344,27 @@ namespace DungeonGeneration
                 startRoomNode.RoomInstance.SetActive(true);
             }
 
-            // Создаем игрока
-            playerInstance = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
-            playerInstance.tag = "Player";
-            Debug.Log($"[DungeonGenerator] Создан новый игрок в стартовой комнате типа: {startRoomNode.RoomType.typeName} на позиции {spawnPoint.position}");
+            // Ищем существующего игрока
+            GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
+            
+            if (existingPlayer != null)
+            {
+                // Если игрок существует, перемещаем его на точку спавна
+                Debug.Log($"[DungeonGenerator] Найден существующий игрок. Перемещаем его в точку спавна.");
+                MovePlayerToSpawnPoint(existingPlayer, spawnPoint);
+                playerInstance = existingPlayer;
+            }
+            else
+            {
+                // Если игрок не существует, создаем нового
+                Debug.Log($"[DungeonGenerator] Существующий игрок не найден. Создаем нового игрока.");
+                playerInstance = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+                playerInstance.tag = "Player";
+            }
+            
+            Debug.Log($"[DungeonGenerator] Игрок находится в стартовой комнате типа: {startRoomNode.RoomType.typeName} на позиции {playerInstance.transform.position}");
 
-            // Уведомляем о создании игрока
+            // Уведомляем о создании/перемещении игрока
             OnPlayerCreated?.Invoke(playerInstance);
 
             yield return null;

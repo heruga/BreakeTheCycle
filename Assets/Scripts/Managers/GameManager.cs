@@ -18,6 +18,12 @@ public class GameManager : MonoBehaviour
     [Header("Transition Settings")]
     public float transitionDuration = 1f;
     public Color fadeColor = Color.black;
+    
+    [Header("Managers")]
+    [SerializeField] private bool initCurrencyManagerOnStart = true;
+
+    [Header("UI References")]
+    [SerializeField] private GameObject currencyUIPanel;
 
     private bool isTransitioning = false;
     private bool isInReality = true;
@@ -40,6 +46,12 @@ public class GameManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log("[GameManager] Instance создан и сохранен");
+            
+            // Инициализируем CurrencyManager
+            if (initCurrencyManagerOnStart)
+            {
+                InitializeCurrencyManager();
+            }
         }
         else
         {
@@ -62,6 +74,63 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log($"[GameManager] Уже находимся в сцене {currentScene}");
             isInReality = currentScene == realitySceneName;
+            
+            // Создаем UI валюты, если мы в сознании
+            if (!isInReality)
+            {
+                SetupCurrencyUI();
+            }
+        }
+
+        UpdateUIState();
+    }
+    
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+    
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+    
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == consciousnessSceneName)
+        {
+            Debug.Log("[GameManager] Загружена сцена Consciousness, настраиваем UI валюты");
+            SetupCurrencyUI();
+        }
+    }
+    
+    /// <summary>
+    /// Инициализирует CurrencyManager
+    /// </summary>
+    private void InitializeCurrencyManager()
+    {
+        if (CurrencyManager.Instance == null)
+        {
+            GameObject currencyManagerObj = new GameObject("CurrencyManager");
+            currencyManagerObj.AddComponent<CurrencyManager>();
+        }
+    }
+    
+    /// <summary>
+    /// Настраивает UI валюты
+    /// </summary>
+    private void SetupCurrencyUI()
+    {
+        // Создаем UI валюты только если мы в режиме Consciousness
+        if (GetCurrentState() == GameState.Consciousness)
+        {
+            if (CurrencyManager.Instance == null)
+            {
+                InitializeCurrencyManager();
+            }
+            
+            CurrencyPrefab.CreateCurrencyUI();
+            Debug.Log("[GameManager] UI валюты настроен");
         }
     }
 
@@ -124,6 +193,8 @@ public class GameManager : MonoBehaviour
         
         Debug.Log("[GameManager] Сцена активирована, переключение завершено");
         isTransitioning = false;
+
+        UpdateUIState();
     }
 
     private void CleanupCurrentScene()
@@ -250,6 +321,38 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] Вызов SwitchGameState");
         SwitchWorld();
+    }
+
+    private void UpdateUIState()
+    {
+        if (currencyUIPanel != null)
+        {
+            currencyUIPanel.SetActive(GetCurrentState() == GameState.Consciousness);
+        }
+    }
+
+    public void SwitchState()
+    {
+        if (!isTransitioning)
+        {
+            StartCoroutine(TransitionState());
+        }
+    }
+
+    private IEnumerator TransitionState()
+    {
+        isTransitioning = true;
+        
+        // Переключаем состояние
+        isInReality = !isInReality;
+        
+        // Обновляем UI
+        UpdateUIState();
+
+        // ... rest of your transition code ...
+
+        isTransitioning = false;
+        yield break;
     }
 }
 

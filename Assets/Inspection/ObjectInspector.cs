@@ -7,6 +7,7 @@ namespace Inspection
         [Header("References")]
         [SerializeField] private InspectionCamera inspectionCamera;
         [SerializeField] private Camera mainCamera;
+        [SerializeField] private InspectionWindowUI inspectionUI; // Добавляем ссылку на UI-окно
         
         [Header("Settings")]
         [SerializeField] private LayerMask inspectableLayer;
@@ -33,6 +34,16 @@ namespace Inspection
                 Debug.LogError("Inspection Camera not assigned! Please assign it in the inspector.");
                 enabled = false;
                 return;
+            }
+
+            if (inspectionUI == null)
+            {
+                // Пытаемся найти UI в сцене
+                inspectionUI = FindObjectOfType<InspectionWindowUI>();
+                if (inspectionUI == null)
+                {
+                    Debug.LogWarning("InspectionWindowUI not assigned! UI features will be disabled.");
+                }
             }
 
             // Проверяем настройку LayerMask
@@ -89,7 +100,13 @@ namespace Inspection
             if (inspectionCamera == null) return;
 
             currentObject = obj;
-            inspectionCamera.StartInspecting(obj.transform);
+            inspectionCamera.StartInspecting(obj.gameObject);
+            
+            // Показываем UI с информацией об объекте
+            if (inspectionUI != null)
+            {
+                inspectionUI.ShowWindow(obj);
+            }
             
             if (showDebug) Debug.Log($"Started inspecting: {obj.gameObject.name}");
         }
@@ -99,6 +116,13 @@ namespace Inspection
             if (inspectionCamera == null) return;
 
             inspectionCamera.StopInspecting();
+            
+            // Скрываем UI при выходе из режима осмотра
+            if (inspectionUI != null)
+            {
+                inspectionUI.HideWindow();
+            }
+            
             currentObject = null;
             
             if (showDebug) Debug.Log("Stopped inspection");
