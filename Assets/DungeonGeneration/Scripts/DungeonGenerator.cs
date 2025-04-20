@@ -266,8 +266,8 @@ namespace DungeonGeneration
                 bossRoom.SetRoomType(dungeonConfig.bossRoomType);
                 Debug.Log($"[DungeonGenerator] Размещена босс-комната на позиции {bossRoom.Position}");
             }
-            else
-            {
+                            else
+                            {
                 Debug.LogError("[DungeonGenerator] Не удалось разместить босс-комнату!");
             }
         }
@@ -345,10 +345,10 @@ namespace DungeonGeneration
             }
 
             // Ищем существующего игрока
-            GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
+                    GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
             
-            if (existingPlayer != null)
-            {
+                    if (existingPlayer != null)
+                    {
                 // Если игрок существует, перемещаем его на точку спавна
                 Debug.Log($"[DungeonGenerator] Найден существующий игрок. Перемещаем его в точку спавна.");
                 MovePlayerToSpawnPoint(existingPlayer, spawnPoint);
@@ -432,9 +432,9 @@ namespace DungeonGeneration
                 
                 roomInstance.SetActive(isStartRoom);
                 Debug.Log($"[DungeonGenerator] Комната {room.Id} {(isStartRoom ? "активирована" : "деактивирована")}");
-                }
-                else
-                {
+                        }
+                        else
+                        {
                 Debug.LogError($"[DungeonGenerator] RoomManager не найден на префабе комнаты {template.templateName}!");
             }
         }

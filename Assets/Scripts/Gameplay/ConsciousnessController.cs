@@ -4,6 +4,7 @@ using TMPro;
 using BreakTheCycle;
 using UnityEngine.SceneManagement;
 using DungeonGeneration.Scripts;
+using DungeonGeneration.Scripts.Health;
 
 /// <summary>
 /// Контроллер игрока для режима "Сознание" с изометрическим видом
@@ -59,10 +60,7 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float interactionRange = 2f;
     [SerializeField] private Vector3 interactionBoxSize = new Vector3(2f, 2f, 2f);
     [SerializeField] private LayerMask interactionMask;
-    [SerializeField] private KeyCode interactionKey = KeyCode.F;
-    [SerializeField] private GameObject interactionPrompt;
-    [SerializeField] private TextMeshProUGUI promptText;
-    [SerializeField] private KeyCode switchRealityKey = KeyCode.R;
+    [SerializeField] private LayerMask inspectableMask;
     
     [Header("Бой")]
     [SerializeField] private float attackDamage = 80f;
@@ -77,6 +75,9 @@ public class ConsciousnessController : MonoBehaviour
     [Header("Визуализация")]
     [SerializeField] private Color chaseGizmoColor = Color.red;
     [SerializeField] private Color attackGizmoColor = Color.yellow;
+    
+    [Header("Эмоции")]
+    [SerializeField] private PlayerEmotionHandler emotionHandler;
     
     private Vector3 moveDirection;
     private Vector3 lastMoveDirection;
@@ -95,14 +96,24 @@ public class ConsciousnessController : MonoBehaviour
     private Canvas createdCanvas;
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
+    private bool controlsEnabled = true;
     
     private void Awake()
     {
         SetupPhysics();
         SetupCamera();
-        SetupInteractionUI();
         lastMoveDirection = transform.forward;
         enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
+        
+        // Получаем или создаем обработчик эмоций
+        if (emotionHandler == null)
+        {
+            emotionHandler = GetComponent<PlayerEmotionHandler>();
+            if (emotionHandler == null)
+            {
+                emotionHandler = gameObject.AddComponent<PlayerEmotionHandler>();
+            }
+        }
     }
     
     private void SetupPhysics()
@@ -123,7 +134,6 @@ public class ConsciousnessController : MonoBehaviour
         
         // Устанавливаем позицию персонажа на правильную высоту
         Vector3 position = transform.position;
-        position.y = 1f;
         transform.position = position;
     }
     
@@ -131,6 +141,8 @@ public class ConsciousnessController : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        if (PlayerControlManager.Instance != null)
+            PlayerControlManager.Instance.SetControlsEnabled(true);
     }
     
     private void SetupCamera()
@@ -155,89 +167,116 @@ public class ConsciousnessController : MonoBehaviour
         UpdateCameraPosition(true);
     }
     
-    private void SetupInteractionUI()
+    private void OnEnable()
     {
-        if (interactionPrompt == null)
+        if (PlayerControlManager.Instance != null)
+            PlayerControlManager.Instance.OnControlStateChanged += OnControlStateChanged;
+        controlsEnabled = PlayerControlManager.Instance == null || PlayerControlManager.Instance.ControlsEnabled;
+    }
+
+    private void OnDisable()
+    {
+        if (PlayerControlManager.Instance != null)
+            PlayerControlManager.Instance.OnControlStateChanged -= OnControlStateChanged;
+    }
+
+    private void OnControlStateChanged(bool enabled)
+    {
+        controlsEnabled = enabled;
+        if (!enabled)
         {
-            Canvas canvas = FindObjectOfType<Canvas>();
-            
-            if (canvas == null)
-            {
-                GameObject canvasObject = new GameObject("ConsciousnessCanvas");
-                createdCanvas = canvasObject.AddComponent<Canvas>();
-                createdCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvasObject.AddComponent<CanvasScaler>();
-                canvasObject.AddComponent<GraphicRaycaster>();
-                canvas = createdCanvas;
-            }
-            
-            interactionPrompt = new GameObject("InteractionPrompt");
-            interactionPrompt.transform.SetParent(canvas.transform, false);
-            
-            RectTransform promptRect = interactionPrompt.AddComponent<RectTransform>();
-            promptRect.anchorMin = new Vector2(0.5f, 0.2f);
-            promptRect.anchorMax = new Vector2(0.5f, 0.2f);
-            promptRect.sizeDelta = new Vector2(400, 50);
-            promptRect.anchoredPosition = Vector2.zero;
-            
-            Image promptBg = interactionPrompt.AddComponent<Image>();
-            promptBg.color = new Color(0, 0, 0, 0.7f);
-            
-            GameObject textObject = new GameObject("PromptText");
-            textObject.transform.SetParent(interactionPrompt.transform, false);
-            
-            promptText = textObject.AddComponent<TextMeshProUGUI>();
-            promptText.text = "Нажмите F для взаимодействия";
-            promptText.alignment = TextAlignmentOptions.Center;
-            promptText.color = Color.white;
-            promptText.fontSize = 24;
-            
-            RectTransform textRect = promptText.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = Vector2.zero;
-            textRect.offsetMax = Vector2.zero;
-            
-            interactionPrompt.SetActive(false);
+            currentVelocity = Vector3.zero;
+            targetVelocity = Vector3.zero;
+            isDashing = false;
+            currentInteractable = null;
+            // Можно добавить сброс ввода, если потребуется
         }
     }
     
     private void Update()
     {
-        if (Input.GetKeyDown(interactionKey))
+        var emotionUI = FindObjectOfType<EmotionUI>();
+        if (emotionUI != null && emotionUI.IsOpen())
         {
-            Debug.Log("[ConsciousnessController] Нажата клавиша F");
-            ProcessInteraction();
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.F))
+            {
+                emotionUI.Close();
+                if (PlayerControlManager.Instance != null)
+                    PlayerControlManager.Instance.SetControlsEnabled(true);
+            }
+            return; // Пока окно эмоций открыто, больше ничего не делаем
         }
 
-        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
+        if (!controlsEnabled) return;
+
+        // Обработка ввода для движения относительно камеры
+        float moveX = Input.GetAxis("Horizontal");
+        float moveZ = Input.GetAxis("Vertical");
+        Vector3 inputDirection = new Vector3(moveX, 0, moveZ);
+        if (inputDirection.magnitude > 0.1f && cameraTransform != null)
         {
-            Attack();
+            Vector3 camForward = cameraTransform.forward;
+            camForward.y = 0;
+            camForward.Normalize();
+            Vector3 camRight = cameraTransform.right;
+            camRight.y = 0;
+            camRight.Normalize();
+            moveDirection = (camForward * moveZ + camRight * moveX).normalized;
+        }
+        else
+        {
+            moveDirection = Vector3.zero;
         }
 
-        CalculateMovementDirection();
-        ProcessRealitySwitch();
-        UpdateCameraPosition(false);
+        // Взаимодействие с объектами (F — Interactable, E — Inspectable)
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            var emotionUI_F = FindObjectOfType<EmotionUI>();
+            if (emotionUI_F != null && emotionUI_F.IsOpen())
+                return; // Не взаимодействуем, если окно эмоций открыто
+            TryInteractWithMask(interactionMask);
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            TryInteractWithMask(inspectableMask);
+        }
     }
     
-    private void CalculateMovementDirection()
+    private void TryInteractWithMask(LayerMask mask)
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-        
-        Vector3 forward = Quaternion.Euler(0, cameraAngleY, 0) * Vector3.forward;
-        Vector3 right = Quaternion.Euler(0, cameraAngleY, 0) * Vector3.right;
-        
-        Vector3 targetDirection = (forward * vertical + right * horizontal).normalized;
-        
-        // Плавное изменение направления движения
-        moveDirection = Vector3.Lerp(moveDirection, targetDirection, Time.deltaTime * 10f);
+        Collider[] colliders = Physics.OverlapSphere(transform.position, interactionRange, mask);
+        foreach (var col in colliders)
+        {
+            var interactable = col.GetComponent<IInteractable>();
+            if (interactable != null)
+            {
+                interactable.OnInteract();
+                break;
+            }
+        }
     }
     
     private void FixedUpdate()
     {
+        if (!controlsEnabled) return;
         // Вычисляем целевую скорость
         targetVelocity = moveDirection * (isDashing ? dashSpeed : moveSpeed);
+
+        // Применяем модификаторы скорости от эмоций
+        if (emotionHandler != null)
+        {
+            // Проверяем, находимся ли мы в бою с элитным врагом
+            bool fightingElite = false; // Здесь нужно добавить проверку на элитного врага
+            
+            if (isDashing)
+            {
+                targetVelocity = targetVelocity.normalized * emotionHandler.ModifyPlayerSpeed(dashSpeed, fightingElite);
+            }
+            else
+            {
+                targetVelocity = targetVelocity.normalized * emotionHandler.ModifyPlayerSpeed(moveSpeed, fightingElite);
+            }
+        }
 
         // Плавное ускорение/замедление
         float speedToUse = targetVelocity.magnitude > currentVelocity.magnitude ? accelerationSpeed : decelerationSpeed;
@@ -381,7 +420,7 @@ public class ConsciousnessController : MonoBehaviour
         Vector3 targetPosition = basePosition;
         
         // Add general direction adjustment for movement with improved responsiveness
-        if (adjustCameraDirection && lastMoveDirection != Vector3.zero && !isReturningToStandardPosition)
+        if (adjustCameraDirection && smoothedMoveDirection != Vector3.zero && !isReturningToStandardPosition)
         {
             // Determine if we need to reduce responsiveness during abrupt changes
             float responsivenessFactor = 1f;
@@ -509,54 +548,9 @@ public class ConsciousnessController : MonoBehaviour
         cameraTransform.rotation = Quaternion.Euler(cameraAngleX, cameraAngleY, 0);
     }
     
-    private void ProcessInteraction()
-    {
-        // Поиск порталов без учета слоя
-        var portalColliders = Physics.OverlapSphere(transform.position, interactionRange);
-        foreach (var collider in portalColliders)
-        {
-            var portal = collider.GetComponent<InteractablePortal>();
-            if (portal == null)
-            {
-                portal = collider.GetComponentInParent<InteractablePortal>();
-            }
-            
-            if (portal != null)
-            {
-                Debug.Log($"[ConsciousnessController] Найден портал: {collider.name}, слой: {collider.gameObject.layer}, расстояние: {Vector3.Distance(transform.position, collider.transform.position)}");
-                if (portal.CheckInteractionRange(transform.position))
-                {
-                    Debug.Log("[ConsciousnessController] Вызываем OnInteract() у портала");
-                    portal.OnInteract();
-                    return;
-                }
-            }
-        }
-    }
-    
-    private void ShowInteractionPrompt(string text)
-    {
-        if (interactionPrompt != null)
-        {
-            interactionPrompt.SetActive(true);
-            if (promptText != null)
-            {
-                promptText.text = text;
-            }
-        }
-    }
-    
-    private void HideInteractionPrompt()
-    {
-        if (interactionPrompt != null)
-        {
-            interactionPrompt.SetActive(false);
-        }
-    }
-    
     private void ProcessRealitySwitch()
     {
-        if (Input.GetKeyDown(switchRealityKey))
+        if (Input.GetKeyDown(KeyCode.R))
         {
             if (GameManager.Instance != null)
             {
@@ -571,26 +565,36 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Attack()
     {
+        if (Time.time < lastAttackTime + attackCooldown) return;
+        
         lastAttackTime = Time.time;
-
-        // Получаем всех врагов в радиусе атаки
+        
+        Debug.Log("[ConsciousnessController] Атака!");
+        
+        // Получаем все коллайдеры в радиусе атаки
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, attackRadius, enemyLayerMask);
-
+        
+        // Базовый урон
+        float damage = attackDamage;
+        
+        // Применяем модификаторы урона от эмоций
+        if (emotionHandler != null)
+        {
+            // Проверяем, является ли враг элитным
+            bool isElite = false; // Здесь нужно добавить проверку на элитного врага
+            damage = emotionHandler.ModifyPlayerDamage(damage, isElite);
+        }
+        
         foreach (var hitCollider in hitColliders)
         {
-            // Сначала проверяем компонент на самом объекте
-            var enemyHealth = hitCollider.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
-            if (enemyHealth == null)
+            // Здесь должна быть логика нанесения урона врагу
+            Debug.Log($"[ConsciousnessController] Попадание по врагу: {hitCollider.name}");
+            
+            // Пример нанесения урона, если у врага есть компонент EnemyHealth
+            EnemyHealth enemy = hitCollider.GetComponent<EnemyHealth>();
+            if (enemy != null)
             {
-                // Если на самом объекте нет, ищем в родителе
-                enemyHealth = hitCollider.GetComponentInParent<DungeonGeneration.Scripts.Health.EnemyHealth>();
-            }
-
-            if (enemyHealth != null)
-            {
-                float previousHealth = enemyHealth.GetCurrentHealth();
-                enemyHealth.TakeDamage(attackDamage);
-                Debug.Log($"<color=red>Нанесен урон {attackDamage} врагу {hitCollider.transform.parent.name}. Здоровье: {previousHealth} -> {enemyHealth.GetCurrentHealth()}</color>");
+                enemy.TakeDamage(damage);
             }
         }
     }
@@ -621,9 +625,91 @@ public class ConsciousnessController : MonoBehaviour
         {
             Destroy(createdCanvas.gameObject);
         }
-        if (interactionPrompt != null)
+    }
+
+    // Методы для интеграции с системой эмоций
+    
+    /// <summary>
+    /// Обрабатывает получение урона с учетом эмоций
+    /// </summary>
+    public float TakeDamage(float damage)
+    {
+        if (emotionHandler != null)
         {
-            Destroy(interactionPrompt);
+            // Применяем модификаторы урона от эмоций
+            float modifiedDamage = emotionHandler.ModifyDamage(damage);
+            
+            // Если урон был полностью отклонен (0), то ничего не делаем
+            if (modifiedDamage <= 0)
+            {
+                return 0;
+            }
+            
+            // Здесь код для реального нанесения урона персонажу
+            // TODO: Реализовать систему здоровья
+            
+            return modifiedDamage;
         }
+        
+        return damage;
+    }
+    
+    /// <summary>
+    /// Проверяет, должен ли игрок уклониться от атаки
+    /// </summary>
+    public bool ShouldDodgeAttack()
+    {
+        if (emotionHandler != null)
+        {
+            return emotionHandler.ShouldDodgeAttack();
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Вызывается при входе в новую комнату
+    /// </summary>
+    public void OnEnterNewRoom()
+    {
+        if (emotionHandler != null)
+        {
+            emotionHandler.OnEnterNewRoom();
+        }
+    }
+    
+    /// <summary>
+    /// Вызывается при победе над врагом
+    /// </summary>
+    public void OnEnemyDefeated()
+    {
+        if (emotionHandler != null)
+        {
+            emotionHandler.OnEnemyDefeated();
+        }
+    }
+    
+    /// <summary>
+    /// Пытается воскресить игрока после смерти
+    /// </summary>
+    public bool TryRevive()
+    {
+        if (emotionHandler != null)
+        {
+            float reviveHealthPercent = emotionHandler.TryRevive();
+            if (reviveHealthPercent > 0)
+            {
+                // Игрок воскрес
+                // TODO: Реализовать воскрешение игрока
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    private void LateUpdate()
+    {
+        UpdateCameraPosition(false);
     }
 } 

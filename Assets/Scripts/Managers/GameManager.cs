@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
     
     [Header("Managers")]
     [SerializeField] private bool initCurrencyManagerOnStart = true;
+    [SerializeField] private bool initEmotionSystemOnStart = true;
 
     [Header("UI References")]
     [SerializeField] private GameObject currencyUIPanel;
@@ -51,6 +52,12 @@ public class GameManager : MonoBehaviour
             if (initCurrencyManagerOnStart)
             {
                 InitializeCurrencyManager();
+            }
+            
+            // Инициализируем EmotionSystem
+            if (initEmotionSystemOnStart)
+            {
+                InitializeEmotionSystem();
             }
         }
         else
@@ -134,6 +141,20 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Инициализирует EmotionSystem
+    /// </summary>
+    private void InitializeEmotionSystem()
+    {
+        if (EmotionSystem.Instance == null)
+        {
+            GameObject emotionSystemObj = new GameObject("EmotionSystem");
+            emotionSystemObj.AddComponent<EmotionSystem>();
+            DontDestroyOnLoad(emotionSystemObj);
+            Debug.Log("[GameManager] EmotionSystem инициализирован");
+        }
+    }
+
     private void Update()
     {
         // Переключение по клавише R
@@ -201,12 +222,19 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] Начало очистки текущей сцены");
         
+        // Сбрасываем активные эмоции при переключении миров
+        if (EmotionSystem.Instance != null)
+        {
+            EmotionSystem.Instance.ResetActiveEmotions();
+            Debug.Log("[GameManager] Активные эмоции сброшены");
+        }
+        
         // Находим всех игроков в сцене
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-        foreach (GameObject player in players)
+        RealityPlayerController[] players = FindObjectsOfType<RealityPlayerController>();
+        foreach (RealityPlayerController player in players)
         {
             Debug.Log($"[GameManager] Уничтожаем игрока: {player.name}");
-            Destroy(player);
+            Destroy(player.gameObject);
         }
         
         // Очищаем все объекты DungeonGenerator
@@ -353,6 +381,39 @@ public class GameManager : MonoBehaviour
 
         isTransitioning = false;
         yield break;
+    }
+
+    /// <summary>
+    /// Обработка смерти игрока
+    /// </summary>
+    public void HandlePlayerDeath()
+    {
+        Debug.Log("[GameManager] Обработка смерти игрока");
+        
+        // Получаем текущий контроллер игрока
+        RealityPlayerController playerController = FindObjectOfType<RealityPlayerController>();
+        ConsciousnessController consciousnessController = FindObjectOfType<ConsciousnessController>();
+        
+        // Пытаемся воскресить игрока, если есть активная эмоция принятия
+        bool revived = false;
+        
+       if (consciousnessController != null)
+        {
+            revived = consciousnessController.TryRevive();
+        }
+        
+        // Если игрок не воскрес, сбрасываем активные эмоции
+        if (!revived)
+        {
+            if (EmotionSystem.Instance != null)
+            {
+                EmotionSystem.Instance.ResetActiveEmotions();
+                Debug.Log("[GameManager] Активные эмоции сброшены после смерти");
+            }
+            
+            // Здесь можно добавить дополнительную логику смерти игрока
+            // например, загрузку последнего чекпоинта или перезапуск уровня
+        }
     }
 }
 
