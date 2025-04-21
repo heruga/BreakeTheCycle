@@ -13,6 +13,11 @@ public class CurrencyUI : MonoBehaviour
     
     private void Start()
     {
+        TryInitializeCurrencyManager();
+    }
+
+    private void TryInitializeCurrencyManager()
+    {
         if (CurrencyManager.Instance != null)
         {
             // Подписываемся на изменение валюты
@@ -22,7 +27,19 @@ public class CurrencyUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[CurrencyUI] CurrencyManager не найден!");
+            Debug.LogWarning("[CurrencyUI] CurrencyManager не найден! Попытка инициализации через GameManager...");
+            
+            // Проверяем GameManager
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.InitializeCurrencyManager();
+                // Повторяем попытку через небольшой промежуток времени
+                Invoke(nameof(TryInitializeCurrencyManager), 0.1f);
+            }
+            else
+            {
+                Debug.LogError("[CurrencyUI] GameManager не найден! Убедитесь, что GameManager присутствует в сцене.");
+            }
         }
     }
 

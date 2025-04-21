@@ -117,7 +117,7 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// Инициализирует CurrencyManager
     /// </summary>
-    private void InitializeCurrencyManager()
+    public void InitializeCurrencyManager()
     {
         if (CurrencyManager.Instance == null)
         {
