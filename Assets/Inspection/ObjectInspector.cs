@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using BreakTheCycle;
 namespace Inspection
 {
     public class ObjectInspector : MonoBehaviour
@@ -101,7 +101,10 @@ namespace Inspection
 
             currentObject = obj;
             inspectionCamera.StartInspecting(obj.gameObject);
-            
+
+            // Активируем связанный объект, если он есть
+            obj.ActivateLinkedObject();
+
             // Показываем UI с информацией об объекте
             if (inspectionUI != null)
             {
@@ -122,7 +125,28 @@ namespace Inspection
             {
                 inspectionUI.HideWindow();
             }
-            
+
+            // Воспроизводим монолог, если есть MonologueTriggerData
+            if (currentObject != null)
+            {
+                var trigger = currentObject.GetComponent<BreakTheCycle.Dialogue.MonologueTriggerData>();
+                if (trigger != null && trigger.monologueID >= 0)
+                {
+                    var manager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
+                    if (manager != null)
+                    {
+                        manager.PlayMonologue(trigger.monologueID);
+                    }
+                }
+            }
+
+            // Синхронизируем углы вращения камеры игрока
+            var controller = mainCamera != null ? mainCamera.GetComponent<FirstPersonCameraController>() : null;
+            if (controller != null)
+            {
+                controller.SyncRotationWithTransform();
+            }
+
             currentObject = null;
             
             if (showDebug) Debug.Log("Stopped inspection");

@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using BreakTheCycle.Dialogue;
 public class MonologueTrigger : MonoBehaviour
 {
     public int monologueID = 0;

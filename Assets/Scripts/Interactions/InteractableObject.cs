@@ -1,5 +1,6 @@
 using UnityEngine;
 using VIDE_Data;
+using BreakTheCycle.Dialogue;
 
 namespace BreakTheCycle
 {
@@ -47,6 +48,17 @@ namespace BreakTheCycle
 
             // Запускаем диалог через VIDE
             VD.BeginDialogue(videAssign);
+
+            // Воспроизводим монолог, если есть MonologueTriggerData
+            var trigger = GetComponent<BreakTheCycle.Dialogue.MonologueTriggerData>();
+            if (trigger != null && trigger.monologueID >= 0)
+            {
+                var manager = FindObjectOfType<MonologueManager>();
+                if (manager != null)
+                {
+                    manager.PlayMonologue(trigger.monologueID);
+                }
+            }
         }
     }
 } 

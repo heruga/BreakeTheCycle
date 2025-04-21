@@ -46,4 +46,11 @@ public class FirstPersonCameraController : MonoBehaviour
             transform.localRotation = Quaternion.Euler(currentVerticalRotation, 0f, 0f);
         }
     }
+
+    public void SyncRotationWithTransform()
+    {
+        Vector3 euler = transform.eulerAngles;
+        targetHorizontalRotation = euler.y;
+        targetVerticalRotation = Mathf.Clamp(euler.x, -verticalRotationLimit, verticalRotationLimit);
+    }
 } 

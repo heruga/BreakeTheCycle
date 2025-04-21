@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 namespace Inspection
 {
@@ -7,9 +7,9 @@ namespace Inspection
     {
         [Header("UI References")]
         [SerializeField] private GameObject windowPanel;
-        [SerializeField] private Text itemNameText;
-        [SerializeField] private Text itemDescriptionText;
-        [SerializeField] private Text controlsHintText;
+        [SerializeField] private TextMeshProUGUI itemNameText;
+        [SerializeField] private TextMeshProUGUI itemDescriptionText;
+        [SerializeField] private TextMeshProUGUI controlsHintText;
 
         [Header("Settings")]
         [SerializeField] private string controlsHintMessage = "Вращение: Удерживайте ПКМ\nЗум: Колесо мыши\nВыход: E";
