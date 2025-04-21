@@ -75,9 +75,6 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private Color chaseGizmoColor = Color.red;
     [SerializeField] private Color attackGizmoColor = Color.yellow;
     
-    [Header("Эмоции")]
-    [SerializeField] private PlayerEmotionHandler emotionHandler;
-    
     private Vector3 moveDirection;
     private Vector3 lastMoveDirection;
     private Vector3 smoothedMoveDirection;
@@ -96,6 +93,7 @@ public class ConsciousnessController : MonoBehaviour
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
     private bool controlsEnabled = true;
+    private EmotionSystem emotionSystem;
     
     private void Awake()
     {
@@ -104,15 +102,6 @@ public class ConsciousnessController : MonoBehaviour
         lastMoveDirection = transform.forward;
         enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
         
-        // Получаем или создаем обработчик эмоций
-        if (emotionHandler == null)
-        {
-            emotionHandler = GetComponent<PlayerEmotionHandler>();
-            if (emotionHandler == null)
-            {
-                emotionHandler = gameObject.AddComponent<PlayerEmotionHandler>();
-            }
-        }
         Debug.Log($"[ConsciousnessController] Awake: controlsEnabled = {controlsEnabled}, PlayerControlManager.Instance?.ControlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
     }
     
@@ -144,6 +133,7 @@ public class ConsciousnessController : MonoBehaviour
         if (PlayerControlManager.Instance != null)
             PlayerControlManager.Instance.SetControlsEnabled(true);
         Debug.Log($"[ConsciousnessController] Start: controlsEnabled = {controlsEnabled}, PlayerControlManager.Instance?.ControlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
+        emotionSystem = FindObjectOfType<EmotionSystem>();
     }
     
     private void SetupCamera()
@@ -197,23 +187,8 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Update()
     {
-        // Debug.Log("[ConsciousnessController] Update вызван");
-        var emotionUI = FindObjectOfType<EmotionUI>();
-        if (emotionUI != null && emotionUI.IsOpen())
-        {
-            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.F))
-            {
-                emotionUI.Close();
-                if (PlayerControlManager.Instance != null)
-                    PlayerControlManager.Instance.SetControlsEnabled(true);
-            }
-            Debug.Log("[ConsciousnessController] Update: return из-за EmotionUI");
-            return; // Пока окно эмоций открыто, больше ничего не делаем
-        }
-
         if (!controlsEnabled)
         {
-            Debug.Log("[ConsciousnessController] Update: return из-за controlsEnabled = false");
             return;
         }
 
@@ -239,12 +214,6 @@ public class ConsciousnessController : MonoBehaviour
         // Взаимодействие с объектами (F — Interactable, E — Inspectable)
         if (Input.GetKeyDown(KeyCode.F))
         {
-            var emotionUI_F = FindObjectOfType<EmotionUI>();
-            if (emotionUI_F != null && emotionUI_F.IsOpen())
-            {
-                Debug.Log("[ConsciousnessController] Update: return из-за EmotionUI (F)");
-                return; // Не взаимодействуем, если окно эмоций открыто
-            }
             TryInteractWithMask(interactionMask);
         }
         if (Input.GetKeyDown(KeyCode.E))
@@ -277,61 +246,62 @@ public class ConsciousnessController : MonoBehaviour
     private void FixedUpdate()
     {
         if (!controlsEnabled) return;
-        // Вычисляем целевую скорость
-        targetVelocity = moveDirection * (isDashing ? dashSpeed : moveSpeed);
 
-        // Применяем модификаторы скорости от эмоций
-        if (emotionHandler != null)
+        // Обработка рывка
+        if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDashTime + dashCooldown)
         {
-            // Проверяем, находимся ли мы в бою с элитным врагом
-            bool fightingElite = false; // Здесь нужно добавить проверку на элитного врага
-            
-            if (isDashing)
-            {
-                targetVelocity = targetVelocity.normalized * emotionHandler.ModifyPlayerSpeed(dashSpeed, fightingElite);
-            }
-            else
-            {
-                targetVelocity = targetVelocity.normalized * emotionHandler.ModifyPlayerSpeed(moveSpeed, fightingElite);
-            }
+            StartDash();
         }
 
-        // Плавное ускорение/замедление
-        float speedToUse = targetVelocity.magnitude > currentVelocity.magnitude ? accelerationSpeed : decelerationSpeed;
-        currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Time.fixedDeltaTime * speedToUse);
-
-        if (currentVelocity.magnitude > 0.1f)
-        {
-            // Поворот персонажа
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed);
-            
-            // Движение через CharacterController
-            characterController.Move(currentVelocity * Time.fixedDeltaTime);
-        }
-
-        // Обработка dash
         if (isDashing)
         {
-            dashTimeLeft -= Time.fixedDeltaTime;
-            if (dashTimeLeft <= 0)
-            {
-                isDashing = false;
-                // Плавное замедление после dash
-                currentVelocity = currentVelocity.normalized * moveSpeed;
-            }
+            HandleDash();
         }
-        else if (moveDirection.magnitude > 0.1f)
+        else
         {
-            // Проверяем возможность выполнить dash
-            if (Input.GetKey(KeyCode.LeftShift) && Time.time >= lastDashTime + dashCooldown)
-            {
-                isDashing = true;
-                dashTimeLeft = dashDuration;
-                lastDashTime = Time.time;
-                Debug.Log("[ConsciousnessController] Выполняем dash!");
-            }
+            HandleMovement();
         }
+
+        UpdateCameraPosition(false);
+    }
+
+    private void HandleMovement()
+    {
+        if (moveDirection != Vector3.zero)
+        {
+            // Ускорение
+            targetVelocity = moveDirection * moveSpeed;
+            currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, accelerationSpeed * Time.fixedDeltaTime);
+        }
+        else
+        {
+            // Замедление
+            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, decelerationSpeed * Time.fixedDeltaTime);
+        }
+
+        // Применяем движение
+        characterController.Move(currentVelocity * Time.fixedDeltaTime);
+    }
+
+    private void HandleDash()
+    {
+        if (dashTimeLeft > 0)
+        {
+            characterController.Move(moveDirection * dashSpeed * Time.fixedDeltaTime);
+            dashTimeLeft -= Time.fixedDeltaTime;
+        }
+        else
+        {
+            isDashing = false;
+            currentVelocity = Vector3.zero;
+        }
+    }
+
+    private void StartDash()
+    {
+        isDashing = true;
+        dashTimeLeft = dashDuration;
+        lastDashTime = Time.time;
     }
     
     private void UpdateCameraPosition(bool instant)
@@ -596,19 +566,15 @@ public class ConsciousnessController : MonoBehaviour
         Debug.Log($"[Attack] Найдено коллайдеров: {hitColliders.Length}");
 
         float damage = attackDamage;
-        float damageBeforeMods = damage;
-        if (emotionHandler != null)
+        // Модифицируем урон с учетом эффектов эмоций
+        if (emotionSystem != null)
         {
-            bool isElite = false; // TODO: добавить проверку на элитного врага
-            damage = emotionHandler.ModifyPlayerDamage(damage, isElite);
-            Debug.Log($"[Attack] Модификатор эмоций: было {damageBeforeMods}, стало {damage}");
+            damage = emotionSystem.ModifyOutgoingDamage(damage);
         }
+        Debug.Log($"[Attack] Базовый урон: {attackDamage}, После модификаций: {damage}");
 
-        int i = 0;
         foreach (var hitCollider in hitColliders)
         {
-            Debug.Log($"[Attack] hitCollider[{i}]: name={hitCollider.name}, tag={hitCollider.tag}, layer={hitCollider.gameObject.layer} (enemyLayerMask={enemyLayerMask.value})");
-            i++;
             EnemyHealth enemy = hitCollider.GetComponent<EnemyHealth>();
             if (enemy == null)
                 enemy = hitCollider.GetComponentInParent<EnemyHealth>();
@@ -619,6 +585,12 @@ public class ConsciousnessController : MonoBehaviour
                 enemy.TakeDamage(damage);
                 float newHealth = enemy.GetCurrentHealth();
                 Debug.Log($"[Attack] Враг {enemy.gameObject.name}: урон {damage}. Было HP={prevHealth}, стало HP={newHealth}");
+
+                // Если враг умер, вызываем обработку победы
+                if (newHealth <= 0 && emotionSystem != null)
+                {
+                    emotionSystem.OnEnemyDefeated();
+                }
             }
             else
             {
@@ -662,23 +634,6 @@ public class ConsciousnessController : MonoBehaviour
     /// </summary>
     public float TakeDamage(float damage)
     {
-        if (emotionHandler != null)
-        {
-            // Применяем модификаторы урона от эмоций
-            float modifiedDamage = emotionHandler.ModifyDamage(damage);
-            
-            // Если урон был полностью отклонен (0), то ничего не делаем
-            if (modifiedDamage <= 0)
-            {
-                return 0;
-            }
-            
-            // Здесь код для реального нанесения урона персонажу
-            // TODO: Реализовать систему здоровья
-            
-            return modifiedDamage;
-        }
-        
         return damage;
     }
     
@@ -687,22 +642,17 @@ public class ConsciousnessController : MonoBehaviour
     /// </summary>
     public bool ShouldDodgeAttack()
     {
-        if (emotionHandler != null)
-        {
-            return emotionHandler.ShouldDodgeAttack();
-        }
-        
         return false;
     }
     
     /// <summary>
     /// Вызывается при входе в новую комнату
     /// </summary>
-    public void OnEnterNewRoom()
+    public void OnRoomEntered()
     {
-        if (emotionHandler != null)
+        if (emotionSystem != null)
         {
-            emotionHandler.OnEnterNewRoom();
+            emotionSystem.OnEnterNewRoom();
         }
     }
     
@@ -711,10 +661,7 @@ public class ConsciousnessController : MonoBehaviour
     /// </summary>
     public void OnEnemyDefeated()
     {
-        if (emotionHandler != null)
-        {
-            emotionHandler.OnEnemyDefeated();
-        }
+        // Empty implementation
     }
     
     /// <summary>
@@ -722,17 +669,6 @@ public class ConsciousnessController : MonoBehaviour
     /// </summary>
     public bool TryRevive()
     {
-        if (emotionHandler != null)
-        {
-            float reviveHealthPercent = emotionHandler.TryRevive();
-            if (reviveHealthPercent > 0)
-            {
-                // Игрок воскрес
-                // TODO: Реализовать воскрешение игрока
-                return true;
-            }
-        }
-        
         return false;
     }
 

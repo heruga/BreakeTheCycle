@@ -46,6 +46,8 @@ namespace DungeonGeneration.Scripts
         public bool IsRoomCleared => isRoomCleared;
         public Transform PlayerSpawnPoint => playerSpawnPoint;
 
+        private bool isInitialized = false;
+
         private void Awake()
         {
             ValidateReferences();
@@ -53,7 +55,10 @@ namespace DungeonGeneration.Scripts
 
         private void Start()
         {
-            InitializeRoom();
+            if (!isInitialized)
+            {
+                InitializeRoom();
+            }
         }
 
         private void ValidateReferences()
@@ -116,6 +121,8 @@ namespace DungeonGeneration.Scripts
 
         public void InitializeRoom()
         {
+            if (isInitialized) return;
+            
             if (dungeonGenerator == null)
             {
                 Debug.LogError("DungeonGenerator not found! Please ensure ValidateReferences was called first.");
@@ -130,6 +137,7 @@ namespace DungeonGeneration.Scripts
             }
 
             SetupRoom();
+            isInitialized = true;
         }
 
         private void SetupRoom()
@@ -339,6 +347,7 @@ namespace DungeonGeneration.Scripts
 
         public void SetRoomType(RoomTypeSO type)
         {
+            if (roomType == type) return; // Don't reinitialize if type hasn't changed
             roomType = type;
             InitializeRoom();
         }

@@ -728,7 +728,6 @@ GameObject:
   - component: {fileID: 3371986541052316177}
   - component: {fileID: 6989551449605726243}
   - component: {fileID: 3366226273777580531}
-  - component: {fileID: 2123858728463797302}
   m_Layer: 5
   m_Name: "\u0420\u0435\u0448\u0438\u043C\u043E\u0441\u0442\u044C"
   m_TagString: Untagged
@@ -838,26 +837,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &2123858728463797302
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4266114977777561033}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe5b3cc0006efa8438613934a212d3fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  button: {fileID: 0}
-  backgroundImage: {fileID: 0}
-  nameText: {fileID: 0}
-  levelIndicator: {fileID: 0}
-  inactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
-  activeColor: {r: 0.3, g: 0.7, b: 0.3, a: 1}
-  selectedColor: {r: 0.7, g: 0.7, b: 0.3, a: 1}
-  maxLevelColor: {r: 0.7, g: 0.3, b: 0.7, a: 1}
 --- !u!1 &5238953844124206419
 GameObject:
   m_ObjectHideFlags: 0
@@ -1399,7 +1378,6 @@ GameObject:
   - component: {fileID: 3304331681663536929}
   - component: {fileID: 4521693070000171852}
   - component: {fileID: 1394345579026880103}
-  - component: {fileID: 1750530651614086356}
   m_Layer: 5
   m_Name: CanvasEmotion
   m_TagString: Untagged
@@ -1490,27 +1468,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &1750530651614086356
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7714758722017341952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d07927b92e3a6ea4394699d2dbf4d230, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  emotionButtons:
-  - {fileID: 3366226273777580531}
-  - {fileID: 2703495230836511493}
-  - {fileID: 1575657001600884649}
-  - {fileID: 8636419157026693568}
-  - {fileID: 1978196435253465679}
-  - {fileID: 3541661710186432406}
-  emotionTypes: 000000000100000003000000020000000400000005000000
-  emotionPanel: {fileID: 561855833715448279}
 --- !u!1 &8275302782874493952
 GameObject:
   m_ObjectHideFlags: 0

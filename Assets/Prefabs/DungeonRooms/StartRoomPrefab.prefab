@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7114778715040662693}
   - component: {fileID: 528481460582703953}
   - component: {fileID: 2665421013187405084}
-  - component: {fileID: 7853217328942671900}
+  - component: {fileID: 7329819957832170657}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
@@ -109,7 +109,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 0.99999994, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7853217328942671900
+--- !u!114 &7329819957832170657
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -118,15 +118,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2443509711469102229}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dca4344d9b81c6943b911f0d225eaadc, type: 3}
+  m_Script: {fileID: 11500000, guid: 9958e01e2f373dd47940e39c70158ae2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interactionRadius: 2.5
+  interactionRadius: 2
   isInteractable: 1
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
-  emotionUI: {fileID: 0}
+  promptUI: {fileID: 0}
 --- !u!1 &3742804089523387981
 GameObject:
   m_ObjectHideFlags: 0
@@ -185,6 +185,9 @@ MonoBehaviour:
   isRoomCleared: 1
   portalPrefab: {fileID: 2169617423991495634, guid: 014b20ec8147238498bcd2120e4cff3d, type: 3}
   enemyPrefabs: []
+  bossPrefab: {fileID: 0}
+  bossSpawnPoint: {fileID: 0}
+  totalWaves: 1
 --- !u!1 &3769130917514245958
 GameObject:
   m_ObjectHideFlags: 0

@@ -136,6 +136,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abe410dfccaa7f84889bdb5be0c53d3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 0
+  emotionSystem: {fileID: 0}
 --- !u!1 &83013875
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,52 +230,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currencyText: {fileID: 1295634698}
   currencyIcon: {fileID: 83013877}
---- !u!1 &106860072
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 106860074}
-  - component: {fileID: 106860073}
-  m_Layer: 0
-  m_Name: EmotionSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &106860073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 106860072}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ff8998bb2dc96540843184a18986c6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxActiveEmotions: 2
-  costMultiplier: 1.5
---- !u!4 &106860074
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 106860072}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1191.7532, y: 487.56094, z: 0.75300026}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &315069654
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1170,37 +1127,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cefd7e70a4c2aa949b9b22029da98b48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1879929137
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1879929139}
-  m_Layer: 0
-  m_Name: EmotionInteractable
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1879929139
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1879929137}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -283.33264, y: 0.64720434, z: -483.6215}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &3418725655121546547
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1325,7 +1251,9 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2123858728463797302, guid: 811806780ea977b44aaec700d149f16e, type: 3}
+    - {fileID: 1750530651614086356, guid: 811806780ea977b44aaec700d149f16e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2778649009507851308, guid: 811806780ea977b44aaec700d149f16e, type: 3}
@@ -1347,7 +1275,5 @@ SceneRoots:
   - {fileID: 753173382}
   - {fileID: 1612038815}
   - {fileID: 411637786}
-  - {fileID: 1879929139}
   - {fileID: 3418725655121546547}
-  - {fileID: 106860074}
   - {fileID: 1743427106}

@@ -23,7 +23,6 @@ public class GameManager : MonoBehaviour
     
     [Header("Managers")]
     [SerializeField] private bool initCurrencyManagerOnStart = true;
-    [SerializeField] private bool initEmotionSystemOnStart = true;
 
     [Header("UI References")]
     [SerializeField] private GameObject currencyUIPanel;
@@ -54,12 +53,6 @@ public class GameManager : MonoBehaviour
             if (initCurrencyManagerOnStart)
             {
                 InitializeCurrencyManager();
-            }
-            
-            // Инициализируем EmotionSystem
-            if (initEmotionSystemOnStart)
-            {
-                InitializeEmotionSystem();
             }
         }
         else
@@ -151,20 +144,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Инициализирует EmotionSystem
-    /// </summary>
-    private void InitializeEmotionSystem()
-    {
-        if (EmotionSystem.Instance == null)
-        {
-            GameObject emotionSystemObj = new GameObject("EmotionSystem");
-            emotionSystemObj.AddComponent<EmotionSystem>();
-            DontDestroyOnLoad(emotionSystemObj);
-            Debug.Log("[GameManager] EmotionSystem инициализирован");
-        }
-    }
-
     private void Update()
     {
         // Переключение по клавише R
@@ -222,13 +201,6 @@ public class GameManager : MonoBehaviour
     private void CleanupCurrentScene()
     {
         Debug.Log("[GameManager] Начало очистки текущей сцены");
-        
-        // Сбрасываем активные эмоции при переключении миров
-        if (EmotionSystem.Instance != null)
-        {
-            EmotionSystem.Instance.ResetActiveEmotions();
-            Debug.Log("[GameManager] Активные эмоции сброшены");
-        }
         
         // Находим всех игроков в сцене
         RealityPlayerController[] players = FindObjectsOfType<RealityPlayerController>();
@@ -375,17 +347,19 @@ public class GameManager : MonoBehaviour
     private IEnumerator TransitionState()
     {
         isTransitioning = true;
+        yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
         
-        // Переключаем состояние
+        // Очищаем текущую сцену
+        CleanupCurrentScene();
+        
+        // Загружаем новую сцену
+        string targetScene = isInReality ? consciousnessSceneName : realitySceneName;
+        yield return StartCoroutine(LoadSceneAsync(targetScene));
+        
         isInReality = !isInReality;
-        
-        // Обновляем UI
-        UpdateUIState();
-
-        // ... rest of your transition code ...
-
         isTransitioning = false;
-        yield break;
+        UpdateUIState();
+        yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
     }
 
     /// <summary>
@@ -399,25 +373,19 @@ public class GameManager : MonoBehaviour
         RealityPlayerController playerController = FindObjectOfType<RealityPlayerController>();
         ConsciousnessController consciousnessController = FindObjectOfType<ConsciousnessController>();
         
-        // Пытаемся воскресить игрока, если есть активная эмоция принятия
+        // Пытаемся воскресить игрока
         bool revived = false;
         
-       if (consciousnessController != null)
+        if (consciousnessController != null)
         {
             revived = consciousnessController.TryRevive();
         }
         
-        // Если игрок не воскрес, сбрасываем активные эмоции
+        // Если игрок не воскрес, загружаем последний чекпоинт
         if (!revived)
         {
-            if (EmotionSystem.Instance != null)
-            {
-                EmotionSystem.Instance.ResetActiveEmotions();
-                Debug.Log("[GameManager] Активные эмоции сброшены после смерти");
-            }
-            
-            // Здесь можно добавить дополнительную логику смерти игрока
-            // например, загрузку последнего чекпоинта или перезапуск уровня
+            // Здесь можно добавить логику загрузки последнего чекпоинта
+            Debug.Log("[GameManager] Игрок не воскрес, загрузка последнего чекпоинта");
         }
     }
 
