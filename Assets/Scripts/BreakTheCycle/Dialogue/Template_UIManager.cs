@@ -59,9 +59,8 @@ public class Template_UIManager : MonoBehaviour
 
     void Awake()
     {
-
-        VD.LoadDialogues(); //Load all dialogues to memory so that we dont spend time doing so later
-        //An alternative to this can be preloading dialogues from the VIDE_Assign component!
+        // Instead of loading all dialogues at once, we'll load them on demand
+        // VD.LoadDialogues(); // Commented out to prevent the collection modification error
     }
 
     //Call this to begin the dialogue and advance through it
@@ -93,6 +92,9 @@ public class Template_UIManager : MonoBehaviour
         //VD.OnActionNode += ActionHandler;
         VD.OnNodeChange += UpdateUI;
         //VD.OnEnd += EndDialogue;
+
+        // Load the specific dialogue we need
+        VD.Load(dialogue.assignedDialogue);
 
         VD.BeginDialogue(dialogue); //Begins dialogue, will call the first OnNodeChange
 
