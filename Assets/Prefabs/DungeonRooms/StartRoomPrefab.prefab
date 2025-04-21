@@ -159,7 +159,6 @@ Transform:
   m_Children:
   - {fileID: 6353428559457229502}
   - {fileID: 1724704315736079335}
-  - {fileID: 3332812865039336414}
   - {fileID: 6440912279179600663}
   - {fileID: 4647518135558013343}
   m_Father: {fileID: 0}
@@ -403,6 +402,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3784936777025076044}
+    - targetCorrespondingSourceObject: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3005910379124140281}
+    - targetCorrespondingSourceObject: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5025158643780504117}
   m_SourcePrefab: {fileID: 100100000, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
 --- !u!4 &4647518135558013343 stripped
 Transform:
@@ -437,3 +442,65 @@ CapsuleCollider:
   m_Height: 3.450847
   m_Direction: 1
   m_Center: {x: 0.005496911, y: -0.02071097, z: 2.9153835e-17}
+--- !u!114 &3005910379124140281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5419129641605487397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b8b99d8a12e39e4b94d2d7162c7c978, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  diags:
+  - Charlie
+  - CommentModifier
+  - CrazyCap
+  - DEMO_Condition
+  - demo_Narration
+  - DialogueWithNPC
+  - Example3Dialogue
+  - Example4_dialogue
+  - Item_LookUp
+  - Laura
+  - MrCube
+  - NPCOnly
+  - PlayerMonologues
+  - QuestChartDemo
+  - TriggeredDude
+  - Witch
+  assignedIndex: 5
+  assignedID: 83595
+  assignedDialogue: DialogueWithNPC
+  interactionCount: 0
+  alias: 
+  overrideStartNode: 0
+  defaultNPCSprite: {fileID: 0}
+  defaultPlayerSprite: {fileID: 0}
+  targetManager: {fileID: 0}
+  preload: 0
+  notuptodate: 0
+  startp: 0
+  loadtag: 
+  langs: []
+  S_playerDiags: []
+  S_actionNodes: []
+--- !u!114 &5025158643780504117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5419129641605487397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e52efd2104163784ab115c6823a301b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactionRadius: 2
+  isInteractable: 1
+  onInteractEvent:
+    m_PersistentCalls:
+      m_Calls: []

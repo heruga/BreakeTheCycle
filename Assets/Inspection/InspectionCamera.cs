@@ -187,6 +187,13 @@ public class InspectionCamera : MonoBehaviour
                 }
             }
             
+            // Возвращаем предмет в исходное положение и поворот
+            if (currentTarget != null)
+            {
+                currentTarget.transform.position = originalPosition;
+                currentTarget.transform.rotation = originalRotation;
+            }
+            
             target = null;
             
             if (cam != null)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using BreakTheCycle;
+using BreakTheCycle.Dialogue;
 
 /// <summary>
 /// Контроллер игрока для режима "Реальность" с видом от первого лица
@@ -24,6 +25,8 @@ public class RealityPlayerController : MonoBehaviour
     private IInteractable currentInteractable;
 
     private bool controlsEnabled = true;
+
+    private bool firstMoveMonologuePlayed = false;
 
     private void Awake()
     {
@@ -82,6 +85,21 @@ public class RealityPlayerController : MonoBehaviour
         float moveZ = Input.GetAxis("Vertical");
         Vector3 move = cachedTransform.right * moveX + cachedTransform.forward * moveZ;
         controller.Move(move * walkSpeed * Time.deltaTime);
+        
+        // Первая реплика при первом движении
+        if (!firstMoveMonologuePlayed && (Mathf.Abs(moveX) > 0.01f || Mathf.Abs(moveZ) > 0.01f))
+        {
+            var trigger = GetComponent<BreakTheCycle.Dialogue.MonologueTriggerData>();
+            if (trigger != null && trigger.monologueID >= 0)
+            {
+                var manager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
+                if (manager != null)
+                {
+                    manager.PlayMonologue(trigger.monologueID);
+                    firstMoveMonologuePlayed = true;
+                }
+            }
+        }
         
         // Поиск интерактивного объекта перед игроком
         Ray ray = new Ray(transform.position, transform.forward);

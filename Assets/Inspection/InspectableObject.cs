@@ -27,11 +27,20 @@ namespace Inspection
         [SerializeField] private int nameFontSize = 24;
         [SerializeField] private int descriptionFontSize = 18;
 
+        [Header("Activation")]
+        public GameObject objectToActivate;
+
         public string ObjectName => objectName;
         public string Description => description;
         public Color NameColor => nameColor;
         public Color DescriptionColor => descriptionColor;
         public int NameFontSize => nameFontSize;
         public int DescriptionFontSize => descriptionFontSize;
+
+        public void ActivateLinkedObject()
+        {
+            if (objectToActivate != null)
+                objectToActivate.SetActive(true);
+        }
     }
 }
