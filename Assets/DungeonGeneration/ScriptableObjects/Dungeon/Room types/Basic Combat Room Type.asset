@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c434e2555574c54e9fabccbc96a8b81, type: 3}
   m_Name: Basic Combat Room Type
   m_EditorClassIdentifier: 
-  typeName: Basic Combat Room
+  typeName: Basic Combat
   roomType: 1
   canBeFirst: 0
   canBeLast: 0

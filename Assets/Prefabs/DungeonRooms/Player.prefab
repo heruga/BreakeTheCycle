@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0ccc27dca21c6c41bd4556dd10f8fb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 7
+  moveSpeed: 5
   rotationSpeed: 5
   groundLayerMask:
     serializedVersion: 2
@@ -62,7 +62,7 @@ MonoBehaviour:
   decelerationSpeed: 12
   dashSpeed: 20
   dashDuration: 0.2
-  dashCooldown: 1
+  dashCooldown: 4
   cameraTransform: {fileID: 0}
   cameraHeight: 15
   cameraAngleX: 45
@@ -78,20 +78,19 @@ MonoBehaviour:
   useSpringEffect: 1
   directionChangeDotThreshold: 0.4
   abruptChangeSmoothing: 1.2
-  interactionRange: 3
-  interactionBoxSize: {x: 2, y: 2, z: 2}
+  interactionRange: 1.91
+  interactionBoxSize: {x: 3, y: 3, z: 3}
   interactionMask:
     serializedVersion: 2
     m_Bits: 64
   inspectableMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   attackDamage: 80
   attackSpeed: 3
   attackCooldown: 1
-  chaseDistance: 10
-  attackDistance: 2
-  attackRadius: 2
+  chaseDistance: 9.06
+  attackRadius: 3.86
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 256
@@ -195,7 +194,7 @@ CharacterController:
   m_Height: 2
   m_Radius: 0.5
   m_SlopeLimit: 20
-  m_StepOffset: 0.1
+  m_StepOffset: 0.05
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}

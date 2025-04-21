@@ -26,7 +26,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3, y: 4, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4855029324600059706}
@@ -83,6 +83,8 @@ MonoBehaviour:
   currentHealth: 100
   deathEffectPrefab: {fileID: 0}
   isBoss: 0
+  currencyDropAmount: 10
+  bossMultiplier: 5
 --- !u!195 &1522460143265363278
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -92,7 +94,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 6061985520564372758}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.52
+  m_Radius: 1.41
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -101,8 +103,8 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 1.16
-  m_BaseOffset: 0.57
+  m_Height: 2.5
+  m_BaseOffset: 1
   m_WalkableMask: 1
   m_ObstacleAvoidanceType: 4
 --- !u!114 &6172594664962153285

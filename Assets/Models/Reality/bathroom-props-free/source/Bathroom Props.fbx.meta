@@ -3,7 +3,22 @@ guid: 2e8d6f77ee1c10146806964b287d15c9
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Common Pill Bottle
+    second: {fileID: 2100000, guid: 6e8d469d0aad07f49bb40b8c2bc1e2e7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Lotion
+    second: {fileID: 2100000, guid: 164a5ef80a4a786438eeceacb081a7a1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Prescription Bottle
+    second: {fileID: 2100000, guid: da2b80e278c217f4c9f0ea568727f712, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

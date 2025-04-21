@@ -21,7 +21,7 @@ public class RealityPlayerController : MonoBehaviour
     private float interactionCheckInterval = 0.1f; // Проверяем взаимодействие каждые 0.1 секунды
 
     private Transform cachedTransform;
-    private InteractableObject currentInteractable;
+    private IInteractable currentInteractable;
 
     private bool controlsEnabled = true;
 
@@ -86,12 +86,31 @@ public class RealityPlayerController : MonoBehaviour
         // Поиск интерактивного объекта перед игроком
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hit;
-        InteractableObject interactable = null;
+        IInteractable interactable = null;
+        bool hasInteractable = false;
         
-        bool hasInteractable = Physics.Raycast(ray, out hit, interactionRange, interactionMask) &&
-                              hit.collider.TryGetComponent(out interactable) &&
-                              interactable != null &&
-                              interactable.IsPlayerInRange(transform);
+        if (Physics.Raycast(ray, out hit, interactionRange, interactionMask))
+        {
+            interactable = hit.collider.GetComponent<IInteractable>();
+            if (interactable != null)
+            {
+                // Если это BaseInteractable, проверяем радиус
+                var baseInteractable = interactable as BaseInteractable;
+                if (baseInteractable != null)
+                {
+                    float distance = Vector3.Distance(baseInteractable.transform.position, transform.position);
+                    if (distance <= baseInteractable.InteractionRadius)
+                    {
+                        hasInteractable = true;
+                    }
+                }
+                else
+                {
+                    // Если не BaseInteractable, считаем, что объект доступен
+                    hasInteractable = true;
+                }
+            }
+        }
         
         if (hasInteractable)
         {

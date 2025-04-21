@@ -25,6 +25,14 @@ namespace DungeonGeneration.Scripts
         [SerializeField] private GameObject portalPrefab;
         [SerializeField] private GameObject[] enemyPrefabs;
 
+        [Header("Boss Settings")]
+        [SerializeField] private GameObject bossPrefab;
+        [SerializeField] private Transform bossSpawnPoint;
+
+        [Header("Waves Settings")]
+        [SerializeField] private int totalWaves = 1;
+        private int currentWave = 0;
+
         private DungeonGenerator dungeonGenerator;
         private RoomNode roomNode;
         private List<GameObject> activeEnemies = new List<GameObject>();
@@ -91,6 +99,13 @@ namespace DungeonGeneration.Scripts
                     return;
                 }
 
+                // Не проверяем enemyPrefabs для босс-комнаты
+                if (roomType.typeName != null && roomType.typeName.ToLower().Contains("boss"))
+                {
+                    // Для босс-комнаты enemyPrefabs может быть пустым
+                    return;
+                }
+
                 if (enemyPrefabs == null || enemyPrefabs.Length == 0)
                 {
                     Debug.LogError($"Enemy prefabs not set in {gameObject.name}!");
@@ -119,9 +134,36 @@ namespace DungeonGeneration.Scripts
 
         private void SetupRoom()
         {
+            if (dungeonGenerator == null)
+            {
+                Debug.LogError("DungeonGenerator not found! Please ensure ValidateReferences was called first.");
+                return;
+            }
+
+            if (roomType != null && roomType.typeName != null && roomType.typeName.ToLower().Contains("boss"))
+            {
+                GameObject prefabToSpawn = bossPrefab;
+                if (prefabToSpawn == null)
+                {
+                    var bossConfig = Resources.FindObjectsOfTypeAll<EnemyConfigSO>().FirstOrDefault(cfg => cfg.isBoss && cfg.enemyPrefab != null);
+                    if (bossConfig != null)
+                        prefabToSpawn = bossConfig.enemyPrefab;
+                }
+                if (prefabToSpawn != null && bossSpawnPoint != null)
+                {
+                    Instantiate(prefabToSpawn, bossSpawnPoint.position, bossSpawnPoint.rotation, transform);
+                    Debug.Log($"[RoomManager] Босс заспавнен в точке {bossSpawnPoint.position}");
+                }
+                else
+                {
+                    Debug.LogError("[RoomManager] Не назначен bossPrefab или bossSpawnPoint для босс-комнаты, и не найден BossEnemyConfigSO!");
+                }
+            }
+
+            currentWave = 0;
             if (IsCombatRoom())
             {
-                SpawnEnemies();
+                StartNextWave();
             }
 
             SetupPortals();
@@ -132,52 +174,65 @@ namespace DungeonGeneration.Scripts
             return roomType != null && roomType.minEnemies > 0;
         }
 
-        private void SpawnEnemies()
+        private void StartNextWave()
         {
+            if (currentWave < totalWaves)
+            {
+                currentWave++;
+                Debug.Log($"[RoomManager] Запуск волны {currentWave}/{totalWaves}");
+                SpawnEnemiesWave();
+            }
+            else
+            {
+                Debug.Log("[RoomManager] Все волны завершены!");
+            }
+        }
+
+        private void SpawnEnemiesWave()
+        {
+            if (enemyPrefabs == null || enemyPrefabs.Length == 0)
+            {
+                Debug.LogWarning("[RoomManager] EnemyPrefabs пустой — враги не будут заспавнены.");
+                return;
+            }
+
             if (roomType == null)
             {
                 Debug.LogError($"Room type not set in {gameObject.name}!");
                 return;
             }
 
-            // Не спавним врагов в стартовой комнате
             if (roomType.canBeFirst)
             {
                 return;
             }
 
-            int enemyCount = UnityEngine.Random.Range(roomType.minEnemies, roomType.maxEnemies + 1);
             List<Transform> availableSpawnPoints = new List<Transform>(enemySpawnPoints);
+            int spawnCount = Mathf.Min(UnityEngine.Random.Range(roomType.minEnemies, roomType.maxEnemies + 1), availableSpawnPoints.Count);
+            Debug.Log($"[RoomManager] Спавним {spawnCount} врагов в волне {currentWave}");
 
-            for (int i = 0; i < enemyCount; i++)
+            for (int i = 0; i < spawnCount; i++)
             {
                 if (availableSpawnPoints.Count == 0) break;
-
                 int spawnIndex = UnityEngine.Random.Range(0, availableSpawnPoints.Count);
                 Transform spawnPoint = availableSpawnPoints[spawnIndex];
                 availableSpawnPoints.RemoveAt(spawnIndex);
 
-                // Выбираем врага в зависимости от типа комнаты
                 GameObject enemyPrefab;
-                
                 if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.eliteCombatRoomType)
                 {
-                    // В элитной комнате всегда спавним элитного врага
                     enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
                 }
                 else if (dungeonGenerator != null && roomType == dungeonGenerator.DungeonConfig.bossRoomType)
                 {
-                    // В босс-комнате берем последнего врага (должен быть босс)
                     enemyPrefab = enemyPrefabs[enemyPrefabs.Length - 1];
                 }
                 else
                 {
-                    // В обычной комнате случайный враг
                     int enemyIndex = UnityEngine.Random.Range(0, enemyPrefabs.Length);
                     enemyPrefab = enemyPrefabs[enemyIndex];
                 }
 
-                // Спавним врага на позиции точки спавна
                 GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity, transform);
                 activeEnemies.Add(enemy);
 
@@ -186,8 +241,7 @@ namespace DungeonGeneration.Scripts
                 {
                     enemyHealth.OnDeath += HandleEnemyDeath;
                 }
-                
-                Debug.Log($"[RoomManager] Создан враг {enemy.name} на позиции {spawnPoint.position}");
+                Debug.Log($"[RoomManager] Создан враг {enemy.name} на позиции {spawnPoint.position} (волна {currentWave})");
             }
         }
 
@@ -216,13 +270,23 @@ namespace DungeonGeneration.Scripts
             if (enemy != null)
             {
                 activeEnemies.Remove(enemy);
+                Debug.Log($"[RoomManager] Враг {enemy.name} погиб. Осталось врагов: {activeEnemies.Count}");
             }
-            
+
             if (activeEnemies.Count == 0 && roomNode != null)
             {
-                roomNode.ClearRoom();
-                isRoomCleared = true;
-                OnRoomCleared?.Invoke();
+                Debug.Log($"[RoomManager] Все враги волны {currentWave} побеждены");
+                if (currentWave < totalWaves)
+                {
+                    StartNextWave();
+                }
+                else
+                {
+                    roomNode.ClearRoom();
+                    isRoomCleared = true;
+                    OnRoomCleared?.Invoke();
+                    Debug.Log("[RoomManager] Все волны завершены, комната очищена!");
+                }
             }
         }
 

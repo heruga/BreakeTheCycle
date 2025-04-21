@@ -353,6 +353,7 @@ namespace DungeonGeneration
                 Debug.Log($"[DungeonGenerator] Найден существующий игрок. Перемещаем его в точку спавна.");
                 MovePlayerToSpawnPoint(existingPlayer, spawnPoint);
                 playerInstance = existingPlayer;
+                playerInstance.SetActive(true);
             }
             else
             {
@@ -360,6 +361,9 @@ namespace DungeonGeneration
                 Debug.Log($"[DungeonGenerator] Существующий игрок не найден. Создаем нового игрока.");
                 playerInstance = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
                 playerInstance.tag = "Player";
+                playerInstance.SetActive(false);
+                MovePlayerToSpawnPoint(playerInstance, spawnPoint);
+                playerInstance.SetActive(true);
             }
             
             Debug.Log($"[DungeonGenerator] Игрок находится в стартовой комнате типа: {startRoomNode.RoomType.typeName} на позиции {playerInstance.transform.position}");

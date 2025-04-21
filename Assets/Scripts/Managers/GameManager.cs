@@ -3,6 +3,8 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using DungeonGeneration;
 using DungeonGeneration.Scripts;
+using UnityEngine.UI;
+using System;
 
 /// <summary>
 /// Менеджер игры, управляющий состояниями и переходами между "Реальностью" и "Сознанием"
@@ -41,7 +43,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Log("[GameManager] Awake начат");
+        Debug.Log($"[GameManager] Awake начат, активен: {gameObject.activeSelf}");
         if (Instance == null)
         {
             Instance = this;
@@ -69,9 +71,15 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("[GameManager] Start начат");
-        // Проверяем, что мы находимся в правильной сцене
+        Debug.Log($"[GameManager] Start начат, активен: {gameObject.activeSelf}");
         string currentScene = SceneManager.GetActiveScene().name;
+        if (currentScene == "Init")
+        {
+            Debug.Log("[GameManager] Init загружен, переходим на MainMenu");
+            SceneManager.LoadScene("MainMenu");
+            return;
+        }
+        // Проверяем, что мы находимся в правильной сцене
         if (currentScene != realitySceneName && currentScene != consciousnessSceneName)
         {
             Debug.Log($"[GameManager] Загрузка начальной сцены {realitySceneName}");
@@ -94,11 +102,13 @@ public class GameManager : MonoBehaviour
     
     private void OnEnable()
     {
+        Debug.Log($"[GameManager] OnEnable вызван, активен: {gameObject.activeSelf}");
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
     
     private void OnDisable()
     {
+        Debug.Log($"[GameManager] OnDisable вызван, активен: {gameObject.activeSelf}");
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
     
@@ -184,7 +194,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator SwitchWorldCoroutine(string targetScene)
     {
-        // Начинаем загрузку новой сцены
+        yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
         AsyncOperation loadOperation = SceneManager.LoadSceneAsync(targetScene);
         if (loadOperation == null)
         {
@@ -194,28 +204,19 @@ public class GameManager : MonoBehaviour
         }
 
         loadOperation.allowSceneActivation = false;
-
-        // Очищаем текущую сцену
         CleanupCurrentScene();
-
-        // Ждем загрузки сцены
         while (loadOperation.progress < 0.9f)
         {
             Debug.Log($"[GameManager] Прогресс загрузки: {loadOperation.progress:P0}");
             yield return null;
         }
-
-        // Активируем новую сцену
         loadOperation.allowSceneActivation = true;
         yield return loadOperation;
-
-        // Меняем состояние только после успешной загрузки
         isInReality = !isInReality;
-        
         Debug.Log("[GameManager] Сцена активирована, переключение завершено");
         isTransitioning = false;
-
         UpdateUIState();
+        yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
     }
 
     private void CleanupCurrentScene()
@@ -270,6 +271,8 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LoadSceneAsync(string sceneName)
     {
+        Debug.Log($"[GameManager] Начало fade-out перед загрузкой сцены: {sceneName}");
+        yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
         Debug.Log($"[GameManager] Начало асинхронной загрузки сцены: {sceneName}");
         AsyncOperation operation = null;
         bool sceneExists = false;
@@ -294,6 +297,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"[GameManager] Сцена {sceneName} найдена, начинаем загрузку");
         yield return StartCoroutine(LoadSceneOperation(sceneName));
+        Debug.Log($"[GameManager] Fade-in после загрузки сцены: {sceneName}");
+        yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
     }
 
     private IEnumerator LoadSceneOperation(string sceneName)
@@ -414,6 +419,20 @@ public class GameManager : MonoBehaviour
             // Здесь можно добавить дополнительную логику смерти игрока
             // например, загрузку последнего чекпоинта или перезапуск уровня
         }
+    }
+
+    public void StartNewGame()
+    {
+        if (!isTransitioning)
+        {
+            StartCoroutine(LoadSceneAsync(realitySceneName));
+        }
+    }
+
+    public void ExitGame()
+    {
+        Debug.Log("[GameManager] Выход из приложения");
+        Application.Quit();
     }
 }
 

@@ -222,11 +222,10 @@ namespace DungeonGeneration.Scripts.Enemies
         {
             if (!agent.isStopped)
             {
-                    agent.isStopped = true;
+                agent.isStopped = true;
                 agent.ResetPath();
-                DebugLog("Переход в бездействие, сброс пути");
             }
-                }
+        }
 
         private bool ShouldUpdatePath()
         {

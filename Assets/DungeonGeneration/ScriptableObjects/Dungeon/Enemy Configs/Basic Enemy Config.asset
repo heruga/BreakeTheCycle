@@ -14,12 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Basic Enemy
   enemyPrefab: {fileID: 750636426342510350, guid: f8f7d4ee1d9c6a643bcd3a4cc6486adf, type: 3}
-  enemyIcon: {fileID: 0}
-  difficultyRating: 1
-  minDungeonLevel: 1
+  isBoss: 0
+  isElite: 0
   spawnWeight: 1
   minGroupSize: 1
-  maxGroupSize: 3
-  possibleDrops: []
-  dropChance: 0
+  maxGroupSize: 2
+  lootTable: {fileID: 0}
   description: Basic enemy that appears in early levels

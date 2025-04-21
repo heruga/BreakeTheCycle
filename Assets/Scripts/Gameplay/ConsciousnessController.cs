@@ -67,7 +67,6 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float attackCooldown = 1f;
     [SerializeField] private float chaseDistance = 10f;
-    [SerializeField] private float attackDistance = 2f;
     [SerializeField] private float attackRadius = 2f; // Радиус области атаки
     [SerializeField] private LayerMask enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
     private float lastAttackTime;
@@ -114,6 +113,7 @@ public class ConsciousnessController : MonoBehaviour
                 emotionHandler = gameObject.AddComponent<PlayerEmotionHandler>();
             }
         }
+        Debug.Log($"[ConsciousnessController] Awake: controlsEnabled = {controlsEnabled}, PlayerControlManager.Instance?.ControlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
     }
     
     private void SetupPhysics()
@@ -143,6 +143,7 @@ public class ConsciousnessController : MonoBehaviour
         Cursor.visible = false;
         if (PlayerControlManager.Instance != null)
             PlayerControlManager.Instance.SetControlsEnabled(true);
+        Debug.Log($"[ConsciousnessController] Start: controlsEnabled = {controlsEnabled}, PlayerControlManager.Instance?.ControlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
     }
     
     private void SetupCamera()
@@ -182,6 +183,7 @@ public class ConsciousnessController : MonoBehaviour
 
     private void OnControlStateChanged(bool enabled)
     {
+        Debug.Log($"[ConsciousnessController] OnControlStateChanged: controlsEnabled = {enabled}");
         controlsEnabled = enabled;
         if (!enabled)
         {
@@ -195,6 +197,7 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Update()
     {
+        // Debug.Log("[ConsciousnessController] Update вызван");
         var emotionUI = FindObjectOfType<EmotionUI>();
         if (emotionUI != null && emotionUI.IsOpen())
         {
@@ -204,10 +207,15 @@ public class ConsciousnessController : MonoBehaviour
                 if (PlayerControlManager.Instance != null)
                     PlayerControlManager.Instance.SetControlsEnabled(true);
             }
+            Debug.Log("[ConsciousnessController] Update: return из-за EmotionUI");
             return; // Пока окно эмоций открыто, больше ничего не делаем
         }
 
-        if (!controlsEnabled) return;
+        if (!controlsEnabled)
+        {
+            Debug.Log("[ConsciousnessController] Update: return из-за controlsEnabled = false");
+            return;
+        }
 
         // Обработка ввода для движения относительно камеры
         float moveX = Input.GetAxis("Horizontal");
@@ -233,12 +241,22 @@ public class ConsciousnessController : MonoBehaviour
         {
             var emotionUI_F = FindObjectOfType<EmotionUI>();
             if (emotionUI_F != null && emotionUI_F.IsOpen())
+            {
+                Debug.Log("[ConsciousnessController] Update: return из-за EmotionUI (F)");
                 return; // Не взаимодействуем, если окно эмоций открыто
+            }
             TryInteractWithMask(interactionMask);
         }
         if (Input.GetKeyDown(KeyCode.E))
         {
             TryInteractWithMask(inspectableMask);
+        }
+
+        // Логика атаки
+        if (Input.GetMouseButtonDown(0))
+        {
+            Debug.Log("[ConsciousnessController] Попытка атаки (нажатие ЛКМ)");
+            Attack();
         }
     }
     
@@ -565,36 +583,46 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Attack()
     {
-        if (Time.time < lastAttackTime + attackCooldown) return;
-        
+        if (Time.time < lastAttackTime + attackCooldown)
+        {
+            Debug.Log($"[Attack] Не атакуем: кулдаун. Time={Time.time:F2}, lastAttackTime={lastAttackTime:F2}, attackCooldown={attackCooldown}");
+            return;
+        }
         lastAttackTime = Time.time;
-        
-        Debug.Log("[ConsciousnessController] Атака!");
-        
-        // Получаем все коллайдеры в радиусе атаки
+
+        Debug.Log($"[Attack] Вызван. enemyLayerMask={enemyLayerMask.value}, attackRadius={attackRadius}");
+
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, attackRadius, enemyLayerMask);
-        
-        // Базовый урон
+        Debug.Log($"[Attack] Найдено коллайдеров: {hitColliders.Length}");
+
         float damage = attackDamage;
-        
-        // Применяем модификаторы урона от эмоций
+        float damageBeforeMods = damage;
         if (emotionHandler != null)
         {
-            // Проверяем, является ли враг элитным
-            bool isElite = false; // Здесь нужно добавить проверку на элитного врага
+            bool isElite = false; // TODO: добавить проверку на элитного врага
             damage = emotionHandler.ModifyPlayerDamage(damage, isElite);
+            Debug.Log($"[Attack] Модификатор эмоций: было {damageBeforeMods}, стало {damage}");
         }
-        
+
+        int i = 0;
         foreach (var hitCollider in hitColliders)
         {
-            // Здесь должна быть логика нанесения урона врагу
-            Debug.Log($"[ConsciousnessController] Попадание по врагу: {hitCollider.name}");
-            
-            // Пример нанесения урона, если у врага есть компонент EnemyHealth
+            Debug.Log($"[Attack] hitCollider[{i}]: name={hitCollider.name}, tag={hitCollider.tag}, layer={hitCollider.gameObject.layer} (enemyLayerMask={enemyLayerMask.value})");
+            i++;
             EnemyHealth enemy = hitCollider.GetComponent<EnemyHealth>();
+            if (enemy == null)
+                enemy = hitCollider.GetComponentInParent<EnemyHealth>();
+
             if (enemy != null)
             {
+                float prevHealth = enemy.GetCurrentHealth();
                 enemy.TakeDamage(damage);
+                float newHealth = enemy.GetCurrentHealth();
+                Debug.Log($"[Attack] Враг {enemy.gameObject.name}: урон {damage}. Было HP={prevHealth}, стало HP={newHealth}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Attack] Не найден EnemyHealth у объекта {hitCollider.name} (родитель: {hitCollider.transform.parent?.name})");
             }
         }
     }

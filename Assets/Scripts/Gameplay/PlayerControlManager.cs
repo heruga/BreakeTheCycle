@@ -25,6 +25,7 @@ namespace BreakTheCycle
 
         public void SetControlsEnabled(bool enabled)
         {
+            Debug.Log($"[PlayerControlManager] SetControlsEnabled: {enabled}");
             if (controlsEnabled != enabled)
             {
                 controlsEnabled = enabled;
