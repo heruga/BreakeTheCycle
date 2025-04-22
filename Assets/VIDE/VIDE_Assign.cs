@@ -37,7 +37,7 @@ public class VIDE_Assign : MonoBehaviour, ISerializationCallbackReceiver
         //Sends preloaded data
         if (preload)
         {
-            VD.LoadFromVA(this);
+            VIDE_Data.VIDE_Data.LoadFromVA(this);
         }
     }
 

@@ -525,7 +525,7 @@ public class VIDE_AssignC : Editor
         {
             IDCheck();
 
-            VIDE_Data.Diags diag = VIDE_Data.VD.PreloadLoad(d.assignedDialogue);
+            VIDE_Data.Diags diag = VIDE_Data.VIDE_Data.PreloadLoad(d.assignedDialogue);
 
             d.playerDiags = diag.playerNodes;
             d.actionNodes = diag.actionNodes;
