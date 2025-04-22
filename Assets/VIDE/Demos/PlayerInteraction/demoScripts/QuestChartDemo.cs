@@ -59,10 +59,10 @@ public class QuestChartDemo : MonoBehaviour
     // The method will also add info to an ExtraVariables key to mark the completion of a quest
     public static void SetQuest(int quest, bool visible)
     {
-        VD.SetVisible(assigned.assignedDialogue, 0, quest, visible);
-        Dictionary<string, object> newEV = VD.GetExtraVariables(assigned.assignedDialogue, 1);
+        VIDE_Data.VIDE_Data.SetVisible(assigned.assignedDialogue, 0, quest, visible);
+        Dictionary<string, object> newEV = VIDE_Data.VIDE_Data.GetExtraVariables(assigned.assignedDialogue, 1);
         newEV["complete"] += "[" + quest.ToString() + "]";
-        VD.SetExtraVariables(assigned.assignedDialogue, 1, newEV);
+        VIDE_Data.VIDE_Data.SetExtraVariables(assigned.assignedDialogue, 1, newEV);
     }
 
     //Will start and end the assigned dialogue
@@ -71,7 +71,7 @@ public class QuestChartDemo : MonoBehaviour
         if (!questChartContainer.activeSelf)
         {
             questChartContainer.SetActive(true);
-            VD.NodeData nd = VD.BeginDialogue(assigned);
+            VIDE_Data.VIDE_Data.NodeData nd = VIDE_Data.VIDE_Data.BeginDialogue(assigned);
             LoadChart(nd);
         }
         else
@@ -83,12 +83,12 @@ public class QuestChartDemo : MonoBehaviour
                 if (i != 0) Destroy(ovGameObject.transform.parent.GetChild(i).gameObject);
 
             questChartContainer.SetActive(false);
-            VD.EndDialogue();
+            VIDE_Data.VIDE_Data.EndDialogue();
         }
     }
 
     // Uses both NodeData and local variables to populate the Quest UI
-    public void LoadChart(VD.NodeData data)
+    public void LoadChart(VIDE_Data.VIDE_Data.NodeData data)
     {
         //Pending quests
         for (int i = 0; i < data.comments.Length; i++)
@@ -103,7 +103,7 @@ public class QuestChartDemo : MonoBehaviour
         }
 
         //Overview quests
-        VD.NodeData overviewData = VD.GetNodeData(assigned.assignedDialogue, 1, true);
+        VIDE_Data.VIDE_Data.NodeData overviewData = VIDE_Data.VIDE_Data.GetNodeData(assigned.assignedDialogue, 1, true);
         for (int i = 0; i < overviewData.comments.Length; i++)
         {
             string completeKey = (string)overviewData.extraVars["complete"];
@@ -133,12 +133,12 @@ public class QuestChartDemo : MonoBehaviour
 
 
     //Check some of the Quests completion
-    public static void CheckTaskCompletion(VD.NodeData data)
+    public static void CheckTaskCompletion(VIDE_Data.VIDE_Data.NodeData data)
     {
-        if (VD.assigned == null) return;
+        if (VIDE_Data.VIDE_Data.assigned == null) return;
 
-        if (!interactedWith.Contains(VD.assigned.gameObject.name))
-            interactedWith.Add(VD.assigned.gameObject.name);
+        if (!interactedWith.Contains(VIDE_Data.VIDE_Data.assigned.gameObject.name))
+            interactedWith.Add(VIDE_Data.VIDE_Data.assigned.gameObject.name);
 
         //Check
         // 0 Talk to Everyone

@@ -19,24 +19,24 @@ public class DEMO_UIManager : MonoBehaviour {
             t.transform.parent.gameObject.SetActive(false);
 
         //Subscribe to some events and Begin the Dialogue
-        VD.OnNodeChange += UpdateUI;
-        VD.OnEnd += End;
-        VD.BeginDialogue(GetComponent<VIDE_Assign>()); //This is the first most important method when using VIDE
+        VIDE_Data.VIDE_Data.OnNodeChange += UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd += End;
+        VIDE_Data.VIDE_Data.BeginDialogue(GetComponent<VIDE_Assign>()); //This is the first most important method when using VIDE
 	}
 
     //Check if a dialogue is active and if we are NOT in a player node in order to continue
     void Update()
     {
-        if (VD.isActive)
+        if (VIDE_Data.VIDE_Data.isActive)
         {
-            if (!VD.nodeData.isPlayer && Input.GetKeyUp(continueButton))
+            if (!VIDE_Data.VIDE_Data.nodeData.isPlayer && Input.GetKeyUp(continueButton))
             {
                 if (keyDown)
                 {
                     keyDown = false;
                 } else
                 {
-                    VD.Next(); //Second most important method when using VIDE
+                    VIDE_Data.VIDE_Data.Next(); //Second most important method when using VIDE
                 }
             }
         } else
@@ -52,12 +52,12 @@ public class DEMO_UIManager : MonoBehaviour {
     public void SelectChoiceAndGoToNext(int playerChoice)
     {
         keyDown = true;
-        VD.nodeData.commentIndex = playerChoice; //Setting this when on a player node will decide which node we go next
-        VD.Next();
+        VIDE_Data.VIDE_Data.nodeData.commentIndex = playerChoice; //Setting this when on a player node will decide which node we go next
+        VIDE_Data.VIDE_Data.Next();
     }
 	
     //Every time VD.nodeData is updated, this method will be called. (Because we subscribed it to OnNodeChange event)
-	void UpdateUI (VD.NodeData data) {
+	void UpdateUI (VIDE_Data.VIDE_Data.NodeData data) {
 
         WipeAll(); //Turn stuff off first
 
@@ -93,18 +93,18 @@ public class DEMO_UIManager : MonoBehaviour {
 
     //This will be called when we reach the end of the dialogue.
     //Very important that this gets called before we call BeginDialogue again!
-    void End(VD.NodeData data)
+    void End(VIDE_Data.VIDE_Data.NodeData data)
     {
-        VD.OnNodeChange -= UpdateUI;
-        VD.OnEnd -= End;
-        VD.EndDialogue(); //Third most important method when using VIDE     
+        VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd -= End;
+        VIDE_Data.VIDE_Data.EndDialogue(); //Third most important method when using VIDE     
         WipeAll();
     }
 
     //Just in case something happens to this script
     void OnDisable()
     {
-        VD.OnNodeChange -= UpdateUI;
-        VD.OnEnd -= End;
+        VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd -= End;
     }
 }

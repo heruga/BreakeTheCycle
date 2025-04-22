@@ -92,7 +92,6 @@ public class ConsciousnessController : MonoBehaviour
     private Canvas createdCanvas;
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
-    private bool controlsEnabled = true;
     private EmotionSystem emotionSystem;
     
     private void Awake()
@@ -102,7 +101,7 @@ public class ConsciousnessController : MonoBehaviour
         lastMoveDirection = transform.forward;
         enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
         
-        Debug.Log($"[ConsciousnessController] Awake: controlsEnabled = {controlsEnabled}, PlayerControlManager.Instance?.ControlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
+        Debug.Log($"[ConsciousnessController] Awake: controlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
     }
     
     private void SetupPhysics()
@@ -132,7 +131,7 @@ public class ConsciousnessController : MonoBehaviour
         Cursor.visible = false;
         if (PlayerControlManager.Instance != null)
             PlayerControlManager.Instance.SetControlsEnabled(true);
-        Debug.Log($"[ConsciousnessController] Start: controlsEnabled = {controlsEnabled}, PlayerControlManager.Instance?.ControlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
+        Debug.Log($"[ConsciousnessController] Start: controlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
         emotionSystem = FindObjectOfType<EmotionSystem>();
     }
     
@@ -162,7 +161,6 @@ public class ConsciousnessController : MonoBehaviour
     {
         if (PlayerControlManager.Instance != null)
             PlayerControlManager.Instance.OnControlStateChanged += OnControlStateChanged;
-        controlsEnabled = PlayerControlManager.Instance == null || PlayerControlManager.Instance.ControlsEnabled;
     }
 
     private void OnDisable()
@@ -174,7 +172,6 @@ public class ConsciousnessController : MonoBehaviour
     private void OnControlStateChanged(bool enabled)
     {
         Debug.Log($"[ConsciousnessController] OnControlStateChanged: controlsEnabled = {enabled}");
-        controlsEnabled = enabled;
         if (!enabled)
         {
             currentVelocity = Vector3.zero;
@@ -187,7 +184,7 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Update()
     {
-        if (!controlsEnabled)
+        if (!PlayerControlManager.Instance.ControlsEnabled)
         {
             return;
         }
@@ -245,7 +242,7 @@ public class ConsciousnessController : MonoBehaviour
     
     private void FixedUpdate()
     {
-        if (!controlsEnabled) return;
+        if (!PlayerControlManager.Instance.ControlsEnabled) return;
 
         // Обработка рывка
         if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDashTime + dashCooldown)

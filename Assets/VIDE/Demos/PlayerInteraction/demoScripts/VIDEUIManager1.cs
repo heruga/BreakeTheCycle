@@ -35,7 +35,7 @@ public class VIDEUIManager1 : MonoBehaviour
     public Image playerSprite;
     public Text playerLabel;
 
-    bool dialoguePaused = false; //Custom variable to prevent the manager from calling VD.Next
+    bool dialoguePaused = false; //Custom variable to prevent the manager from calling VIDE_Data.VIDE_Data.Next
     bool animatingText = false; //Will help us know when text is currently being animated
 
     //Reference to the player script
@@ -53,11 +53,11 @@ public class VIDEUIManager1 : MonoBehaviour
 
     void Awake()
     {
-       // VD.LoadDialogues(); //Load all dialogues to memory so that we dont spend time doing so later
+       // VIDE_Data.VIDE_Data.LoadDialogues(); //Load all dialogues to memory so that we dont spend time doing so later
         //An alternative to this can be preloading dialogues from the VIDE_Assign component!
 
         //Loads the saved state of VIDE_Assigns and dialogues.
-        VD.LoadState("VIDEDEMOScene1", true);
+        VIDE_Data.VIDE_Data.LoadState("VIDEDEMOScene1", true);
     }
 
     //This begins the dialogue and progresses through it (Called by VIDEDemoPlayer.cs)
@@ -69,7 +69,7 @@ public class VIDEUIManager1 : MonoBehaviour
         var doNotInteract = PreConditions(dialogue);
         if (doNotInteract) return;
 
-        if (!VD.isActive)
+        if (!VIDE_Data.VIDE_Data.isActive)
         {
             Begin(dialogue);
         } else
@@ -87,14 +87,14 @@ public class VIDEUIManager1 : MonoBehaviour
         playerLabel.text = "";
 
         //First step is to call BeginDialogue, passing the required VIDE_Assign component 
-        //This will store the first Node data in VD.nodeData
+        //This will store the first Node data in VIDE_Data.VIDE_Data.nodeData
         //But before we do so, let's subscribe to certain events that will allow us to easily
         //Handle the node-changes
-        VD.OnActionNode += ActionHandler;
-        VD.OnNodeChange += UpdateUI;
-        VD.OnEnd += EndDialogue;
+        VIDE_Data.VIDE_Data.OnActionNode += ActionHandler;
+        VIDE_Data.VIDE_Data.OnNodeChange += UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd += EndDialogue;
 
-        VD.BeginDialogue(dialogue); //Begins dialogue, will call the first OnNodeChange
+        VIDE_Data.VIDE_Data.BeginDialogue(dialogue); //Begins dialogue, will call the first OnNodeChange
 
         dialogueContainer.SetActive(true); //Let's make our dialogue container visible
     }
@@ -107,7 +107,7 @@ public class VIDEUIManager1 : MonoBehaviour
 
         if (!dialoguePaused) //Only if
         {       
-            VD.Next(); //We call the next node and populate nodeData with new data. Will fire OnNodeChange.
+            VIDE_Data.VIDE_Data.Next(); //We call the next node and populate nodeData with new data. Will fire OnNodeChange.
         } else
         {
             //Disable item popup and disable pause
@@ -123,9 +123,9 @@ public class VIDEUIManager1 : MonoBehaviour
     void Update()
     {
         //Lets just store the Node Data variable for the sake of fewer words
-        var data = VD.nodeData;
+        var data = VIDE_Data.VIDE_Data.nodeData;
 
-        if (VD.isActive) //If there is a dialogue active
+        if (VIDE_Data.VIDE_Data.isActive) //If there is a dialogue active
         {
             //Scroll through Player dialogue options if dialogue is not paused and we are on a player node
             //For player nodes, NodeData.commentIndex is the index of the picked choice
@@ -154,10 +154,10 @@ public class VIDEUIManager1 : MonoBehaviour
         //Note you could also use Unity's Navi system
     }
 
-    //When we call VD.Next, nodeData will change. When it changes, OnNodeChange event will fire
+    //When we call VIDE_Data.VIDE_Data.Next, nodeData will change. When it changes, OnNodeChange event will fire
     //We subscribed our UpdateUI method to the event in the Begin method
     //Here's where we update our UI
-    void UpdateUI(VD.NodeData data)
+    void UpdateUI(VIDE_Data.VIDE_Data.NodeData data)
     {
         //Reset some variables
         //Destroy the current choices
@@ -179,8 +179,8 @@ public class VIDEUIManager1 : MonoBehaviour
             //Set node sprite if there's any, otherwise try to use default sprite
             if (data.sprite != null)
                 playerSprite.sprite = data.sprite;
-            else if (VD.assigned.defaultPlayerSprite != null)
-                playerSprite.sprite = VD.assigned.defaultPlayerSprite;
+            else if (VIDE_Data.VIDE_Data.assigned.defaultPlayerSprite != null)
+                playerSprite.sprite = VIDE_Data.VIDE_Data.assigned.defaultPlayerSprite;
 
             SetOptions(data.comments);
 
@@ -207,15 +207,15 @@ public class VIDEUIManager1 : MonoBehaviour
                     if (data.commentIndex == (int)data.extraVars["sprite"])
                         NPCSprite.sprite = data.sprite;
                     else
-                        NPCSprite.sprite = VD.assigned.defaultNPCSprite; //If not there yet, set default dialogue sprite
+                        NPCSprite.sprite = VIDE_Data.VIDE_Data.assigned.defaultNPCSprite; //If not there yet, set default dialogue sprite
                 }
                 else //Otherwise use the node sprites
                 {
                     NPCSprite.sprite = data.sprite;
                 }
             } //or use the default sprite if there isnt a node sprite at all
-            else if (VD.assigned.defaultNPCSprite != null)
-                NPCSprite.sprite = VD.assigned.defaultNPCSprite;
+            else if (VIDE_Data.VIDE_Data.assigned.defaultNPCSprite != null)
+                NPCSprite.sprite = VIDE_Data.VIDE_Data.assigned.defaultNPCSprite;
 
             //This coroutine animates the NPC text instead of displaying it all at once
             NPC_TextAnimator = DrawText(data.comments[data.commentIndex], 0.02f);
@@ -225,7 +225,7 @@ public class VIDEUIManager1 : MonoBehaviour
             if (data.tag.Length > 0)
                 NPC_label.text = data.tag;
             else
-                NPC_label.text = VD.assigned.alias;
+                NPC_label.text = VIDE_Data.VIDE_Data.assigned.alias;
 
             //Sets the NPC container on
             NPC_Container.SetActive(true);
@@ -253,16 +253,16 @@ public class VIDEUIManager1 : MonoBehaviour
 
     //Unsuscribe from everything, disable UI, and end dialogue
     //Called automatically because we subscribed to the OnEnd event
-    void EndDialogue(VD.NodeData data)
+    void EndDialogue(VIDE_Data.VIDE_Data.NodeData data)
     {
         CheckTasks();
-        VD.OnActionNode -= ActionHandler;
-        VD.OnNodeChange -= UpdateUI;
-        VD.OnEnd -= EndDialogue;
+        VIDE_Data.VIDE_Data.OnActionNode -= ActionHandler;
+        VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd -= EndDialogue;
         dialogueContainer.SetActive(false);
-        VD.EndDialogue();
+        VIDE_Data.VIDE_Data.EndDialogue();
 
-        VD.SaveState("VIDEDEMOScene1", true); //Saves VIDE stuff related to EVs and override start nodes
+        VIDE_Data.VIDE_Data.SaveState("VIDEDEMOScene1", true); //Saves VIDE stuff related to EVs and override start nodes
         QuestChartDemo.SaveProgress(); //saves OUR custom game data
     }
 
@@ -271,12 +271,12 @@ public class VIDEUIManager1 : MonoBehaviour
         //If the script gets destroyed, let's make sure we force-end the dialogue to prevent errors
         //We do not save changes
         CheckTasks();
-        VD.OnActionNode -= ActionHandler;
-        VD.OnNodeChange -= UpdateUI;
-        VD.OnEnd -= EndDialogue;
+        VIDE_Data.VIDE_Data.OnActionNode -= ActionHandler;
+        VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd -= EndDialogue;
         if (dialogueContainer != null)
         dialogueContainer.SetActive(false);
-        VD.EndDialogue();
+        VIDE_Data.VIDE_Data.EndDialogue();
     }
 
     #endregion
@@ -289,9 +289,9 @@ public class VIDEUIManager1 : MonoBehaviour
     //And we don't want to call Next() this time
     bool PreConditions(VIDE_Assign dialogue)
     {
-        var data = VD.nodeData;
+        var data = VIDE_Data.VIDE_Data.nodeData;
 
-        if (VD.isActive) //Stuff we check while the dialogue is active
+        if (VIDE_Data.VIDE_Data.isActive) //Stuff we check while the dialogue is active
         {
             //Check for extra variables
             //This one finds a key named "item" which has the value of the item thats gonna be given
@@ -308,14 +308,14 @@ public class VIDEUIManager1 : MonoBehaviour
                             int newItem = (int)newVars["item"]; //Retrieve the value we want to change
                             newItem += (int)data.extraVars["item++"]; //Change it as we desire
                             newVars["item"] = newItem; //Set it back   
-                            VD.SetExtraVariables(25, newVars); //Send newVars through UpdateExtraVariable method
+                            VIDE_Data.VIDE_Data.SetExtraVariables(25, newVars); //Send newVars through UpdateExtraVariable method
                         }
 
                         //If it's CrazyCap, check his stock before continuing
                         //If out of stock, change override start node
-                        if (VD.assigned.alias == "CrazyCap")
+                        if (VIDE_Data.VIDE_Data.assigned.alias == "CrazyCap")
                             if ((int)data.extraVars["item"] + 1 >= player.demo_Items.Count)
-                                VD.assigned.overrideStartNode = 28;
+                                VIDE_Data.VIDE_Data.assigned.overrideStartNode = 28;
 
 
                         if (!player.demo_ItemInventory.Contains(player.demo_Items[(int)data.extraVars["item"]]))
@@ -332,11 +332,11 @@ public class VIDEUIManager1 : MonoBehaviour
                 {
                     if (data.extraVars.ContainsKey("condInfo"))
                     {
-                        int[] nodeIDs = VD.ToIntArray((string)data.extraVars["outCondition"]);
-                        if (VD.assigned.interactionCount < nodeIDs.Length)
-                            VD.SetNode(nodeIDs[VD.assigned.interactionCount]);
+                        int[] nodeIDs = VIDE_Data.VIDE_Data.ToIntArray((string)data.extraVars["outCondition"]);
+                        if (VIDE_Data.VIDE_Data.assigned.interactionCount < nodeIDs.Length)
+                            VIDE_Data.VIDE_Data.SetNode(nodeIDs[VIDE_Data.VIDE_Data.assigned.interactionCount]);
                         else
-                            VD.SetNode(nodeIDs[nodeIDs.Length - 1]);
+                            VIDE_Data.VIDE_Data.SetNode(nodeIDs[nodeIDs.Length - 1]);
                         return true;
                     }
                 }
@@ -357,8 +357,8 @@ public class VIDEUIManager1 : MonoBehaviour
         return false;
     }
 
-    //Conditions we check after VD.Next was called but before we update the UI
-    void PostConditions(VD.NodeData data)
+    //Conditions we check after VIDE_Data.VIDE_Data.Next was called but before we update the UI
+    void PostConditions(VIDE_Data.VIDE_Data.NodeData data)
     {
         //Don't conduct extra variable actions if we are waiting on a paused action
         if (data.pausedAction) return;
@@ -386,10 +386,10 @@ public class VIDEUIManager1 : MonoBehaviour
 
     //This will replace any "[NAME]" with the name of the gameobject holding the VIDE_Assign
     //Will also replace [WEAPON] with a different variable
-    void ReplaceWord(VD.NodeData data)
+    void ReplaceWord(VIDE_Data.VIDE_Data.NodeData data)
     {
         if (data.comments[data.commentIndex].Contains("[NAME]"))
-            data.comments[data.commentIndex] = data.comments[data.commentIndex].Replace("[NAME]", VD.assigned.gameObject.name);
+            data.comments[data.commentIndex] = data.comments[data.commentIndex].Replace("[NAME]", VIDE_Data.VIDE_Data.assigned.gameObject.name);
 
         if (data.comments[data.commentIndex].Contains("[WEAPON]"))
             data.comments[data.commentIndex] = data.comments[data.commentIndex].Replace("[WEAPON]", player.demo_ItemInventory[0].ToLower());
@@ -403,7 +403,7 @@ public class VIDEUIManager1 : MonoBehaviour
     void OnLoadedAction()
     {
         Debug.Log("Finished loading all dialogues");
-        VD.OnLoaded -= OnLoadedAction;
+        VIDE_Data.VIDE_Data.OnLoaded -= OnLoadedAction;
     }
 
     //Another way to handle Action Nodes is to listen to the OnActionNode event, which sends the ID of the action node
@@ -455,7 +455,7 @@ public class VIDEUIManager1 : MonoBehaviour
     void CutTextAnim()
     {
         StopCoroutine(NPC_TextAnimator);
-        NPC_Text.text = VD.nodeData.comments[VD.nodeData.commentIndex]; //Now just copy full text		
+        NPC_Text.text = VIDE_Data.VIDE_Data.nodeData.comments[VIDE_Data.VIDE_Data.nodeData.commentIndex]; //Now just copy full text		
         animatingText = false;
     }
 
@@ -465,7 +465,7 @@ public class VIDEUIManager1 : MonoBehaviour
         if (player.demo_ItemInventory.Count == 5)
             QuestChartDemo.SetQuest(2, false);
 
-        QuestChartDemo.CheckTaskCompletion(VD.nodeData);
+        QuestChartDemo.CheckTaskCompletion(VIDE_Data.VIDE_Data.nodeData);
     }
 
     #endregion
