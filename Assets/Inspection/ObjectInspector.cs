@@ -57,10 +57,9 @@ namespace Inspection
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape))
             {
-                if (showDebug) Debug.Log("E key pressed");
-                
+
                 if (currentObject == null)
                     TryStartInspection();
                 else
@@ -112,6 +111,12 @@ namespace Inspection
             }
             
             if (showDebug) Debug.Log($"Started inspecting: {obj.gameObject.name}");
+
+            // Блокируем управление игроком на время осмотра
+            if (PlayerControlManager.Instance != null)
+            {
+                PlayerControlManager.Instance.SetControlsEnabled(false);
+            }
         }
 
         private void StopInspection()
@@ -140,16 +145,15 @@ namespace Inspection
                 }
             }
 
-            // Синхронизируем углы вращения камеры игрока
-            var controller = mainCamera != null ? mainCamera.GetComponent<FirstPersonCameraController>() : null;
-            if (controller != null)
-            {
-                controller.SyncRotationWithTransform();
-            }
-
             currentObject = null;
             
             if (showDebug) Debug.Log("Stopped inspection");
+
+            // Возвращаем управление игроку после осмотра
+            if (PlayerControlManager.Instance != null)
+            {
+                PlayerControlManager.Instance.SetControlsEnabled(true);
+            }
         }
 
         // Визуализация в редакторе

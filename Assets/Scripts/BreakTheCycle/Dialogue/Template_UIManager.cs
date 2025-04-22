@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using VIDE_Data; //<--- Import to use VD class
 using TMPro;
+using BreakTheCycle;
 
 public class Template_UIManager : MonoBehaviour
 {
@@ -47,7 +48,7 @@ public class Template_UIManager : MonoBehaviour
     public bool useNavigation;
 
 
-    bool dialoguePaused = false; //Custom variable to prevent the manager from calling VD.Next
+    bool dialoguePaused = false; //Custom variable to prevent the manager from calling VIDE_Data.Next
     bool animatingText = false; //Will help us know when text is currently being animated
     int availableChoices = 0;
 
@@ -60,17 +61,14 @@ public class Template_UIManager : MonoBehaviour
     void Awake()
     {
         // Instead of loading all dialogues at once, we'll load them on demand
-        // VD.LoadDialogues(); // Commented out to prevent the collection modification error
+        // VIDE_Data.LoadDialogues(); // Commented out to prevent the collection modification error
     }
 
     //Call this to begin the dialogue and advance through it
     public void Interact(VIDE_Assign dialogue)
     {
-        //Удаляем проверку PreConditions
-        //var doNotInteract = PreConditions(dialogue);
-        //if (doNotInteract) return;
-
-        if (!VD.isActive)
+        Debug.Log($"[Interact] dialogue={dialogue}, isActive={VIDE_Data.VIDE_Data.isActive}");
+        if (!VIDE_Data.VIDE_Data.isActive)
         {
             Begin(dialogue);
         }
@@ -89,27 +87,46 @@ public class Template_UIManager : MonoBehaviour
         playerLabel.text = "";
 
         //Subscribe to events
-        //VD.OnActionNode += ActionHandler;
-        VD.OnNodeChange += UpdateUI;
-        //VD.OnEnd += EndDialogue;
+        //VIDE_Data.OnActionNode += ActionHandler;
+        VIDE_Data.VIDE_Data.OnNodeChange += UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd += EndDialogue;
 
-        // Load the specific dialogue we need
-        VD.Load(dialogue.assignedDialogue);
+        // Удаляем ручную загрузку диалога, чтобы избежать ошибки
+        // VIDE_Data.VIDE_Data.Load(dialogue.assignedDialogue);
 
-        VD.BeginDialogue(dialogue); //Begins dialogue, will call the first OnNodeChange
+        VIDE_Data.VIDE_Data.BeginDialogue(dialogue); //Begins dialogue, will call the first OnNodeChange
 
-        dialogueContainer.SetActive(true); //Let's make our dialogue container visible
+        Debug.Log("Открываем диалоговое окно!");
+        dialogueContainer.SetActive(true);
+        Debug.Log("dialogueContainer active: " + dialogueContainer.activeSelf);
+        // Отключаем управление игроком
+        if (PlayerControlManager.Instance != null)
+            PlayerControlManager.Instance.SetControlsEnabled(false);
     }
     
     //Calls next node in the dialogue
     public void CallNext()
     {
-        //Удаляем CutTextAnim
-        //if (animatingText) { CutTextAnim(); return; }
-
+        Debug.Log($"[CallNext] dialoguePaused={dialoguePaused}, isEnd={VIDE_Data.VIDE_Data.nodeData?.isEnd}");
+        var data = VIDE_Data.VIDE_Data.nodeData;
+        Debug.Log($"[CallNext] commentIndex={data.commentIndex}, comments.Length={data.comments?.Length ?? -1}");
+        if (data.comments != null && data.commentIndex < data.comments.Length)
+        {
+            Debug.Log($"[CallNext] Выбранный комментарий: {data.comments[data.commentIndex]}");
+        }
+        // Попробуем получить следующий узел через GetNext
+        var nextNode = VIDE_Data.VIDE_Data.GetNext(true, true);
+        Debug.Log($"[CallNext] GetNext: nodeID={nextNode?.nodeID}, isPlayer={nextNode?.isPlayer}, isEnd={nextNode?.isEnd}");
+        if (nextNode == null || nextNode.isEnd)
+        {
+            Debug.Log("[CallNext] Следующего узла нет или это конец — завершаем диалог вручную.");
+            EndDialogue(VIDE_Data.VIDE_Data.nodeData);
+            return;
+        }
         if (!dialoguePaused) //Only if
         {
-            VD.Next(); //We call the next node and populate nodeData with new data. Will fire OnNodeChange.
+            var afterNext = VIDE_Data.VIDE_Data.Next();
+            Debug.Log($"[CallNext] После Next: nodeID={afterNext?.nodeID}, isPlayer={afterNext?.isPlayer}, isEnd={afterNext?.isEnd}");
         }
         else
         {
@@ -121,21 +138,18 @@ public class Template_UIManager : MonoBehaviour
     //They will send along the choice index
     public void SelectChoice(int choice)
     {
-        VD.nodeData.commentIndex = choice;
-
-        if (Input.GetMouseButtonUp(0))
-        {
-            Interact(VD.assigned);
-        }
+        Debug.Log($"[SelectChoice] Выбран индекс: {choice}");
+        VIDE_Data.VIDE_Data.nodeData.commentIndex = choice;
+        Interact(VIDE_Data.VIDE_Data.assigned);
     }
 
     //Input related stuff (scroll through player choices and update highlight)
     void Update()
     {
         //Lets just store the Node Data variable for the sake of fewer words
-        var data = VD.nodeData;
+        var data = VIDE_Data.VIDE_Data.nodeData;
 
-        if (VD.isActive) //If there is a dialogue active
+        if (VIDE_Data.VIDE_Data.isActive) //If there is a dialogue active
         {
             //Scroll through Player dialogue options if dialogue is not paused and we are on a player node
             //For player nodes, NodeData.commentIndex is the index of the picked choice
@@ -157,50 +171,121 @@ public class Template_UIManager : MonoBehaviour
                     maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = Color.white;
                     if (i == data.commentIndex) maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = Color.yellow;
                 }
+
+                // --- ВЫБОР РЕПЛИКИ ПО ENTER или ЛКМ ---
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0))
+                {
+                    Debug.Log($"[UI] Выбрана реплика: {data.commentIndex} — {data.comments[data.commentIndex]}");
+                    SelectChoice(data.commentIndex);
+                }
+            }
+
+            // --- ЗАВЕРШЕНИЕ ДИАЛОГА ПО ENTER/ЛКМ НА NPC/END NODE ---
+            if (!data.isPlayer && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0)))
+            {
+                Debug.Log("[UI] Завершаем диалог по Enter/ЛКМ на NPC/End Node");
+                Interact(VIDE_Data.VIDE_Data.assigned);
             }
 
             //Detect interact key
             if (Input.GetKeyDown(interactionKey))
             {
-                Interact(VD.assigned);
-            }
-            if (Input.GetMouseButtonDown(0))
-            {
-                if (animatingText)
-                {
-                    Interact(VD.assigned);
-                }
-                else if (!data.isPlayer)
-                {
-                    Interact(VD.assigned);
-                }
+                Interact(VIDE_Data.VIDE_Data.assigned);
             }
         }
         //Note you could also use Unity's Navi system, in which case you would tick the useNavigation flag.
     }
 
-    //When we call VD.Next, nodeData will change. When it changes, OnNodeChange event will fire
+    //When we call VIDE_Data.Next, nodeData will change. When it changes, OnNodeChange event will fire
     //We subscribed our UpdateUI method to the event in the Begin method
     //Here's where we update our UI
-    void UpdateUI(VD.NodeData data)
+    void UpdateUI(VIDE_Data.VIDE_Data.NodeData data)
     {
-        //Reset some variables
+        Debug.Log($"[UpdateUI] Вызван для nodeID={data.nodeID}, isPlayer={data.isPlayer}, isEnd={data.isEnd}, commentIndex={data.commentIndex}");
+        // Подробная отладка
+        Debug.Log($"[UpdateUI] NodeData: isPlayer={data.isPlayer}, commentIndex={data.commentIndex}, comments.Length={data.comments?.Length ?? -1}");
+        if (data.comments != null)
+        {
+            for (int i = 0; i < data.comments.Length; i++)
+            {
+                Debug.Log($"[UpdateUI] data.comments[{i}]: {data.comments[i]}");
+            }
+        }
+        Debug.Log($"[UpdateUI] extraData: {data.extraData}");
+
+        // Устанавливаем количество доступных вариантов для навигации
+        availableChoices = data.comments != null ? data.comments.Length : 0;
+
+        // Сброс UI
         NPC_Text.text = "";
+        NPC_label.text = "";
+        playerLabel.text = "";
         foreach (Button b in maxPlayerChoices) { b.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = ""; b.transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = Color.white; }
         NPC_Container.SetActive(false);
         playerContainer.SetActive(false);
-        playerSprite.sprite = null;
-        NPCSprite.sprite = null;
 
-        //Удаляем PostConditions
-        //PostConditions(data);
-
-        //If this new Node is a Player Node, set the player choices offered by the node
-        if (data.isPlayer)
+        // Выводим текст в зависимости от типа узла
+        if (!data.isPlayer)
         {
-            //Set node sprite if there's any, otherwise try to use default sprite
-
+            data.commentIndex = 0; // Сбросить индекс для NPC-узла
+            NPC_Container.SetActive(true);
+            if (data.comments != null && data.commentIndex < data.comments.Length)
+            {
+                NPC_Text.text = data.comments[data.commentIndex];
+                Debug.Log($"[UpdateUI] NPC_Text.text = {NPC_Text.text}");
+            }
+            else
+            {
+                Debug.LogWarning("[UpdateUI] Нет комментариев для NPC!");
+            }
+            // Имя NPC из поля Tag
+            if (!string.IsNullOrEmpty(data.tag))
+                NPC_label.text = data.tag;
+            else
+                NPC_label.text = "NPC";
+            Debug.Log($"[UpdateUI] NPC_label.text = {NPC_label.text}");
         }
+        else
+        {
+            playerContainer.SetActive(true);
+            if (data.comments != null)
+            {
+                for (int i = 0; i < data.comments.Length && i < maxPlayerChoices.Count; i++)
+                {
+                    maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = data.comments[i];
+                    Debug.Log($"[UpdateUI] PlayerChoice[{i}] = {data.comments[i]}");
+                    var btn = maxPlayerChoices[i];
+                    int choiceIndex = i;
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(() => {
+                        VIDE_Data.VIDE_Data.nodeData.commentIndex = choiceIndex;
+                        Debug.Log($"[UI] Клик по варианту: {choiceIndex} — {data.comments[choiceIndex]}");
+                        CallNext();
+                    });
+                }
+            }
+            // Имя игрока из поля Tag
+            if (!string.IsNullOrEmpty(data.tag))
+                playerLabel.text = data.tag;
+            else
+                playerLabel.text = "Игрок";
+            Debug.Log($"[UpdateUI] playerLabel.text = {playerLabel.text}");
+        }
+    }
+
+    void EndDialogue(VIDE_Data.VIDE_Data.NodeData data)
+    {
+        Debug.Log("[EndDialogue] Диалог завершён!");
+        dialogueContainer.SetActive(false); // Скрываем окно диалога
+        // Включаем управление игроком обратно
+        if (PlayerControlManager.Instance != null)
+            PlayerControlManager.Instance.SetControlsEnabled(true);
+        VIDE_Data.VIDE_Data.EndDialogue(); // Корректно завершаем диалог в VIDE
+    }
+
+    void OnDestroy()
+    {
+        VIDE_Data.VIDE_Data.OnEnd -= EndDialogue;
     }
 
     #endregion

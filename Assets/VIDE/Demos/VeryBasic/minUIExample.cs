@@ -5,18 +5,18 @@ public class minUIExample : MonoBehaviour {
 
     void Start()
     {
-        gameObject.AddComponent<VD>();
+        gameObject.AddComponent<VIDE_Data.VIDE_Data>();
     }
 
     void OnDisable()
     {
-        VD.EndDialogue();
+        VIDE_Data.VIDE_Data.EndDialogue();
     }
 
     void OnGUI () {
-	    if (VD.isActive)
+	    if (VIDE_Data.VIDE_Data.isActive)
         {
-            var data = VD.nodeData; //Quick reference
+            var data = VIDE_Data.VIDE_Data.nodeData; //Quick reference
             if (data.isPlayer) // If it's a player node, let's show all of the available options as buttons
             {
                 for (int i = 0; i < data.comments.Length; i++)
@@ -24,7 +24,7 @@ public class minUIExample : MonoBehaviour {
                     if (GUILayout.Button(data.comments[i])) //When pressed, set the selected option and call Next()
                     {
                         data.commentIndex = i;
-                        VD.Next();
+                        VIDE_Data.VIDE_Data.Next();
                     }
                 }
             } else //if it's a NPC node, Let's show the comment and add a button to continue
@@ -32,18 +32,18 @@ public class minUIExample : MonoBehaviour {
                 GUILayout.Label(data.comments[data.commentIndex]);
 
                 if (GUILayout.Button(">")){
-                    VD.Next();
+                    VIDE_Data.VIDE_Data.Next();
                 }
             }
 			if (data.isEnd) // If it's the end, let's just call EndDialogue
                 {
-                    VD.EndDialogue();
+                    VIDE_Data.VIDE_Data.EndDialogue();
                 }
         } else // Add a button to begin conversation if it isn't started yet
         {
             if (GUILayout.Button("Start Convo"))
             {
-                VD.BeginDialogue(GetComponent<VIDE_Assign>()); //We've attached a VIDE_Assign to this same gameobject, so we just call the component
+                VIDE_Data.VIDE_Data.BeginDialogue(GetComponent<VIDE_Assign>()); //We've attached a VIDE_Assign to this same gameobject, so we just call the component
             }
         }
 	}

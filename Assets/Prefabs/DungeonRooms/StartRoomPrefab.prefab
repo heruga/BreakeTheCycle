@@ -126,7 +126,9 @@ MonoBehaviour:
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
-  promptUI: {fileID: 0}
+  emotionPanel: {fileID: 0}
+  emotionSystem: {fileID: 0}
+  closeButton: {fileID: 0}
 --- !u!1 &3742804089523387981
 GameObject:
   m_ObjectHideFlags: 0
@@ -161,6 +163,7 @@ Transform:
   - {fileID: 1724704315736079335}
   - {fileID: 6440912279179600663}
   - {fileID: 4647518135558013343}
+  - {fileID: 3332812865039336414}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2389503971449649565
@@ -335,6 +338,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 207053049366289193}
     m_Modifications:
+    - target: {fileID: 3717919272393897730, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4334118179322819346, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5059081636037315948, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 7479141225663391599, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
       propertyPath: m_LocalScale.x
       value: 1
@@ -391,9 +406,17 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7534642119308436716, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
       propertyPath: m_Name
       value: SadGirl
+      objectReference: {fileID: 0}
+    - target: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -404,10 +427,10 @@ PrefabInstance:
       addedObject: {fileID: 3784936777025076044}
     - targetCorrespondingSourceObject: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3005910379124140281}
+      addedObject: {fileID: 6454268836722660449}
     - targetCorrespondingSourceObject: {fileID: 7818512823391436245, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5025158643780504117}
+      addedObject: {fileID: 3261396388518603994}
   m_SourcePrefab: {fileID: 100100000, guid: 3ad78af665486d94a9afa6c5ffbabeed, type: 3}
 --- !u!4 &4647518135558013343 stripped
 Transform:
@@ -442,7 +465,20 @@ CapsuleCollider:
   m_Height: 3.450847
   m_Direction: 1
   m_Center: {x: 0.005496911, y: -0.02071097, z: 2.9153835e-17}
---- !u!114 &3005910379124140281
+--- !u!114 &6454268836722660449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5419129641605487397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08c02621c48638746adbf5647803e080, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  uiManager: {fileID: 0}
+--- !u!114 &3261396388518603994
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -463,20 +499,23 @@ MonoBehaviour:
   - DialogueWithNPC
   - Example3Dialogue
   - Example4_dialogue
+  - ForRealTest
   - Item_LookUp
   - Laura
   - MrCube
   - NPCOnly
   - PlayerMonologues
   - QuestChartDemo
+  - Test
+  - TESTWORKBITCH
   - TriggeredDude
   - Witch
-  assignedIndex: 5
-  assignedID: 83595
-  assignedDialogue: DialogueWithNPC
+  assignedIndex: 8
+  assignedID: 36207
+  assignedDialogue: ForRealTest
   interactionCount: 0
   alias: 
-  overrideStartNode: 0
+  overrideStartNode: -1
   defaultNPCSprite: {fileID: 0}
   defaultPlayerSprite: {fileID: 0}
   targetManager: {fileID: 0}
@@ -487,20 +526,3 @@ MonoBehaviour:
   langs: []
   S_playerDiags: []
   S_actionNodes: []
---- !u!114 &5025158643780504117
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5419129641605487397}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e52efd2104163784ab115c6823a301b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interactionRadius: 2
-  isInteractable: 1
-  onInteractEvent:
-    m_PersistentCalls:
-      m_Calls: []
