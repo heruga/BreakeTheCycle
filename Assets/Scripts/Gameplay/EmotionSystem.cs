@@ -4,7 +4,6 @@ using System;
 using UnityEngine.UI;
 using TMPro;
 using DungeonGeneration.Scripts.Health;
-using System.Collections;
 
 public class EmotionSystem : MonoBehaviour
 {
@@ -107,9 +106,6 @@ public class EmotionSystem : MonoBehaviour
     private Dictionary<EmotionType, int> roomIgnoreCounters = new Dictionary<EmotionType, int>();
     private bool hasUsedReviveInCurrentRoom = false;
 
-    // Dictionary to store progress images for each emotion
-    private Dictionary<EmotionType, Image> upgradeProgressImages = new Dictionary<EmotionType, Image>();
-
     private void Awake()
     {
         // Инициализируем список эмоций
@@ -133,7 +129,6 @@ public class EmotionSystem : MonoBehaviour
         
         FindUIElements();
         UpdateUITexts();
-        SetupEmotionTooltips();
     }
 
     private void Update()
@@ -142,40 +137,6 @@ public class EmotionSystem : MonoBehaviour
         if (playerHealth == null)
         {
             playerHealth = FindObjectOfType<PlayerHealth>();
-        }
-        
-        // Update progress bars for emotions being upgraded
-        foreach (EmotionType emotionType in Enum.GetValues(typeof(EmotionType)))
-        {
-            GameObject emotionObject = GameObject.Find(emotionType.ToString());
-            if (emotionObject != null)
-            {
-                LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
-                if (longHoldHandler != null && upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
-                {
-                    if (longHoldHandler.IsHolding)
-                    {
-                        float progress = (Time.time - longHoldHandler.HoldStartTime) / longHoldHandler.holdTime;
-                        progressImage.fillAmount = Mathf.Clamp01(progress);
-                        
-                        // Добавляем визуальный эффект пульсации при заполнении
-                        if (progress > 0.9f)
-                        {
-                            float pulse = Mathf.PingPong(Time.time * 4, 0.2f) + 0.8f;
-                            progressImage.color = new Color(1f, 0.8f, 0.2f, pulse);
-                        }
-                    }
-                    else if (progressImage.fillAmount > 0)
-                    {
-                        // Плавное исчезновение полосы прогресса
-                        progressImage.fillAmount = Mathf.Max(0, progressImage.fillAmount - Time.deltaTime * 2);
-                        if (progressImage.fillAmount <= 0)
-                        {
-                            progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -193,72 +154,6 @@ public class EmotionSystem : MonoBehaviour
             levelUpButton = levelUpObj.GetComponent<Button>();
             // Ищем текст внутри кнопки
             levelUpText = levelUpObj.GetComponentInChildren<TextMeshProUGUI>();
-        }
-    }
-
-    private void SetupEmotionTooltips()
-    {
-        foreach (EmotionType emotionType in Enum.GetValues(typeof(EmotionType)))
-        {
-            GameObject emotionObject = GameObject.Find(emotionType.ToString());
-            if (emotionObject != null)
-            {
-                // Add tooltip component
-                ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-                if (tooltip == null)
-                {
-                    tooltip = emotionObject.AddComponent<ToolTip>();
-                }
-                UpdateEmotionTooltip(emotionType, tooltip);
-                
-                // Add long hold handler for upgrading
-                LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
-                if (longHoldHandler == null)
-                {
-                    longHoldHandler = emotionObject.AddComponent<LongHoldHandler>();
-                    longHoldHandler.holdTime = 2f;
-                    
-                    // Create a local copy of emotionType to avoid closure issues
-                    EmotionType capturedType = emotionType;
-                    longHoldHandler.onLongHold = new UnityEngine.Events.UnityEvent();
-                    longHoldHandler.onLongHold.AddListener(() => UpgradeEmotion(capturedType));
-                    
-                    // Add progress indicator
-                    GameObject progressIndicator = new GameObject("UpgradeProgress");
-                    progressIndicator.transform.SetParent(emotionObject.transform, false);
-                    
-                    RectTransform rectTransform = progressIndicator.AddComponent<RectTransform>();
-                    rectTransform.anchorMin = new Vector2(0, 0);
-                    rectTransform.anchorMax = new Vector2(1, 0);
-                    rectTransform.pivot = new Vector2(0, 0);
-                    rectTransform.sizeDelta = new Vector2(0, 8); // Увеличиваем высоту для лучшей видимости
-                    
-                    Image progressImage = progressIndicator.AddComponent<Image>();
-                    progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f); // Увеличиваем непрозрачность
-                    progressImage.fillMethod = Image.FillMethod.Horizontal;
-                    progressImage.type = Image.Type.Filled;
-                    progressImage.fillAmount = 0;
-                    
-                    // Добавляем эффект свечения для лучшей видимости
-                    Outline outline = progressIndicator.AddComponent<Outline>();
-                    outline.effectColor = new Color(1f, 1f, 0.5f, 0.5f);
-                    outline.effectDistance = new Vector2(1, 1);
-                    
-                    // Store reference to progress image in dictionary
-                    if (!upgradeProgressImages.ContainsKey(capturedType))
-                    {
-                        upgradeProgressImages.Add(capturedType, progressImage);
-                    }
-                }
-            }
-        }
-    }
-
-    private void UpdateEmotionTooltip(EmotionType emotionType, ToolTip tooltip)
-    {
-        if (tooltip != null)
-        {
-            tooltip.SetTooltipText(GetEmotionDescription(emotionType));
         }
     }
 
@@ -351,13 +246,6 @@ public class EmotionSystem : MonoBehaviour
             {
                 img.color = isActive ? activeColor : inactiveColor;
             }
-            
-            // Обновляем текст тултипа при изменении состояния
-            ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-            if (tooltip != null)
-            {
-                UpdateEmotionTooltip(emotionType, tooltip);
-            }
         }
         else
         {
@@ -374,51 +262,11 @@ public class EmotionSystem : MonoBehaviour
         {
             emotion.level++;
             Debug.Log($"Улучшена эмоция {emotion.type} до уровня {emotion.level}");
-            
-            // Обновляем тултип после улучшения
-            GameObject emotionObject = GameObject.Find(emotionType.ToString());
-            if (emotionObject != null)
-            {
-                ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-                if (tooltip != null)
-                {
-                    UpdateEmotionTooltip(emotionType, tooltip);
-                }
-                
-                // Добавляем визуальный эффект успешного улучшения
-                if (upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
-                {
-                    // Создаем эффект вспышки
-                    progressImage.color = Color.white;
-                    progressImage.fillAmount = 1;
-                    
-                    // Анимируем исчезновение через анимацию
-                    StartCoroutine(FadeOutProgressBar(progressImage));
-                }
-            }
         }
         else
         {
             Debug.Log($"Эмоция {emotion.type} уже максимального уровня!");
         }
-    }
-
-    private System.Collections.IEnumerator FadeOutProgressBar(Image progressImage)
-    {
-        float duration = 0.5f;
-        float elapsed = 0;
-        Color startColor = progressImage.color;
-        Color endColor = new Color(1f, 0.8f, 0.2f, 0);
-        
-        while (elapsed < duration)
-        {
-            progressImage.color = Color.Lerp(startColor, endColor, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        
-        progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-        progressImage.fillAmount = 0;
     }
 
     public void UpgradeMaxActiveEmotions()
@@ -474,25 +322,10 @@ public class EmotionSystem : MonoBehaviour
     {
         FindUIElements(); // На случай, если панель создаётся заново
         UpdateUITexts();
-        // Обновляем цвета всех эмоций и тултипы
+        // Обновляем цвета всех эмоций
         foreach (Emotion emotion in emotions)
         {
             UpdateEmotionVisual(emotion.type, emotion.isActive);
-            
-            GameObject emotionObject = GameObject.Find(emotion.type.ToString());
-            if (emotionObject != null)
-            {
-                ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-                if (tooltip != null)
-                {
-                    UpdateEmotionTooltip(emotion.type, tooltip);
-                }
-                else
-                {
-                    tooltip = emotionObject.AddComponent<ToolTip>();
-                    UpdateEmotionTooltip(emotion.type, tooltip);
-                }
-            }
         }
     }
 
