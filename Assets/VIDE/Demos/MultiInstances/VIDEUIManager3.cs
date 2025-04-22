@@ -99,7 +99,7 @@ public class VIDEUIManager3 : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.T))
         {
-            VIDE_Data.VIDE_Data.SetCurrentLanguage("English");
+            VD.SetCurrentLanguage("English");
         }
     }
 }

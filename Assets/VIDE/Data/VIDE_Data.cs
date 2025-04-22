@@ -237,7 +237,7 @@ namespace VIDE_Data
 
     }
 
-    public class VIDE_Data : MonoBehaviour
+    public class VD : MonoBehaviour
     {
 
         /// <summary>
@@ -2861,9 +2861,9 @@ namespace VIDE_Data
         }
         public static int GetInt(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
-                Dictionary<string, object> dic = GetExtraVars(VIDE_Data.currentPlayerStep.varKeys.ToArray(), VIDE_Data.currentPlayerStep.vars.ToArray());
+                Dictionary<string, object> dic = GetExtraVars(VD.currentPlayerStep.varKeys.ToArray(), VD.currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
                 {
                     if (dic[key].GetType() == typeof(int))
@@ -2893,9 +2893,9 @@ namespace VIDE_Data
         }
         public static float GetFloat(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
-                Dictionary<string, object> dic = GetExtraVars(VIDE_Data.currentPlayerStep.varKeys.ToArray(), VIDE_Data.currentPlayerStep.vars.ToArray());
+                Dictionary<string, object> dic = GetExtraVars(VD.currentPlayerStep.varKeys.ToArray(), VD.currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
                 {
                     if (dic[key].GetType() == typeof(float))
@@ -2925,9 +2925,9 @@ namespace VIDE_Data
         }
         public static bool GetBool(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
-                Dictionary<string, object> dic = GetExtraVars(VIDE_Data.currentPlayerStep.varKeys.ToArray(), VIDE_Data.currentPlayerStep.vars.ToArray());
+                Dictionary<string, object> dic = GetExtraVars(VD.currentPlayerStep.varKeys.ToArray(), VD.currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
                 {
                     if (dic[key].GetType() == typeof(bool))
@@ -2957,9 +2957,9 @@ namespace VIDE_Data
         }
         public static string GetString(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
-                Dictionary<string, object> dic = GetExtraVars(VIDE_Data.currentPlayerStep.varKeys.ToArray(), VIDE_Data.currentPlayerStep.vars.ToArray());
+                Dictionary<string, object> dic = GetExtraVars(VD.currentPlayerStep.varKeys.ToArray(), VD.currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
                 {
                     if (dic[key].GetType() == typeof(string))
@@ -3032,8 +3032,8 @@ namespace VIDE_Data
         {
             Dictionary<string, object> dict = new Dictionary<string, object>();
 
-            if (VIDE_Data.GetCurLan != null)
-                dict.Add("locCur", VIDE_Data.currentLanguage);
+            if (VD.GetCurLan != null)
+                dict.Add("locCur", VD.currentLanguage);
 
             for (int i = 0; i < diags.Count; i++)
             {
@@ -3081,10 +3081,10 @@ namespace VIDE_Data
 
             Dictionary<string, object> dict = SerializeHelper.ReadState(filename) as Dictionary<string, object>;
 
-            if (VIDE_Data.localizationEnabled && dict.ContainsKey("locCur"))
+            if (VD.localizationEnabled && dict.ContainsKey("locCur"))
             {
-                if (VIDE_Data.currentLanguage != (string)dict["locCur"])
-                    VIDE_Data.SetCurrentLanguage((string)dict["locCur"]);
+                if (VD.currentLanguage != (string)dict["locCur"])
+                    VD.SetCurrentLanguage((string)dict["locCur"]);
             }
 
 
@@ -3212,8 +3212,8 @@ namespace VIDE_Data
 
         void FetchDiags()
         {
-            VIDE_Data.FetchDiags();
-            diags.AddRange(VIDE_Data.saved);
+            VD.FetchDiags();
+            diags.AddRange(VD.saved);
 
         }
 
@@ -3342,23 +3342,23 @@ namespace VIDE_Data
         /// <returns></returns>
         bool Load(string dName)
         {
-            VIDE_Data.currentDiag = currentDiag;
-            VIDE_Data.Load(dName);
-            diags[currentDiag] = VIDE_Data.saved[currentDiag];
+            VD.currentDiag = currentDiag;
+            VD.Load(dName);
+            diags[currentDiag] = VD.saved[currentDiag];
 
             //Here we load the localized version
-            if (VIDE_Data.localizationEnabledSET)
+            if (VD.localizationEnabledSET)
             {
-                VIDE_Localization.LoadLanguages(VIDE_Data.saved[currentDiag].name, false);
+                VIDE_Localization.LoadLanguages(VD.saved[currentDiag].name, false);
                 LoadLocalized(false);
             }
             else
             {
-                VIDE_Localization.LoadLanguages(VIDE_Data.saved[currentDiag].name, true);
+                VIDE_Localization.LoadLanguages(VD.saved[currentDiag].name, true);
                 LoadLocalized(true);
             }
 
-            VIDE_Data.currentDiag = -1;
+            VD.currentDiag = -1;
 
             return true;
         }
@@ -4482,9 +4482,9 @@ namespace VIDE_Data
 
             currentDiag = theIndex; //assign current dialogue index
 
-            if (VIDE_Data.saved.Count > 0 && VIDE_Data.saved[currentDiag].loaded)
+            if (VD.saved.Count > 0 && VD.saved[currentDiag].loaded)
             {
-                diags[currentDiag] = VIDE_Data.saved[currentDiag];
+                diags[currentDiag] = VD.saved[currentDiag];
             }
 
             //Check if the dialogue is already loaded
@@ -4493,7 +4493,7 @@ namespace VIDE_Data
                 //Let's load the dialogue 
                 if (Load(diagToLoad.assignedDialogue))
                 {
-                    diags[currentDiag] = VIDE_Data.saved[currentDiag];
+                    diags[currentDiag] = VD.saved[currentDiag];
                     isActive = true;
                 }
                 else
@@ -4588,9 +4588,9 @@ namespace VIDE_Data
 
             currentDiag = theIndex; //assign current dialogue index
 
-            if (VIDE_Data.saved.Count > 0 && VIDE_Data.saved[currentDiag].loaded)
+            if (VD.saved.Count > 0 && VD.saved[currentDiag].loaded)
             {
-                diags[currentDiag] = VIDE_Data.saved[currentDiag];
+                diags[currentDiag] = VD.saved[currentDiag];
             }
 
             //Check if the dialogue is already loaded
@@ -4702,10 +4702,10 @@ namespace VIDE_Data
 
         public void LoadLocalized(bool onlyLoadDefault)
         {
-            VIDE_Localization.VLanguage cur = VIDE_Data.GetCurLan;
+            VIDE_Localization.VLanguage cur = VD.GetCurLan;
 
             if (onlyLoadDefault)
-                cur = VIDE_Data.dflset;
+                cur = VD.dflset;
 
             if (cur != null)
                 if (cur.playerDiags != null)
@@ -4743,7 +4743,7 @@ namespace VIDE_Data
         }
         public int GetInt(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
                 Dictionary<string, object> dic = GetExtraVars(currentPlayerStep.varKeys.ToArray(), currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
@@ -4775,7 +4775,7 @@ namespace VIDE_Data
         }
         public float GetFloat(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
                 Dictionary<string, object> dic = GetExtraVars(currentPlayerStep.varKeys.ToArray(), currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
@@ -4807,7 +4807,7 @@ namespace VIDE_Data
         }
         public bool GetBool(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
                 Dictionary<string, object> dic = GetExtraVars(currentPlayerStep.varKeys.ToArray(), currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))
@@ -4839,7 +4839,7 @@ namespace VIDE_Data
         }
         public string GetString(string key)
         {
-            if (VIDE_Data.isActive && VIDE_Data.nodeData != null)
+            if (VD.isActive && VD.nodeData != null)
             {
                 Dictionary<string, object> dic = GetExtraVars(currentPlayerStep.varKeys.ToArray(), currentPlayerStep.vars.ToArray());
                 if (dic.ContainsKey(key))

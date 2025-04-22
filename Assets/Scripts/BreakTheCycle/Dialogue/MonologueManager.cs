@@ -43,7 +43,7 @@ namespace BreakTheCycle.Dialogue
         {
             if (isMonologueActive && Input.GetMouseButtonDown(0))
             {
-                if (VIDE_Data.VIDE_Data.nodeData != null && currentCommentIndex < VIDE_Data.VIDE_Data.nodeData.comments.Length - 1)
+                if (VD.nodeData != null && currentCommentIndex < VD.nodeData.comments.Length - 1)
                 {
                     currentCommentIndex++;
                     ShowCurrentComment();
@@ -59,10 +59,10 @@ namespace BreakTheCycle.Dialogue
         {
             Debug.Log("Попытка воспроизвести монолог с ID: " + monologueID);
 
-            if (VIDE_Data.VIDE_Data.isActive)
+            if (VD.isActive)
             {
                 Debug.Log("Завершаем предыдущий диалог");
-                VIDE_Data.VIDE_Data.EndDialogue();
+                VD.EndDialogue();
             }
 
             if (monologuePanel == null || monologueText == null)
@@ -72,15 +72,15 @@ namespace BreakTheCycle.Dialogue
             }
 
             monologueAssign.overrideStartNode = monologueID;
-            VIDE_Data.VIDE_Data.BeginDialogue(monologueAssign);
+            VD.BeginDialogue(monologueAssign);
             currentMonologueID = monologueID;
             currentCommentIndex = 0;
 
             // Проверяем Extra Variable playOnce
             bool playOnce = false;
-            if (VIDE_Data.VIDE_Data.nodeData != null && VIDE_Data.VIDE_Data.nodeData.extraVars != null && VIDE_Data.VIDE_Data.nodeData.extraVars.ContainsKey("playOnce"))
+            if (VD.nodeData != null && VD.nodeData.extraVars != null && VD.nodeData.extraVars.ContainsKey("playOnce"))
             {
-                object val = VIDE_Data.VIDE_Data.nodeData.extraVars["playOnce"];
+                object val = VD.nodeData.extraVars["playOnce"];
                 if (val is bool)
                     playOnce = (bool)val;
                 else if (val is string)
@@ -94,9 +94,9 @@ namespace BreakTheCycle.Dialogue
                 return;
             }
 
-            if (VIDE_Data.VIDE_Data.nodeData != null)
+            if (VD.nodeData != null)
             {
-                Debug.Log("Данные узла получены, текст: " + VIDE_Data.VIDE_Data.nodeData.comments[0]);
+                Debug.Log("Данные узла получены, текст: " + VD.nodeData.comments[0]);
                 monologuePanel.SetActive(true);
                 ShowCurrentComment();
                 isMonologueActive = true;
@@ -116,16 +116,16 @@ namespace BreakTheCycle.Dialogue
 
         private void ShowCurrentComment()
         {
-            if (VIDE_Data.VIDE_Data.nodeData != null && currentCommentIndex < VIDE_Data.VIDE_Data.nodeData.comments.Length)
+            if (VD.nodeData != null && currentCommentIndex < VD.nodeData.comments.Length)
             {
-                monologueText.text = VIDE_Data.VIDE_Data.nodeData.comments[currentCommentIndex];
+                monologueText.text = VD.nodeData.comments[currentCommentIndex];
             }
         }
 
         private void HideMonologue()
         {
             monologuePanel.SetActive(false);
-            VIDE_Data.VIDE_Data.EndDialogue();
+            VD.EndDialogue();
             isMonologueActive = false;
             currentMonologueID = -1;
             currentCommentIndex = 0;
@@ -134,9 +134,9 @@ namespace BreakTheCycle.Dialogue
         // Добавляем метод для очистки при отключении объекта
         void OnDisable()
         {
-            if (VIDE_Data.VIDE_Data.isActive)
+            if (VD.isActive)
             {
-                VIDE_Data.VIDE_Data.EndDialogue();
+                VD.EndDialogue();
             }
             isMonologueActive = false;
             currentMonologueID = -1;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using VIDE_Data;
 
-[CustomEditor(typeof(VIDE_Data.VIDE_Data))]
+[CustomEditor(typeof(VD))]
 public class VDE : Editor
 {
     Vector2 scrollPos = new Vector2();
@@ -23,9 +23,9 @@ public class VDE : Editor
         if (EditorApplication.isPlaying)
         {
 
-            if (VIDE_Data.VIDE_Data.isActive)
+            if (VD.isActive)
             {
-                GUILayout.Box("Active: " + VIDE_Data.VIDE_Data.saved[VIDE_Data.VIDE_Data.currentDiag].name, GUILayout.ExpandWidth(true));
+                GUILayout.Box("Active: " + VD.saved[VD.currentDiag].name, GUILayout.ExpandWidth(true));
             }
             else
             {
@@ -33,36 +33,36 @@ public class VDE : Editor
             }
 
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUI.skin.GetStyle("Box"), GUILayout.ExpandWidth(true), GUILayout.Height(400));
-            for (int i = 0; i < VIDE_Data.VIDE_Data.saved.Count; i++)
+            for (int i = 0; i < VD.saved.Count; i++)
             {
-                if (!VIDE_Data.VIDE_Data.saved[i].loaded)
+                if (!VD.saved[i].loaded)
                 {
                     GUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(i.ToString() + ". " + VIDE_Data.VIDE_Data.saved[i].name + ": NOT LOADED");
-                    if (VIDE_Data.VIDE_Data.isActive) GUI.enabled = false;
-                    if (GUILayout.Button("Load!")) VIDE_Data.VIDE_Data.LoadDialogues(VIDE_Data.VIDE_Data.saved[i].name);
+                    EditorGUILayout.LabelField(i.ToString() + ". " + VD.saved[i].name + ": NOT LOADED");
+                    if (VD.isActive) GUI.enabled = false;
+                    if (GUILayout.Button("Load!")) VD.LoadDialogues(VD.saved[i].name);
                     GUI.enabled = true;
                     GUILayout.EndHorizontal();
 
                 }
                 else
                 {
-                    EditorGUILayout.LabelField(i.ToString() + ". " + VIDE_Data.VIDE_Data.saved[i].name + ": LOADED", b);
+                    EditorGUILayout.LabelField(i.ToString() + ". " + VD.saved[i].name + ": LOADED", b);
                 }
             }
             EditorGUILayout.EndScrollView();
 
             EditorGUILayout.BeginHorizontal();
 
-            if (VIDE_Data.VIDE_Data.isActive) GUI.enabled = false;
+            if (VD.isActive) GUI.enabled = false;
 
             if (GUILayout.Button("Load All"))
             {
-                VIDE_Data.VIDE_Data.LoadDialogues();
+                VD.LoadDialogues();
             }
             if (GUILayout.Button("Unload All"))
             {
-                VIDE_Data.VIDE_Data.UnloadDialogues();
+                VD.UnloadDialogues();
             }
 
             GUI.enabled = true;

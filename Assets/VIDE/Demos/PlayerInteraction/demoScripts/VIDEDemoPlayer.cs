@@ -43,7 +43,7 @@ public class VIDEDemoPlayer : MonoBehaviour
     {
 
         //Only allow player to move and turn if there are no dialogs loaded
-        if (!VIDE_Data.VIDE_Data.isActive)
+        if (!VD.isActive)
         {
             transform.Rotate(0, Input.GetAxis("Mouse X") * 5, 0);
             float move = Input.GetAxisRaw("Vertical");

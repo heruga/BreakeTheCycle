@@ -41,13 +41,13 @@ namespace BreakTheCycle
             }
 
             // Проверяем, не запущен ли уже другой диалог
-            if (VIDE_Data.VIDE_Data.isActive)
+            if (VD.isActive)
             {
-                VIDE_Data.VIDE_Data.EndDialogue();
+                VD.EndDialogue();
             }
 
             // Запускаем диалог через VIDE
-            VIDE_Data.VIDE_Data.BeginDialogue(videAssign);
+            VD.BeginDialogue(videAssign);
 
             // Воспроизводим монолог, если есть MonologueTriggerData
             var trigger = GetComponent<BreakTheCycle.Dialogue.MonologueTriggerData>();
