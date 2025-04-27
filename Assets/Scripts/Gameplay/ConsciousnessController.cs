@@ -67,7 +67,7 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float attackCooldown = 1f;
     [SerializeField] private float chaseDistance = 10f;
-    [SerializeField] private float attackRadius = 2f; // Радиус области атаки
+    [SerializeField] private float attackRadius = 199f; // Радиус области атаки
     [SerializeField] private LayerMask enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
     private float lastAttackTime;
 
@@ -78,7 +78,6 @@ public class ConsciousnessController : MonoBehaviour
     private Vector3 moveDirection;
     private Vector3 lastMoveDirection;
     private Vector3 smoothedMoveDirection;
-    private InteractableObject currentInteractable;
     private Vector3 targetCameraPosition;
     private Vector3 cameraVelocity = Vector3.zero;
     private Vector3 previousTargetPosition;
@@ -89,7 +88,6 @@ public class ConsciousnessController : MonoBehaviour
     private bool isAbruptDirectionChange = false;
     private float abruptChangeTime = 0f;
     private GameObject createdCamera;
-    private Canvas createdCanvas;
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
     private EmotionSystem emotionSystem;
@@ -177,7 +175,6 @@ public class ConsciousnessController : MonoBehaviour
             currentVelocity = Vector3.zero;
             targetVelocity = Vector3.zero;
             isDashing = false;
-            currentInteractable = null;
             // Можно добавить сброс ввода, если потребуется
         }
     }
@@ -206,6 +203,12 @@ public class ConsciousnessController : MonoBehaviour
         else
         {
             moveDirection = Vector3.zero;
+        }
+
+        // Dash теперь обрабатывается в Update
+        if (Input.GetKeyDown(KeyCode.Space) && moveDirection != Vector3.zero && Time.time >= lastDashTime + dashCooldown)
+        {
+            StartDash();
         }
 
         // Взаимодействие с объектами (F — Interactable, E — Inspectable)
@@ -244,12 +247,7 @@ public class ConsciousnessController : MonoBehaviour
     {
         if (!PlayerControlManager.Instance.ControlsEnabled) return;
 
-        // Обработка рывка
-        if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDashTime + dashCooldown)
-        {
-            StartDash();
-        }
-
+        // Удаляю обработку dash из FixedUpdate
         if (isDashing)
         {
             HandleDash();
@@ -296,6 +294,7 @@ public class ConsciousnessController : MonoBehaviour
 
     private void StartDash()
     {
+        if (moveDirection == Vector3.zero) return;
         isDashing = true;
         dashTimeLeft = dashDuration;
         lastDashTime = Time.time;
@@ -306,11 +305,11 @@ public class ConsciousnessController : MonoBehaviour
         // Обновляем таймер движения
         if (moveDirection != Vector3.zero)
         {
-            // Detect direction change
+            // Определяем изменение направления движения
             float directionDot = Vector3.Dot(moveDirection.normalized, lastMoveDirection.normalized);
             bool hasChangedDirection = directionDot < 0.7f && lastMoveDirection != Vector3.zero;
             
-            // Detect abrupt/opposite direction change (close to opposite direction)
+            // Определяем резкое/противоположное изменение направления (почти противоположное направление)
             if (directionDot < -directionChangeDotThreshold && lastMoveDirection != Vector3.zero)
             {
                 isAbruptDirectionChange = true;
@@ -322,15 +321,15 @@ public class ConsciousnessController : MonoBehaviour
                 directionChangeTime = Time.time;
             }
 
-            // Save the last non-zero movement direction
+            // Сохраняем последнее ненулевое направление движения
             lastMoveDirection = moveDirection;
             timeSinceLastMovement = 0f;
             isReturningToStandardPosition = false;
             
-            // Apply direction smoothing especially for abrupt changes
+            // Применяем сглаживание направления, особенно для резких изменений
             if (isAbruptDirectionChange && Time.time - abruptChangeTime < abruptChangeSmoothing)
             {
-                // Gradually transition for abrupt direction changes
+                // Плавный переход для резких изменений направления
                 float abruptChangeFactor = (Time.time - abruptChangeTime) / abruptChangeSmoothing;
                 smoothedMoveDirection = Vector3.Slerp(
                     smoothedMoveDirection,
@@ -340,7 +339,7 @@ public class ConsciousnessController : MonoBehaviour
             }
             else
             {
-                // Normal smooth transition for typical movement
+                // Обычный плавный переход для стандартного движения
                 smoothedMoveDirection = Vector3.Slerp(
                     smoothedMoveDirection, 
                     moveDirection, 
@@ -354,23 +353,23 @@ public class ConsciousnessController : MonoBehaviour
             // Увеличиваем таймер, когда игрок не движется
             timeSinceLastMovement += Time.deltaTime;
             
-            // Quickly smooth direction to zero when not moving
+            // Быстрое сглаживание направления к нулю, когда игрок не движется
             smoothedMoveDirection = Vector3.Lerp(smoothedMoveDirection, Vector3.zero, Time.deltaTime * 5.0f);
             isAbruptDirectionChange = false;
         }
         
-        // Calculate desired camera position based on player position
-        float yOffset = cameraHeight; // Absolute height from ground
+        // Вычисляем желаемую позицию камеры относительно позиции игрока
+        float yOffset = cameraHeight; // Абсолютная высота над землей
         
-        // Start with player position
+        // Начинаем с позиции игрока
         Vector3 basePosition = transform.position;
         
-        // Calculate the forward direction of the camera in world space (ignoring Y)
+        // Вычисляем направление вперёд камеры в мировых координатах (игнорируя Y)
         Vector3 cameraForward = Quaternion.Euler(0, cameraAngleY, 0) * Vector3.forward;
         cameraForward.y = 0;
         cameraForward.Normalize();
         
-        // Get the base offset for the isometric camera - это стандартный офсет
+        // Получаем стандартное смещение для изометрической камеры
         Vector3 standardOffset = Quaternion.Euler(cameraAngleX, cameraAngleY, 0) * new Vector3(0, 0, -Mathf.Abs(cameraOffset.z));
         Vector3 cameraPositionOffset = standardOffset;
         
@@ -396,18 +395,18 @@ public class ConsciousnessController : MonoBehaviour
             cameraPositionOffset.y = 0; // Сбрасываем Y-компонент, так как высоту мы устанавливаем отдельно
         }
         
-        // Apply the calculated offset to the base position
+        // Применяем рассчитанное смещение к базовой позиции
         basePosition += cameraPositionOffset;
         
-        // Now set the absolute height
+        // Теперь устанавливаем абсолютную высоту
         basePosition.y = yOffset;
         
         Vector3 targetPosition = basePosition;
         
-        // Add general direction adjustment for movement with improved responsiveness
+        // Добавляем общее смещение камеры в направлении движения с улучшенной отзывчивостью
         if (adjustCameraDirection && smoothedMoveDirection != Vector3.zero && !isReturningToStandardPosition)
         {
-            // Determine if we need to reduce responsiveness during abrupt changes
+            // Определяем, нужно ли уменьшить отзывчивость при резких изменениях
             float responsivenessFactor = 1f;
             
             // При резком изменении направления уменьшаем силу смещения
@@ -417,7 +416,7 @@ public class ConsciousnessController : MonoBehaviour
                 float smoothProgress = (Time.time - abruptChangeTime) / abruptChangeSmoothing;
                 responsivenessFactor = Mathf.SmoothStep(0.2f, 1.0f, smoothProgress);
             }
-            // Normal direction change behavior
+            // Обычное поведение при смене направления
             else if (Time.time - directionChangeTime < 0.5f)
             {
                 // Усиливаем эффект на короткое время после обычной смены направления
@@ -517,7 +516,6 @@ public class ConsciousnessController : MonoBehaviour
         }
         else
         {
-            // Smooth camera movement with appropriate speed
             cameraTransform.position = Vector3.Lerp(
                 cameraTransform.position,
                 targetPosition,
@@ -528,24 +526,7 @@ public class ConsciousnessController : MonoBehaviour
         // Сохраняем целевую позицию для следующего кадра
         previousTargetPosition = targetPosition;
         
-        // Calculate rotation to look at player
-        // First set fixed angle for isometric view
         cameraTransform.rotation = Quaternion.Euler(cameraAngleX, cameraAngleY, 0);
-    }
-    
-    private void ProcessRealitySwitch()
-    {
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.SwitchGameState();
-            }
-            else
-            {
-                Debug.LogWarning("GameManager не найден! Переключение реальностей невозможно.");
-            }
-        }
     }
     
     private void Attack()
@@ -553,7 +534,7 @@ public class ConsciousnessController : MonoBehaviour
         if (Time.time < lastAttackTime + attackCooldown)
         {
             Debug.Log($"[Attack] Не атакуем: кулдаун. Time={Time.time:F2}, lastAttackTime={lastAttackTime:F2}, attackCooldown={attackCooldown}");
-            return;
+                    return;
         }
         lastAttackTime = Time.time;
 
@@ -618,33 +599,23 @@ public class ConsciousnessController : MonoBehaviour
         {
             Destroy(createdCamera);
         }
-        if (createdCanvas != null)
-        {
-            Destroy(createdCanvas.gameObject);
-        }
     }
 
     // Методы для интеграции с системой эмоций
     
-    /// <summary>
     /// Обрабатывает получение урона с учетом эмоций
-    /// </summary>
     public float TakeDamage(float damage)
     {
         return damage;
     }
     
-    /// <summary>
     /// Проверяет, должен ли игрок уклониться от атаки
-    /// </summary>
     public bool ShouldDodgeAttack()
     {
         return false;
     }
     
-    /// <summary>
     /// Вызывается при входе в новую комнату
-    /// </summary>
     public void OnRoomEntered()
     {
         if (emotionSystem != null)
@@ -653,17 +624,13 @@ public class ConsciousnessController : MonoBehaviour
         }
     }
     
-    /// <summary>
     /// Вызывается при победе над врагом
-    /// </summary>
     public void OnEnemyDefeated()
     {
         // Empty implementation
     }
     
-    /// <summary>
     /// Пытается воскресить игрока после смерти
-    /// </summary>
     public bool TryRevive()
     {
         return false;

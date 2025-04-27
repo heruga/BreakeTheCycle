@@ -33,32 +33,36 @@ namespace BreakTheCycle
         /// </summary>
         public override void OnInteract()
         {
-            if (!IsInteractable) return;
-            if (videAssign == null)
+            Debug.Log($"[InteractableObject] OnInteract вызван для {gameObject.name}");
+            if (!IsInteractable)
             {
-                // Нет диалога — ничего не делаем
+                Debug.Log($"[InteractableObject] Объект {gameObject.name} не интерактивен (IsInteractable = false)");
                 return;
             }
 
-            // Проверяем, не запущен ли уже другой диалог
-            if (VIDE_Data.VIDE_Data.isActive)
-            {
-                VIDE_Data.VIDE_Data.EndDialogue();
-            }
-
-            // Запускаем диалог через VIDE
-            VIDE_Data.VIDE_Data.BeginDialogue(videAssign);
-
-            // Воспроизводим монолог, если есть MonologueTriggerData
             var trigger = GetComponent<BreakTheCycle.Dialogue.MonologueTriggerData>();
-            if (trigger != null && trigger.monologueID >= 0)
+            if (trigger == null)
             {
-                var manager = FindObjectOfType<MonologueManager>();
-                if (manager != null)
-                {
-                    manager.PlayMonologue(trigger.monologueID);
-                }
+                Debug.Log($"[InteractableObject] MonologueTriggerData не найден на {gameObject.name}");
+                return;
             }
+            Debug.Log($"[InteractableObject] MonologueTriggerData найден на {gameObject.name}, monologueID = {trigger.monologueID}");
+
+            if (trigger.monologueID < 0)
+            {
+                Debug.Log($"[InteractableObject] Некорректный monologueID ({trigger.monologueID}) на {gameObject.name}");
+                return;
+            }
+
+            var manager = FindObjectOfType<MonologueManager>();
+            if (manager == null)
+            {
+                Debug.Log($"[InteractableObject] MonologueManager не найден в сцене!");
+                return;
+            }
+            Debug.Log($"[InteractableObject] MonologueManager найден, вызываю PlayMonologue({trigger.monologueID})");
+            manager.PlayMonologue(trigger.monologueID);
+            Debug.Log($"[InteractableObject] PlayMonologue({trigger.monologueID}) вызван");
         }
     }
 } 

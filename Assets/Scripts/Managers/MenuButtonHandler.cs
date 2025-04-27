@@ -17,4 +17,12 @@ public class MenuButtonHandler : MonoBehaviour
         else
             Debug.LogError("GameManager.Instance не найден!");
     }
+
+    public void ContinueGame()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.ContinueGame();
+        else
+            Debug.LogError("GameManager.Instance не найден!");
+    }
 } 

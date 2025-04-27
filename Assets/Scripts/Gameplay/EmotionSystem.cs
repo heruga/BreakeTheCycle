@@ -115,9 +115,12 @@ public class EmotionSystem : MonoBehaviour
         // Инициализируем список эмоций
         foreach (EmotionType type in Enum.GetValues(typeof(EmotionType)))
         {
-            emotions.Add(new Emotion { type = type });
+            int savedLevel = PlayerPrefs.GetInt($"EmotionLevel_{type}", 1);
+            emotions.Add(new Emotion { type = type, level = savedLevel });
             roomIgnoreCounters[type] = 0;
         }
+        currentMaxEmotionsLevel = PlayerPrefs.GetInt("MaxActiveEmotionsLevel", 1);
+        maxActiveEmotions = currentMaxEmotionsLevel;
     }
 
     private void Start()
@@ -351,6 +354,13 @@ public class EmotionSystem : MonoBehaviour
             {
                 img.color = isActive ? activeColor : inactiveColor;
             }
+
+            // Сброс прогрессбара при деактивации эмоции
+            if (!isActive && upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
+            {
+                progressImage.fillAmount = 0;
+                progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
+            }
             
             // Обновляем текст тултипа при изменении состояния
             ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
@@ -370,9 +380,18 @@ public class EmotionSystem : MonoBehaviour
         Emotion emotion = emotions.Find(e => e.type == emotionType);
         if (emotion == null) return;
 
+        int upgradeCost = 10 * emotion.level;
+        if (!CurrencyManager.Instance.SpendCurrency(upgradeCost))
+        {
+            // Недостаточно валюты, не улучшаем
+            return;
+        }
+
         if (emotion.level < 3)
         {
             emotion.level++;
+            PlayerPrefs.SetInt($"EmotionLevel_{emotion.type}", emotion.level);
+            PlayerPrefs.Save();
             Debug.Log($"Улучшена эмоция {emotion.type} до уровня {emotion.level}");
             
             // Обновляем тултип после улучшения
@@ -424,16 +443,18 @@ public class EmotionSystem : MonoBehaviour
     public void UpgradeMaxActiveEmotions()
     {
         int upgradeCost = GetUpgradeCost();
-        // Здесь должна быть проверка наличия достаточного количества ресурсов у игрока
-        // if (playerResources >= upgradeCost) 
-        
+        if (!CurrencyManager.Instance.SpendCurrency(upgradeCost))
+        {
+            // Недостаточно валюты, не увеличиваем
+            return;
+        }
         if (currentMaxEmotionsLevel < 6) // Максимум 6 уровней
         {
             maxActiveEmotions++;
             currentMaxEmotionsLevel++;
+            PlayerPrefs.SetInt("MaxActiveEmotionsLevel", currentMaxEmotionsLevel);
+            PlayerPrefs.Save();
             Debug.Log($"Увеличено максимальное количество активных эмоций до {maxActiveEmotions}");
-            // Здесь должно быть списание ресурсов
-            // playerResources -= upgradeCost;
             UpdateUITexts();
         }
         else

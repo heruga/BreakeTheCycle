@@ -60,7 +60,7 @@ MonoBehaviour:
   decelerationSpeed: 12
   dashSpeed: 20
   dashDuration: 0.2
-  dashCooldown: 4
+  dashCooldown: 2
   cameraTransform: {fileID: 0}
   cameraHeight: 15
   cameraAngleX: 45

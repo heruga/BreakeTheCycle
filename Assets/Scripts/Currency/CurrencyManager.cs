@@ -14,13 +14,16 @@ public class CurrencyManager : MonoBehaviour
     // Синглтон
     public static CurrencyManager Instance { get; private set; }
     
+    private const string PlayerPrefsCurrencyKey = "PlayerCurrency";
+
     private void Awake()
     {
         // Паттерн синглтон
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            // Загружаем валюту из PlayerPrefs
+            currentCurrency = PlayerPrefs.GetInt(PlayerPrefsCurrencyKey, 0);
         }
         else
         {
@@ -40,6 +43,8 @@ public class CurrencyManager : MonoBehaviour
         }
         
         currentCurrency += amount;
+        PlayerPrefs.SetInt(PlayerPrefsCurrencyKey, currentCurrency);
+        PlayerPrefs.Save();
         OnCurrencyChanged?.Invoke(currentCurrency);
         Debug.Log($"[CurrencyManager] Добавлено {amount} валюты. Текущее количество: {currentCurrency}");
     }
@@ -55,6 +60,8 @@ public class CurrencyManager : MonoBehaviour
         if (currentCurrency >= amount)
         {
             currentCurrency -= amount;
+            PlayerPrefs.SetInt(PlayerPrefsCurrencyKey, currentCurrency);
+            PlayerPrefs.Save();
             OnCurrencyChanged?.Invoke(currentCurrency);
             Debug.Log($"[CurrencyManager] Потрачено {amount} валюты. Текущее количество: {currentCurrency}");
             return true;

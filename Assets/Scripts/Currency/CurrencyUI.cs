@@ -23,6 +23,7 @@ public class CurrencyUI : MonoBehaviour
             // Подписываемся на изменение валюты
             CurrencyManager.Instance.OnCurrencyChanged += UpdateCurrencyDisplay;
             // Обновляем начальное значение
+            Debug.Log($"[CurrencyUI] Подписка на OnCurrencyChanged. Текущее значение: {CurrencyManager.Instance.GetCurrentCurrency()}");
             UpdateCurrencyDisplay(CurrencyManager.Instance.GetCurrentCurrency());
         }
         else
@@ -53,9 +54,14 @@ public class CurrencyUI : MonoBehaviour
 
     private void UpdateCurrencyDisplay(int newAmount)
     {
+        Debug.Log($"[CurrencyUI] UpdateCurrencyDisplay вызван. Новое значение: {newAmount}");
         if (currencyText != null)
         {
             currencyText.text = newAmount.ToString();
+        }
+        else
+        {
+            Debug.LogWarning("[CurrencyUI] currencyText не назначен в инспекторе!");
         }
     }
 } 
