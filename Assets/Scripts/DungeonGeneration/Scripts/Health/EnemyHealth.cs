@@ -18,6 +18,8 @@ namespace DungeonGeneration.Scripts.Health
         [SerializeField] private GameObject healthBarPrefab;
         private EnemyHealthBar healthBar;
 
+        public bool IsBoss => isBoss;
+
         private void Start()
         {
             if (healthBarPrefab != null)
@@ -89,7 +91,15 @@ namespace DungeonGeneration.Scripts.Health
         private void UpdateHealthBar()
         {
             if (healthBar != null)
-                healthBar.SetHealth(GetHealthPercentage());
+            {
+                float healthPercentage = GetHealthPercentage();
+                UnityEngine.Debug.Log($"[EnemyHealth] Updating health bar. Percentage: {healthPercentage}");
+                healthBar.SetHealth(healthPercentage);
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("[EnemyHealth] UpdateHealthBar called, but healthBar is null!");
+            }
         }
     }
 } 

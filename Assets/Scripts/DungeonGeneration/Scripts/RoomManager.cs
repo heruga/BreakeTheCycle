@@ -298,6 +298,14 @@ namespace DungeonGeneration.Scripts
         {
             if (enemy != null)
             {
+                // Проверяем, был ли убит босс
+                var enemyHealth = enemy.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
+                if (enemyHealth != null && enemyHealth.IsBoss)
+                {
+                    PlayerPrefs.SetInt("BossDefeated", 1);
+                    PlayerPrefs.Save();
+                    Debug.Log("[RoomManager] Босс убит! Установлен флаг BossDefeated");
+                }
                 activeEnemies.Remove(enemy);
                 Debug.Log($"[RoomManager] Враг {enemy.name} погиб. Осталось врагов: {activeEnemies.Count}");
             }

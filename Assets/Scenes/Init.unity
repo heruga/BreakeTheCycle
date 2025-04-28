@@ -181,7 +181,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2918445784654813985, guid: 9cc767f0c9a33f045aa420c8416b53ea, type: 3}
       propertyPath: transitionDuration
-      value: 1
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2918445784654813985, guid: 9cc767f0c9a33f045aa420c8416b53ea, type: 3}
+      propertyPath: bossReturnMonologueID
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 7312542451258861361, guid: 9cc767f0c9a33f045aa420c8416b53ea, type: 3}
       propertyPath: m_LocalPosition.x

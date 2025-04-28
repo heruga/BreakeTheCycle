@@ -1,4 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="RealityReturner">
+    <Position X="10.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Interactables\RealityReturner.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EmotionPanelInteractable">
+    <Position X="6.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQBAQAAACAAAAAgAAAACAAAgAEAAAAIAAAAAAYAAAA=</HashCode>
+      <FileName>Assets\Scripts\Interactions\EmotionPanelInteractable.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DungeonGeneration.Scripts.InteractablePortal">
+    <Position X="8.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQFAQAAACAQAAAAAAAACAAAAAAACAABAAAAGAIAAAg=</HashCode>
+      <FileName>Assets\Scripts\DungeonGeneration\Scripts\InteractablePortal.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BreakTheCycle.BaseInteractable">
+    <Position X="7.25" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAQAAAAAAACAAAAAACAAAAAAAACAAAAggAAAAAQA=</HashCode>
+      <FileName>Assets\Scripts\Interactions\BaseInteractable.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="BreakTheCycle.InteractableObject">
+    <Position X="4.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAAAAAAAAAAAAAAAIAAAAAACAAAAQAAAAAEA=</HashCode>
+      <FileName>Assets\Scripts\Interactions\InteractableObject.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="IInteractable">
+    <Position X="7.25" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Interactions\IInteractable.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>

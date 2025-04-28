@@ -146,10 +146,8 @@ public class Template_UIManager : MonoBehaviour
     //Input related stuff (scroll through player choices and update highlight)
     void Update()
     {
-        //Lets just store the Node Data variable for the sake of fewer words
         var data = VIDE_Data.VIDE_Data.nodeData;
-
-        if (VIDE_Data.VIDE_Data.isActive) //If there is a dialogue active
+        if (VIDE_Data.VIDE_Data.isActive)
         {
             //Scroll through Player dialogue options if dialogue is not paused and we are on a player node
             //For player nodes, NodeData.commentIndex is the index of the picked choice
@@ -187,8 +185,9 @@ public class Template_UIManager : MonoBehaviour
             // --- ЗАВЕРШЕНИЕ ДИАЛОГА ПО ENTER/ЛКМ НА NPC/END NODE ---
             if (!data.isPlayer && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0)))
             {
-                Debug.Log("[UI] Завершаем диалог по Enter/ЛКМ на NPC/End Node");
-                Interact(VIDE_Data.VIDE_Data.assigned);
+                Debug.Log("[UI] Пошаговый показ комментариев NPC через OnContinuePressed");
+                OnContinuePressed();
+                return;
             }
 
             //Detect interact key
@@ -256,7 +255,10 @@ public class Template_UIManager : MonoBehaviour
         if (playOnce && PlayerPrefs.GetInt(playedKey, 0) == 1)
         {
             Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} уже был показан ранее, пропускаем.");
-            CallNext();
+            if (data.isPlayer)
+                CallNext();
+            else
+                OnContinuePressed();
             return;
         }
         // --- КОНЕЦ ДОБАВЛЕНИЯ ---
@@ -264,9 +266,7 @@ public class Template_UIManager : MonoBehaviour
         // Выводим текст в зависимости от типа узла
         if (!data.isPlayer)
         {
-            data.commentIndex = 0; // Сбросить индекс для NPC-узла
-            if (NPC_Container != null && NPC_Container.gameObject != null)
-                NPC_Container.SetActive(true);
+            NPC_Container.SetActive(true);
             if (data.comments != null && data.commentIndex < data.comments.Length)
             {
                 NPC_Text.text = data.comments[data.commentIndex];
@@ -300,7 +300,10 @@ public class Template_UIManager : MonoBehaviour
                     btn.onClick.AddListener(() => {
                         VIDE_Data.VIDE_Data.nodeData.commentIndex = choiceIndex;
                         Debug.Log($"[UI] Клик по варианту: {choiceIndex} — {data.comments[choiceIndex]}");
-                        CallNext();
+                        if (data.isPlayer)
+                            CallNext();
+                        else
+                            OnContinuePressed();
                     });
                 }
             }
@@ -318,6 +321,30 @@ public class Template_UIManager : MonoBehaviour
             PlayerPrefs.SetInt(playedKey, 1);
             PlayerPrefs.Save();
             Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} отмечен как показанный.");
+        }
+    }
+
+    // Новый метод для пошагового показа комментариев NPC
+    void OnContinuePressed()
+    {
+        var data = VIDE_Data.VIDE_Data.nodeData;
+        if (!data.isPlayer)
+        {
+            if (data.commentIndex < data.comments.Length - 1)
+            {
+                data.commentIndex++;
+                Debug.Log($"[OnContinuePressed] Показываем следующий комментарий NPC: {data.commentIndex}");
+                UpdateUI(data);
+            }
+            else
+            {
+                Debug.Log("[OnContinuePressed] Все комментарии NPC показаны, переходим к следующему узлу");
+                VIDE_Data.VIDE_Data.Next();
+            }
+        }
+        else
+        {
+            // Логика для выбора игрока (оставляем как есть)
         }
     }
 

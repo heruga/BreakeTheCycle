@@ -64,5 +64,13 @@ namespace BreakTheCycle
             manager.PlayMonologue(trigger.monologueID);
             Debug.Log($"[InteractableObject] PlayMonologue({trigger.monologueID}) вызван");
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, InteractionRadius);
+        }
+#endif
     }
 } 

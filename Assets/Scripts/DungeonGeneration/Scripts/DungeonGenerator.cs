@@ -1156,31 +1156,82 @@ namespace DungeonGeneration
 
         private void AssignRoomTypes()
         {
+            Debug.Log($"[DungeonGenerator] AssignRoomTypes: Начало назначения типов. Всего комнат (включая стартовую): {roomNodes.Count}");
+            
             // Не трогаем стартовую комнату
             var allRooms = roomNodes.Where(r => r != startRoomNode).ToList();
-            if (allRooms.Count == 0) return;
+            if (allRooms.Count == 0) 
+            {
+                Debug.LogWarning("[DungeonGenerator] AssignRoomTypes: Нет комнат для назначения типов (кроме стартовой).");
+                return;
+            }
+
+            Debug.Log($"[DungeonGenerator] AssignRoomTypes: Комнат для назначения типов: {allRooms.Count}");
 
             // 1. Найти самую дальнюю комнату для босса
             var bossRoom = FindFurthestRoom(startRoomNode);
             if (bossRoom != null)
             {
-                bossRoom.SetRoomType(dungeonConfig.bossRoomType);
+                Debug.Log($"[DungeonGenerator] AssignRoomTypes: Найдена самая дальняя комната для босса: {bossRoom.Id} в позиции {bossRoom.Position}");
+                if (dungeonConfig.bossRoomType != null)
+                {
+                    Debug.Log($"[DungeonGenerator] AssignRoomTypes: Присваиваем тип '{dungeonConfig.bossRoomType.typeName}' комнате {bossRoom.Id}");
+                    bossRoom.SetRoomType(dungeonConfig.bossRoomType);
+                }
+                else
+                {
+                    Debug.LogError("[DungeonGenerator] AssignRoomTypes: dungeonConfig.bossRoomType is NULL! Невозможно назначить тип босс-комнаты.");
+                }
+            }
+            else
+            {
+                 Debug.LogWarning("[DungeonGenerator] AssignRoomTypes: Не удалось найти самую дальнюю комнату (FindFurthestRoom вернул null). Босс-комната не будет назначена.");
             }
 
             // 2. Сформировать список кандидатов для элитной комнаты (без стартовой и босса)
             var eliteCandidates = allRooms.Where(r => r != bossRoom).ToList();
+             Debug.Log($"[DungeonGenerator] AssignRoomTypes: Кандидатов на элитную комнату: {eliteCandidates.Count}");
             if (eliteCandidates.Count > 0)
             {
                 int eliteIndex = UnityEngine.Random.Range(0, eliteCandidates.Count);
-                eliteCandidates[eliteIndex].SetRoomType(dungeonConfig.eliteCombatRoomType);
+                if (dungeonConfig.eliteCombatRoomType != null)
+                {
+                    Debug.Log($"[DungeonGenerator] AssignRoomTypes: Выбираем элитную комнату: {eliteCandidates[eliteIndex].Id}. Присваиваем тип '{dungeonConfig.eliteCombatRoomType.typeName}'.");
+                    eliteCandidates[eliteIndex].SetRoomType(dungeonConfig.eliteCombatRoomType);
+                }
+                 else
+                {
+                    Debug.LogWarning("[DungeonGenerator] AssignRoomTypes: dungeonConfig.eliteCombatRoomType is NULL! Невозможно назначить тип элитной комнаты.");
+                }
             }
 
             // 3. Остальные — basicCombatRoomType
+             Debug.Log("[DungeonGenerator] AssignRoomTypes: Назначаем базовый тип оставшимся комнатам...");
+            int basicAssignedCount = 0;
             foreach (var room in allRooms)
             {
-                if (room.RoomType == null)
-                    room.SetRoomType(dungeonConfig.basicCombatRoomType);
+                if (room.RoomType == null) // Если тип еще не назначен (не босс и не элитная)
+                {
+                    if (dungeonConfig.basicCombatRoomType != null)
+                    {
+                        room.SetRoomType(dungeonConfig.basicCombatRoomType);
+                        basicAssignedCount++;
+                    }
+                    else
+                    {
+                         Debug.LogWarning($"[DungeonGenerator] AssignRoomTypes: dungeonConfig.basicCombatRoomType is NULL! Невозможно назначить базовый тип комнате {room.Id}.");
+                    }
+                }
             }
+             Debug.Log($"[DungeonGenerator] AssignRoomTypes: Назначен базовый тип для {basicAssignedCount} комнат.");
+
+            // Финальная проверка типов
+            Debug.Log("[DungeonGenerator] AssignRoomTypes: Финальные типы комнат:");
+            foreach(var node in roomNodes)
+            {
+                Debug.Log($"  - Комната: {node.Id}, Тип: {node.RoomType?.typeName ?? "!!! NULL !!!"}");
+            }
+             Debug.Log("[DungeonGenerator] AssignRoomTypes: Завершено.");
         }
     }
 } 

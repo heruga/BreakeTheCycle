@@ -24,7 +24,14 @@ public class EnemyHealthBar : MonoBehaviour
     /// Установить процент здоровья (0..1)
     public void SetHealth(float percent)
     {
+        UnityEngine.Debug.Log($"[EnemyHealthBar] SetHealth called with percent: {percent}");
+        if (fillImage == null)
+        {
+            UnityEngine.Debug.LogError("[EnemyHealthBar] fillImage is null!");
+            return;
+        }
         fillImage.fillAmount = Mathf.Clamp01(percent);
+        UnityEngine.Debug.Log($"[EnemyHealthBar] fillImage.fillAmount is now: {fillImage.fillAmount}");
     }
 
     private void LateUpdate()

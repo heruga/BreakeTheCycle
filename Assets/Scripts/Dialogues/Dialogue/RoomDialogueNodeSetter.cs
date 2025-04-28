@@ -9,8 +9,9 @@ namespace BreakTheCycle.Dialogue
         [Tooltip("ID стартового узла для диалога")]
         public int startNodeId;
 
-        private void Start()
+        private void Awake()
         {
+            Debug.Log($"[RoomDialogueNodeSetter] Awake: npcId={npcId}, startNodeId={startNodeId}, gameObject={gameObject.name}");
             string playedKey = $"RoomDialogue_{npcId}_{startNodeId}_Played";
             if (PlayerPrefs.GetInt(playedKey, 0) == 1)
             {
@@ -22,6 +23,11 @@ namespace BreakTheCycle.Dialogue
                 DialogueStartNodeQueue.Instance.SetStartNode(npcId, startNodeId);
                 Debug.Log($"[RoomDialogueNodeSetter] Для NPC {npcId} назначен стартовый узел {startNodeId}");
             }
+            else
+            {
+                Debug.LogWarning($"[RoomDialogueNodeSetter] Не удалось добавить в очередь: npcId={npcId}, DialogueStartNodeQueue.Instance={(DialogueStartNodeQueue.Instance != null)}");
+            }
         }
     }
-} 
+}
+ 

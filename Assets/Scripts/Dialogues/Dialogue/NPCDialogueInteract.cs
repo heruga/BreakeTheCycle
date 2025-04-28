@@ -11,6 +11,7 @@ namespace BreakTheCycle.Dialogue
 
         private void Awake()
         {
+            Debug.Log($"[NPCDialogueInteract] Awake: npcId={npcId}, gameObject={gameObject.name}");
             dialogueAssign = GetComponent<VIDE_Assign>();
             if (dialogueAssign == null)
             {
@@ -26,7 +27,9 @@ namespace BreakTheCycle.Dialogue
             if (!string.IsNullOrEmpty(npcId) && DialogueStartNodeQueue.Instance != null)
             {
                 int nodeId;
-                if (DialogueStartNodeQueue.Instance.TryGetStartNode(npcId, out nodeId))
+                bool found = DialogueStartNodeQueue.Instance.TryGetStartNode(npcId, out nodeId);
+                Debug.Log($"[NPCDialogueInteract] Проверка очереди: найдено={found}, nodeId={nodeId}");
+                if (found)
                 {
                     if (dialogueAssign != null)
                     {
@@ -35,6 +38,10 @@ namespace BreakTheCycle.Dialogue
                         DialogueStartNodeQueue.Instance.RemoveStartNode(npcId);
                     }
                 }
+            }
+            else
+            {
+                Debug.Log($"[NPCDialogueInteract] Очередь пуста или npcId не задан: npcId={npcId}, DialogueStartNodeQueue.Instance={(DialogueStartNodeQueue.Instance != null)}");
             }
         }
 

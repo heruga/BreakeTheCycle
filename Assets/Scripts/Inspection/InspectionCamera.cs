@@ -6,6 +6,7 @@ public class InspectionCamera : MonoBehaviour
 {
         [Header("Camera Settings")]
         [SerializeField] private float rotationSpeed = 2f;
+        [SerializeField] private float rotationSpeedRightMouse = 5f; // Скорость вращения для правой кнопки мыши
         [SerializeField] private float minVerticalAngle = -80f; // Минимальный угол вращения по вертикали
         [SerializeField] private float maxVerticalAngle = 80f;  // Максимальный угол вращения по вертикали
         
@@ -42,6 +43,8 @@ public class InspectionCamera : MonoBehaviour
 
         private void Awake()
         {
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
             cam = GetComponent<Camera>();
             if (cam == null)
             {
@@ -235,8 +238,8 @@ public class InspectionCamera : MonoBehaviour
         {
             if (Input.GetMouseButton(1))
             {
-                float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
-                float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
+                float mouseX = Input.GetAxis("Mouse X") * rotationSpeedRightMouse;
+                float mouseY = Input.GetAxis("Mouse Y") * rotationSpeedRightMouse;
 
                 // Обновляем углы
                 currentHorizontalAngle += mouseX;

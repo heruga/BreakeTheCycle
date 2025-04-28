@@ -25,6 +25,9 @@ public class GameManager : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private GameObject currencyUIPanel;
 
+    [Header("Monologue Settings")]
+    public int bossReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после убийства босса
+
     private bool isTransitioning = false;
     private bool isInReality = true;
     private AsyncOperation sceneLoadOperation;
@@ -217,6 +220,23 @@ public class GameManager : MonoBehaviour
             waitTime += Time.unscaledDeltaTime;
             yield return null;
         }
+        
+        // --- Показываем монолог при возвращении в реальность ПОСЛЕ восстановления состояния, если босс был убит ---
+        if (SceneManager.GetActiveScene().name == realitySceneName && PlayerPrefs.GetInt("BossDefeated", 0) == 1)
+        {
+            var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
+            if (monologueManager != null)
+            {
+                Debug.Log("[GameManager] Показываем монолог после убийства босса (SwitchWorldCoroutine)");
+                monologueManager.PlayMonologue(bossReturnMonologueID);
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] MonologueManager не найден в сцене!");
+            }
+            PlayerPrefs.SetInt("BossDefeated", 0); // Сбросить флаг, чтобы монолог не показывался повторно
+            PlayerPrefs.Save();
+        }
 
         yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
     }
@@ -304,6 +324,24 @@ public class GameManager : MonoBehaviour
             waitTime += Time.unscaledDeltaTime;
             yield return null;
         }
+        
+        // --- Показываем монолог при возвращении в реальность ПОСЛЕ восстановления состояния, если босс был убит ---
+        if (sceneName == realitySceneName && PlayerPrefs.GetInt("BossDefeated", 0) == 1)
+        {
+            var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
+            if (monologueManager != null)
+            {
+                Debug.Log("[GameManager] Показываем монолог после убийства босса (LoadSceneAsync)");
+                monologueManager.PlayMonologue(bossReturnMonologueID);
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] MonologueManager не найден в сцене!");
+            }
+            PlayerPrefs.SetInt("BossDefeated", 0); // Сбросить флаг, чтобы монолог не показывался повторно
+            PlayerPrefs.Save();
+        }
+
         yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
     }
 

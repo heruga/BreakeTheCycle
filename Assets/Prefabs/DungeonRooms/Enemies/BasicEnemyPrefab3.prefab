@@ -53,6 +53,7 @@ MonoBehaviour:
   isBoss: 0
   currencyDropAmount: 10
   bossMultiplier: 1
+  healthBarPrefab: {fileID: 5781516032655189868, guid: 574da03ab1afb7041ad66acf7b6cce14, type: 3}
 --- !u!114 &6300152041901352408
 MonoBehaviour:
   m_ObjectHideFlags: 0
