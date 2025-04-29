@@ -233,17 +233,17 @@ public class Template_UIManager : MonoBehaviour
         }
         // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
         if (NPC_Container != null && NPC_Container.gameObject != null) 
-            NPC_Container.SetActive(false);
+        NPC_Container.SetActive(false);
         else 
             Debug.LogWarning("[UpdateUI] NPC_Container is null or destroyed!");
             
         if (playerContainer != null && playerContainer.gameObject != null) 
-            playerContainer.SetActive(false);
+        playerContainer.SetActive(false);
         else 
             Debug.LogWarning("[UpdateUI] playerContainer is null or destroyed!");
         // --- КОНЕЦ ДОБАВЛЕНИЯ ---
 
-        // --- ДОБАВЛЕНО: Проверка playOnce и уникального ключа ---
+        // --- Проверка playOnce и уникального ключа ---
         bool playOnce = false;
         string dialogueType = "DefaultType";
         if (data.extraVars != null)
@@ -262,41 +262,46 @@ public class Template_UIManager : MonoBehaviour
             }
         }
         string playedKey = $"Monologue_{dialogueType}_{data.nodeID}_Played";
-        if (playOnce && PlayerPrefs.GetInt(playedKey, 0) == 1)
+        // --- ИСПРАВЛЕНО: Пропускаем узел только если playOnce, ключ уже установлен и мы на первом комментарии ---
+        if (playOnce && PlayerPrefs.GetInt(playedKey, 0) == 1 && data.commentIndex == 0)
         {
-            Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} уже был показан ранее, пропускаем через Next().");
-            VIDE_Data.VIDE_Data.Next(); // Пропускаем узел через Next()
+            Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} уже был показан ранее, пропускаем (ничего не отображаем). (playOnce, commentIndex==0)");
+            if (data.isEnd)
+            {
+                Debug.Log($"[UpdateUI] Это конец диалога, вызываем EndDialogue сразу (playOnce).");
+                EndDialogue(data);
+            }
             return;
         }
-        // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         // Выводим текст в зависимости от типа узла
         if (!data.isPlayer)
         {
             // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
             if (NPC_Container != null && NPC_Container.gameObject != null) {
-                NPC_Container.SetActive(true);
+            NPC_Container.SetActive(true);
                 if (NPC_Text != null) {
-                    if (data.comments != null && data.commentIndex < data.comments.Length)
-                    {
-                        NPC_Text.text = data.comments[data.commentIndex];
-                        Debug.Log($"[UpdateUI] NPC_Text.text = {NPC_Text.text}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[UpdateUI] Нет комментариев для NPC!");
+            if (data.comments != null && data.commentIndex < data.comments.Length)
+            {
+                NPC_Text.text = data.comments[data.commentIndex];
+                Debug.Log($"[UpdateUI] NPC_Text.text = {NPC_Text.text}");
+            }
+            else
+            {
+                Debug.LogWarning("[UpdateUI] Нет комментариев для NPC!");
                         NPC_Text.text = ""; // Очищаем на всякий случай
                     }
-                }
+            }
                 else Debug.LogWarning("[UpdateUI] NPC_Text is null!");
                 
                 if (NPC_label != null) {
-                     // Имя NPC из поля Tag
-                    if (!string.IsNullOrEmpty(data.tag))
-                        NPC_label.text = data.tag;
-                    else
-                        NPC_label.text = "NPC";
-                    Debug.Log($"[UpdateUI] NPC_label.text = {NPC_label.text}");
+            // Имя NPC из поля Tag
+            if (!string.IsNullOrEmpty(data.tag))
+                NPC_label.text = data.tag;
+            else
+                NPC_label.text = "NPC";
+            Debug.Log($"[UpdateUI] NPC_label.text = {NPC_label.text}");
                 }
                 else Debug.LogWarning("[UpdateUI] NPC_label is null!");
             }
@@ -307,29 +312,29 @@ public class Template_UIManager : MonoBehaviour
         {
             // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
             if (playerContainer != null && playerContainer.gameObject != null) {
-                playerContainer.SetActive(true);
-                if (data.comments != null)
+            playerContainer.SetActive(true);
+            if (data.comments != null)
+            {
+                for (int i = 0; i < data.comments.Length && i < maxPlayerChoices.Count; i++)
                 {
-                    for (int i = 0; i < data.comments.Length && i < maxPlayerChoices.Count; i++)
-                    {
-                        if (maxPlayerChoices[i] == null || maxPlayerChoices[i].gameObject == null) continue;
+                    if (maxPlayerChoices[i] == null || maxPlayerChoices[i].gameObject == null) continue;
                         var tmpText = maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>();
                         if (tmpText != null) {
                             tmpText.text = data.comments[i];
-                            Debug.Log($"[UpdateUI] PlayerChoice[{i}] = {data.comments[i]}");
+                    Debug.Log($"[UpdateUI] PlayerChoice[{i}] = {data.comments[i]}");
                         }
                         else Debug.LogWarning($"[UpdateUI] TextMeshProUGUI not found on child 0 of player choice {i}!");
                         
-                        var btn = maxPlayerChoices[i];
-                        int choiceIndex = i;
-                        btn.onClick.RemoveAllListeners();
-                        btn.onClick.AddListener(() => {
-                            VIDE_Data.VIDE_Data.nodeData.commentIndex = choiceIndex;
-                            Debug.Log($"[UI] Клик по варианту: {choiceIndex} — {data.comments[choiceIndex]}");
+                    var btn = maxPlayerChoices[i];
+                    int choiceIndex = i;
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(() => {
+                        VIDE_Data.VIDE_Data.nodeData.commentIndex = choiceIndex;
+                        Debug.Log($"[UI] Клик по варианту: {choiceIndex} — {data.comments[choiceIndex]}");
                             if (data.isPlayer) // Проверка нужна, чтобы избежать вызова для NPC
-                                CallNext();
-                        });
-                    }
+                        CallNext();
+                    });
+                }
                     // Очищаем текст у неиспользуемых кнопок
                     for (int i = data.comments.Length; i < maxPlayerChoices.Count; i++)
                     {
@@ -339,12 +344,12 @@ public class Template_UIManager : MonoBehaviour
                     }
                 }
                 if (playerLabel != null) {
-                    // Имя игрока из поля Tag
-                    if (!string.IsNullOrEmpty(data.tag))
-                        playerLabel.text = data.tag;
-                    else
-                        playerLabel.text = "Игрок";
-                    Debug.Log($"[UpdateUI] playerLabel.text = {playerLabel.text}");
+            // Имя игрока из поля Tag
+            if (!string.IsNullOrEmpty(data.tag))
+                playerLabel.text = data.tag;
+            else
+                playerLabel.text = "Игрок";
+            Debug.Log($"[UpdateUI] playerLabel.text = {playerLabel.text}");
                 } else Debug.LogWarning("[UpdateUI] playerLabel is null!");
             }
             else Debug.LogWarning("[UpdateUI] playerContainer is null or destroyed!");
@@ -352,20 +357,33 @@ public class Template_UIManager : MonoBehaviour
         }
 
         // После показа узла с playOnce сохраняем ключ
-        if (playOnce && PlayerPrefs.GetInt(playedKey, 0) == 0)
+        // --- ИСПРАВЛЕНО: Сохраняем ключ только на последнем комментарии узла ---
+        if (playOnce && PlayerPrefs.GetInt(playedKey, 0) == 0 && data.commentIndex == data.comments.Length - 1)
         {
             PlayerPrefs.SetInt(playedKey, 1);
             PlayerPrefs.Save();
-            Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} отмечен как показанный.");
+            Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} отмечен как показанный (после последнего комментария).");
+        }
+        // --- ДОБАВЛЕНО: Завершаем диалог сразу, если это конец ---
+        if (data.isEnd)
+        {
+            Debug.Log($"[UpdateUI] Это конец диалога, вызываем EndDialogue сразу.");
+            EndDialogue(data);
         }
     }
 
     void EndDialogue(VIDE_Data.VIDE_Data.NodeData data)
     {
         Debug.Log("[EndDialogue] Диалог завершён!");
-        // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
+
+        // --- ОТПИСКА ОТ СОБЫТИЙ --- 
+        VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
+        VIDE_Data.VIDE_Data.OnEnd -= EndDialogue;
+        // VIDE_Data.OnActionNode -= ActionHandler; // Если бы использовали
+
+        // --- ДОБАВЛЕНО: Проверка ссылок перед использованием --- 
         if (dialogueContainer != null && dialogueContainer.gameObject != null) 
-            dialogueContainer.SetActive(false); // Скрываем окно диалога
+        dialogueContainer.SetActive(false); // Скрываем окно диалога
         else 
             Debug.LogWarning("[EndDialogue] dialogueContainer is null or destroyed!");
         // --- КОНЕЦ ДОБАВЛЕНИЯ ---

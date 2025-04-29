@@ -8,16 +8,19 @@ using BreakTheCycle.Dialogue;
 /// </summary>
 public class RealityPlayerController : MonoBehaviour
 {
-    [Header("Движение")]
-    [SerializeField] private float walkSpeed = 5f;
-    
-    [Header("Взаимодействие")]
-    [SerializeField] private float interactionRange = 3f;
+    [Header("Movement")]
+    [SerializeField] private float speed = 5.0f;
+    [SerializeField] private float gravity = -9.81f;
+    [SerializeField] private float jumpHeight = 1.5f;
+
+    [Header("Interaction")]
+    [SerializeField] private float interactionRange = 2.0f;
     [SerializeField] private KeyCode interactionKey = KeyCode.F;
     [SerializeField] private LayerMask interactionMask;
-    
+    [SerializeField] private Camera playerCamera; // Добавляем поле для камеры
+
     private CharacterController controller;
-    private Vector3 velocity;
+    private Vector3 playerVelocity;
     private float nextInteractionCheck = 0f;
     private float interactionCheckInterval = 0.1f; // Проверяем взаимодействие каждые 0.1 секунды
 
@@ -71,7 +74,7 @@ public class RealityPlayerController : MonoBehaviour
         Cursor.lockState = enabled ? CursorLockMode.Locked : CursorLockMode.None;
         if (!enabled)
         {
-            velocity = Vector3.zero;
+            playerVelocity = Vector3.zero;
             currentInteractable = null;
             Input.ResetInputAxes();
         }
@@ -84,7 +87,7 @@ public class RealityPlayerController : MonoBehaviour
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
         Vector3 move = cachedTransform.right * moveX + cachedTransform.forward * moveZ;
-        controller.Move(move * walkSpeed * Time.deltaTime);
+        controller.Move(move * speed * Time.deltaTime);
         
         // Первая реплика при первом движении
         if (!firstMoveMonologuePlayed && (Mathf.Abs(moveX) > 0.01f || Mathf.Abs(moveZ) > 0.01f))
@@ -102,11 +105,11 @@ public class RealityPlayerController : MonoBehaviour
         }
         
         // Поиск интерактивного объекта перед игроком
-        Ray ray = new Ray(transform.position, transform.forward);
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit hit;
         IInteractable interactable = null;
         bool hasInteractable = false;
-        
+
         if (Physics.Raycast(ray, out hit, interactionRange, interactionMask))
         {
             interactable = hit.collider.GetComponent<IInteractable>();
@@ -140,7 +143,10 @@ public class RealityPlayerController : MonoBehaviour
         }
         else
         {
-            currentInteractable = null;
+             if (currentInteractable != null)
+             {
+                 currentInteractable = null;
+             }
         }
     }
 

@@ -70,9 +70,16 @@ namespace DungeonGeneration.Scripts
 
             if (availableRooms == null || availableRooms.Count == 0)
             {
-                // Если GetAvailableRooms вернул 0, значит, и босс-комната посещена или недоступна
-                Debug.Log("[InteractablePortal] Нет доступных комнат (включая босса) или все посещены! Возвращаем игрока в реальность.");
-                SceneManager.LoadScene("Reality"); // Замените на нужное имя сцены, если требуется
+                Debug.Log("[InteractablePortal] Нет доступных комнат (вероятно, это конец данжа/комната босса). Возвращаемся в реальность.");
+                
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.SwitchWorld();
+                }
+                else
+                {
+                    Debug.LogError("[InteractablePortal] GameManager не найден! Не удалось вернуться в реальность.");
+                }
                 return;
             }
 

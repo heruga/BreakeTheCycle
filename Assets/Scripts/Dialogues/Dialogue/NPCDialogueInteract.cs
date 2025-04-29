@@ -23,47 +23,52 @@ namespace BreakTheCycle.Dialogue
                 if (uiManager == null)
                     Debug.LogWarning("[NPCDialogueInteract] В сцене не найден Template_UIManager!");
             }
-            // --- Применяем стартовый узел из глобального менеджера очереди ---
-            if (!string.IsNullOrEmpty(npcId) && DialogueStartNodeQueue.Instance != null)
-            {
-                int nodeId;
-                bool found = DialogueStartNodeQueue.Instance.TryGetStartNode(npcId, out nodeId);
-                Debug.Log($"[NPCDialogueInteract] Проверка очереди: найдено={found}, nodeId={nodeId}");
-                if (found)
-                {
-                    if (dialogueAssign != null)
-                    {
-                        dialogueAssign.overrideStartNode = nodeId;
-                        Debug.Log($"[NPCDialogueInteract] Применён стартовый узел {nodeId} для NPC {npcId}");
-                        DialogueStartNodeQueue.Instance.RemoveStartNode(npcId);
-                    }
-                }
-            }
-            else
-            {
-                Debug.Log($"[NPCDialogueInteract] Очередь пуста или npcId не задан: npcId={npcId}, DialogueStartNodeQueue.Instance={(DialogueStartNodeQueue.Instance != null)}");
-            }
         }
 
         public void OnInteract()
         {
-            if (dialogueAssign != null)
+            if (dialogueAssign == null)
             {
+                Debug.LogWarning($"[NPCDialogueInteract] Нельзя взаимодействовать: VIDE_Assign не найден на {gameObject.name}!");
+                return;
+            }
+
                 if (!VIDE_Data.VIDE_Data.isActive)
                 {
-                    if (uiManager != null)
-                        uiManager.Interact(dialogueAssign);
+                int nextNodeId = -1; // По умолчанию -1 (используется базовый узел)
+                if (!string.IsNullOrEmpty(npcId) && DialogueStartNodeQueue.Instance != null)
+                {
+                    if (DialogueStartNodeQueue.Instance.TryDequeueNextStartNode(npcId, out int dequeuedId))
+                    {
+                        nextNodeId = dequeuedId; // Используем ID из очереди
+                        Debug.Log($"[NPCDialogueInteract] Взят узел {nextNodeId} из очереди для NPC {npcId}");
+                    }
                     else
-                        Debug.LogWarning("UI-менеджер не назначен!");
+                    {
+                        Debug.Log($"[NPCDialogueInteract] Очередь для NPC {npcId} пуста, используем базовый узел.");
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning("Диалог уже активен! Сначала завершите предыдущий.");
+                    Debug.LogWarning($"[NPCDialogueInteract] Не можем проверить очередь: npcId пуст или DialogueStartNodeQueue.Instance == null. Используем базовый узел.");
                 }
+                dialogueAssign.overrideStartNode = nextNodeId;
+
+                if (uiManager != null)
+                {
+                    Debug.Log($"[NPCDialogueInteract] Запуск диалога с overrideStartNode = {nextNodeId}");
+                    uiManager.Interact(dialogueAssign);
+                }
+                else
+                    Debug.LogWarning("UI-менеджер не назначен!");
             }
             else
             {
-                Debug.LogWarning($"[NPCDialogueInteract] Нельзя запустить диалог: VIDE_Assign не назначен на {gameObject.name}!");
+                if (uiManager != null)
+                {
+                     Debug.Log("[NPCDialogueInteract] Диалог уже активен, передаем управление UI-менеджеру.");
+                     uiManager.Interact(dialogueAssign);
+                }
             }
         }
     }

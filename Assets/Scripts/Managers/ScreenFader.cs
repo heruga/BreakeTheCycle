@@ -56,7 +56,7 @@ public class ScreenFader : MonoBehaviour
             fadeImage.color = color;
     }
 
-    public Coroutine FadeIn(float duration, Color color)
+    public Coroutine StartFadeIn(float duration, Color color)
     {
         if (currentFade != null) StopCoroutine(currentFade);
         currentFade = StartCoroutine(FadeRoutine(1, 0, duration, color));

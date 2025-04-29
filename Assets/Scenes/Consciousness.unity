@@ -2717,6 +2717,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1184988567
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6409561166978420638, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_Name
+      value: MonologueManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.290522
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2.3209918
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.840078
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7331005108865889794, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f79bb93c835816544846a19ccd3413c6, type: 3}
 --- !u!1 &1216980704
 GameObject:
   m_ObjectHideFlags: 0
@@ -3894,6 +3951,7 @@ MonoBehaviour:
   generationDelay: 0.5
   showDebugGizmos: 1
   debugLineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  forceAllRoomsCleared: 0
 --- !u!4 &1502513923
 Transform:
   m_ObjectHideFlags: 0
@@ -3960,7 +4018,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5212032192114772038, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5212032192114772038, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: m_LocalPosition.z
@@ -4021,6 +4079,22 @@ PrefabInstance:
     - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: emotionHandler
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
+      propertyPath: interactionRange
+      value: 2.09
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
+      propertyPath: interactionBoxSize.x
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
+      propertyPath: interactionBoxSize.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
+      propertyPath: interactionBoxSize.z
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8343313373965687932, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -5294,3 +5368,4 @@ SceneRoots:
   - {fileID: 1761938895}
   - {fileID: 802721757}
   - {fileID: 1380421497}
+  - {fileID: 1184988567}

@@ -180,6 +180,10 @@ PrefabInstance:
       value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 2918445784654813985, guid: 9cc767f0c9a33f045aa420c8416b53ea, type: 3}
+      propertyPath: endScreenPrefab
+      value: 
+      objectReference: {fileID: 8848880956491629774, guid: 1e54f2b4fb967fe438d8e4ce23670bad, type: 3}
+    - target: {fileID: 2918445784654813985, guid: 9cc767f0c9a33f045aa420c8416b53ea, type: 3}
       propertyPath: transitionDuration
       value: 2
       objectReference: {fileID: 0}

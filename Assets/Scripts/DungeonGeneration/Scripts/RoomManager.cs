@@ -145,6 +145,16 @@ namespace DungeonGeneration.Scripts
                 return;
             }
 
+            if (dungeonGenerator != null && dungeonGenerator.forceAllRoomsCleared)
+            {
+                Debug.Log("[RoomManager] Глобальный флаг forceAllRoomsCleared активен, спавн босса и врагов отменен.");
+                isRoomCleared = true;
+                if (roomNode != null) roomNode.ClearRoom();
+                OnRoomCleared?.Invoke();
+                SetupPortals();
+                return;
+            }
+
             if (roomType != null && roomType.typeName != null && roomType.typeName.ToLower().Contains("boss"))
             {
                 // Новый способ: ищем EnemyConfigSO с isBoss в массиве enemyConfigs этой комнаты
@@ -175,7 +185,7 @@ namespace DungeonGeneration.Scripts
             }
 
             currentWave = 0;
-            if (IsCombatRoom())
+            if (IsCombatRoom() && !(roomType != null && roomType.typeName != null && roomType.typeName.ToLower().Contains("boss")))
             {
                 StartNextWave();
             }
@@ -204,6 +214,15 @@ namespace DungeonGeneration.Scripts
 
         private void SpawnEnemiesWave()
         {
+            if (dungeonGenerator != null && dungeonGenerator.forceAllRoomsCleared)
+            {
+                Debug.Log("[RoomManager] Глобальный флаг forceAllRoomsCleared активен, враги не будут спавниться, комната считается очищённой.");
+                isRoomCleared = true;
+                if (roomNode != null) roomNode.ClearRoom();
+                OnRoomCleared?.Invoke();
+                return;
+            }
+
             if (enemyConfigs == null || enemyConfigs.Length == 0)
             {
                 Debug.LogWarning("[RoomManager] EnemyConfigs пустой — враги не будут заспавнены.");
@@ -226,20 +245,20 @@ namespace DungeonGeneration.Scripts
 
             foreach (var spawnPoint in availableSpawnPoints)
             {
-                // Фильтруем подходящие enemy configs по типу комнаты
-                var suitableConfigs = enemyConfigs.Where(cfg => 
-                    (roomType == dungeonGenerator.DungeonConfig.eliteCombatRoomType && cfg.isElite) ||
-                    (roomType == dungeonGenerator.DungeonConfig.basicCombatRoomType && !cfg.isElite && !cfg.isBoss) ||
-                    (roomType == dungeonGenerator.DungeonConfig.bossRoomType && cfg.isBoss)
+                var suitableConfigs = enemyConfigs.Where(cfg => !cfg.isBoss && 
+                    (
+                        (roomType == dungeonGenerator.DungeonConfig.eliteCombatRoomType && cfg.isElite) ||
+                        (roomType == dungeonGenerator.DungeonConfig.basicCombatRoomType && !cfg.isElite)
+                    )
                 ).ToList();
 
                 if (suitableConfigs.Count == 0)
                 {
-                    Debug.LogWarning($"[RoomManager] Нет подходящих enemy configs для типа комнаты {roomType.typeName}!");
+                    if(roomType != dungeonGenerator.DungeonConfig.bossRoomType)
+                        Debug.LogWarning($"[RoomManager] Нет подходящих НЕ-БОСС enemy configs для типа комнаты {roomType.typeName}! Враги не будут заспавнены в этой точке.");
                     continue;
                 }
 
-                // Случайно выбираем enemy config для этой точки
                 var enemyConfig = suitableConfigs[UnityEngine.Random.Range(0, suitableConfigs.Count)];
                 int minCount = Mathf.Max(0, enemyConfig.minGroupSize);
                 int maxCount = Mathf.Max(minCount, enemyConfig.maxGroupSize);
@@ -258,7 +277,6 @@ namespace DungeonGeneration.Scripts
                         Debug.LogError($"[RoomManager] Один из enemyPrefabs равен null в EnemyConfigSO {enemyConfig.enemyName}!");
                         continue;
                     }
-                    // Добавляем разброс позиции
                     Vector2 offset2D = UnityEngine.Random.insideUnitCircle * enemySpawnScatterRadius;
                     Vector3 spawnPos = spawnPoint.position + new Vector3(offset2D.x, 0, offset2D.y);
                     GameObject enemy = Instantiate(prefab, spawnPos, spawnPoint.rotation, transform);
@@ -298,29 +316,41 @@ namespace DungeonGeneration.Scripts
         {
             if (enemy != null)
             {
-                // Проверяем, был ли убит босс
                 var enemyHealth = enemy.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
-                if (enemyHealth != null && enemyHealth.IsBoss)
+                bool wasBoss = enemyHealth != null && enemyHealth.IsBoss; // Запоминаем, был ли это босс
+
+                // Проверяем, был ли убит босс (для PlayerPrefs)
+                if (wasBoss)
                 {
                     PlayerPrefs.SetInt("BossDefeated", 1);
                     PlayerPrefs.Save();
                     Debug.Log("[RoomManager] Босс убит! Установлен флаг BossDefeated");
                 }
+                
                 activeEnemies.Remove(enemy);
                 Debug.Log($"[RoomManager] Враг {enemy.name} погиб. Осталось врагов: {activeEnemies.Count}");
             }
 
             if (activeEnemies.Count == 0 && roomNode != null && !isRoomCleared)
             {
-                Debug.Log($"[RoomManager] Все враги волны {currentWave} побеждены");
-                if (currentWave < totalWaves)
+                // Если умерший враг был боссом ИЛИ это была последняя волна обычных врагов
+                var enemyHealthCheck = enemy?.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
+                bool diedBoss = enemyHealthCheck != null && enemyHealthCheck.IsBoss;
+
+                if (diedBoss) 
                 {
-                    StartNextWave();
+                    Debug.Log($"[RoomManager] Убит босс и врагов больше нет, очищаем комнату.");
+                    ClearRoomInternal(); // Очищаем комнату сразу после босса
                 }
-                else
+                else if (currentWave >= totalWaves) // Если это НЕ босс, проверяем волны
                 {
-                    // Логика очистки комнаты при нормальном завершении
-                    ClearRoomInternal();
+                     Debug.Log($"[RoomManager] Все враги волны {currentWave} побеждены, это была последняя волна. Очищаем комнату.");
+                     ClearRoomInternal(); // Очищаем после последней обычной волны
+                }
+                else // Если это НЕ босс и НЕ последняя волна
+                {
+                     Debug.Log($"[RoomManager] Все враги волны {currentWave} побеждены, запускаем следующую волну.");
+                     StartNextWave(); // Запускаем следующую волну
                 }
             }
         }

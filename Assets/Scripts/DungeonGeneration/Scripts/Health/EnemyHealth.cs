@@ -17,6 +17,7 @@ namespace DungeonGeneration.Scripts.Health
         [Header("UI")]
         [SerializeField] private GameObject healthBarPrefab;
         private EnemyHealthBar healthBar;
+        private bool isHealthBarActive = false; // Флаг для отслеживания активации
 
         public bool IsBoss => isBoss;
 
@@ -26,13 +27,28 @@ namespace DungeonGeneration.Scripts.Health
             {
                 var barObj = Instantiate(healthBarPrefab);
                 healthBar = barObj.GetComponent<EnemyHealthBar>();
-                healthBar.SetTarget(transform);
-                UpdateHealthBar();
+                if (healthBar != null) // Доп. проверка, что компонент найден
+                {
+                    healthBar.SetTarget(transform);
+                    UpdateHealthBar();
+                    healthBar.gameObject.SetActive(false); // Деактивируем при старте
+                }
+                else
+                {
+                    Debug.LogError("[EnemyHealth] Не найден компонент EnemyHealthBar на префабе HealthBar!");
+                }
             }
         }
 
         public override void TakeDamage(float damage)
         {
+            // Активируем HealthBar при первом получении урона
+            if (damage > 0 && healthBar != null && !isHealthBarActive)
+            {
+                healthBar.gameObject.SetActive(true);
+                isHealthBarActive = true;
+            }
+            
             if (damage > 0 && currentHealth > 0)
             {
                 var controller = GetComponent<Enemies.EnemyController>();
@@ -68,9 +84,7 @@ namespace DungeonGeneration.Scripts.Health
             Destroy(gameObject);
         }
         
-        /// <summary>
         /// Выпадение валюты при смерти врага
-        /// </summary>
         private void DropCurrency()
         {
             if (CurrencyManager.Instance != null)
@@ -84,7 +98,7 @@ namespace DungeonGeneration.Scripts.Health
                 }
                 
                 CurrencyManager.Instance.AddCurrency(amount);
-                Debug.Log($"[EnemyHealth] Враг {gameObject.name} выронил {amount} валюты");
+                Debug.Log($"[EnemyHealth] После смерти {gameObject.name} выронил {amount} валюты");
             }
         }
 
@@ -99,6 +113,14 @@ namespace DungeonGeneration.Scripts.Health
             else
             {
                 UnityEngine.Debug.LogWarning("[EnemyHealth] UpdateHealthBar called, but healthBar is null!");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (healthBar != null)
+            {
+                Destroy(healthBar.gameObject);
             }
         }
     }

@@ -1,17 +1,22 @@
 using UnityEngine;
 
 /// <summary>
-/// Скрипт для создания триггерной зоны, которая активирует переход между сценами
+/// Скрипт для создания триггерной зоны, которая информирует GameManager о входе/выходе игрока.
 /// </summary>
 public class SceneTransitionTrigger : MonoBehaviour
 {
-    private bool isPlayerInTrigger = false;
-
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInTrigger = true;
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetPlayerInTransitionZone(true);
+            }
+            else
+            {
+                Debug.LogError("[SceneTransitionTrigger] GameManager.Instance не найден при входе в триггер!");
+            }
         }
     }
 
@@ -19,15 +24,12 @@ public class SceneTransitionTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInTrigger = false;
-        }
-    }
-
-    private void Update()
-    {
-        if (isPlayerInTrigger && Input.GetKeyDown(KeyCode.R))
-        {
-            GameManager.Instance.SwitchWorld();
+             if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetPlayerInTransitionZone(false);
+            }
+            // Ошибка здесь менее критична, но можно добавить лог при желании
+            // else { Debug.LogWarning("[SceneTransitionTrigger] GameManager.Instance не найден при выходе из триггера!"); }
         }
     }
 } 

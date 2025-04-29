@@ -69,7 +69,7 @@ namespace BreakTheCycle.Actions
 
             // Ставим узел 37 в очередь для этого NPC
             int nodeToQueue = 37;
-            DialogueStartNodeQueue.Instance.SetStartNode(npcId, nodeToQueue);
+            DialogueStartNodeQueue.Instance.EnqueueStartNode(npcId, nodeToQueue);
             Debug.Log($"[DialogueActions] Для NPC '{npcId}' поставлен в очередь стартовый узел {nodeToQueue}.");
 
             // --- ДОБАВЛЕНО: Переключение мира, если мы не в реальности ---
@@ -101,7 +101,6 @@ namespace BreakTheCycle.Actions
         {
             Debug.Log("[DialogueActions] Вызван ClearAllRoomsAndDisableSpawns");
 
-            // Находим генератор подземелий
             DungeonGenerator dungeonGenerator = FindObjectOfType<DungeonGenerator>();
             if (dungeonGenerator == null)
             {
@@ -109,30 +108,8 @@ namespace BreakTheCycle.Actions
                 return;
             }
 
-            var roomManagers = GetRoomManagers(dungeonGenerator);
-
-            if (roomManagers == null || roomManagers.Count == 0)
-            {
-                Debug.LogWarning("[DialogueActions] Не найдено активных RoomManager для очистки.");
-                return;
-            }
-
-            Debug.Log($"[DialogueActions] Найдено {roomManagers.Count} комнат для очистки.");
-
-            // Проходим по всем найденным RoomManager и вызываем принудительную очистку
-            foreach (var roomManager in roomManagers)
-            {
-                if (roomManager != null)
-                {
-                    roomManager.ForceClearRoomAndDestroyEnemies();
-                }
-                else
-                {
-                    Debug.LogWarning("[DialogueActions] Обнаружен null RoomManager в списке.");
-                }
-            }
-
-            Debug.Log("[DialogueActions] Все активные комнаты принудительно очищены.");
+            dungeonGenerator.forceAllRoomsCleared = true;
+            Debug.Log("[DialogueActions] Установлен глобальный флаг forceAllRoomsCleared = true");
         }
         
         // Вспомогательный метод для получения RoomManager. Может потребовать адаптации,

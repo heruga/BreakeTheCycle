@@ -12,6 +12,9 @@ namespace BreakTheCycle.Dialogue
         public GameObject monologuePanel;    // Панель с текстом монолога
         public TextMeshProUGUI monologueText;           // Компонент TextMeshProUGUI для отображения монолога
         
+        // Добавляем событие
+        public event System.Action<int> OnMonologueComplete;
+
         private VIDE_Assign monologueAssign;
         private bool isMonologueActive = false; // Флаг активности монолога
         private int currentMonologueID = -1; // ID текущего монолога
@@ -124,11 +127,17 @@ namespace BreakTheCycle.Dialogue
 
         private void HideMonologue()
         {
+            int completedID = currentMonologueID; // Запоминаем ID перед сбросом
+
             monologuePanel.SetActive(false);
             VIDE_Data.VIDE_Data.EndDialogue();
             isMonologueActive = false;
             currentMonologueID = -1;
             currentCommentIndex = 0;
+
+            // Вызываем событие после всех действий
+            OnMonologueComplete?.Invoke(completedID);
+            Debug.Log($"Monologue {completedID} completed and event invoked.");
         }
 
         // Добавляем метод для очистки при отключении объекта

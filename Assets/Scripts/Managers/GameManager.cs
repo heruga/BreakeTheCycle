@@ -5,6 +5,7 @@ using DungeonGeneration;
 using DungeonGeneration.Scripts;
 using UnityEngine.UI;
 using System;
+using BreakTheCycle.Dialogue; // Добавляем неймспейс для MonologueManager
 
 /// Менеджер игры, управляющий состояниями и переходами между "Реальностью" и "Сознанием"
 public class GameManager : MonoBehaviour
@@ -24,14 +25,20 @@ public class GameManager : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private GameObject currencyUIPanel;
+    [SerializeField] private GameObject endScreenPrefab; // Ссылка на префаб финального экрана
 
     [Header("Monologue Settings")]
     public int bossReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после убийства босса
 
     private bool isTransitioning = false;
     private bool isInReality = true;
-    private AsyncOperation sceneLoadOperation;
-    private bool playerRestored = false;
+    private Coroutine _lastForceRestoreCoroutine = null;
+    private bool _loadingErrorOccurred = false; // Флаг для отслеживания ошибок во вложенной корутине
+    private bool isPlayerInTransitionZone = false; // Флаг нахождения игрока в зоне перехода
+
+    // Поля для отслеживания финального монолога
+    private int listeningForMonologueID = -1;
+    private MonologueManager monologueManagerInstance; // Кэшируем ссылку
 
     /// Возможные состояния игры
     public enum GameState
@@ -95,12 +102,19 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] OnEnable вызван, активен: " + gameObject.activeSelf);
         SceneManager.activeSceneChanged += OnActiveSceneChanged;
+        // Подписка на монолог происходит в ListenForFinalMonologue
     }
     
     private void OnDisable()
     {
         Debug.Log("[GameManager] OnDisable вызван, активен: " + gameObject.activeSelf);
         SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+
+        // Отписываемся от события завершения монолога при отключении
+        if (monologueManagerInstance != null)
+        {
+            monologueManagerInstance.OnMonologueComplete -= HandleFinalMonologueCompletion;
+        }
     }
     
     private void OnActiveSceneChanged(Scene oldScene, Scene newScene)
@@ -147,10 +161,10 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // Переключение по клавише R
-        if (Input.GetKeyDown(KeyCode.R) && !isTransitioning)
+        // Переключение по клавише R - ТОЛЬКО если игрок в РЕАЛЬНОСТИ и в зоне перехода
+        if (isInReality && Input.GetKeyDown(KeyCode.R) && !isTransitioning && isPlayerInTransitionZone) 
         {
-            Debug.Log("[GameManager] Нажата клавиша R, начало переключения мира");
+            Debug.Log("[GameManager] Нажата клавиша R В РЕАЛЬНОСТИ И В ЗОНЕ ПЕРЕХОДА, начало переключения мира");
             SwitchWorld();
         }
     }
@@ -173,72 +187,258 @@ public class GameManager : MonoBehaviour
         // Универсальное сохранение состояния сцены
         SaveSceneState(SceneManager.GetActiveScene().name);
 
-        string targetScene = !isInReality ? realitySceneName : consciousnessSceneName;
-        Debug.Log($"[GameManager] Целевая сцена: {targetScene}");
+        // Получаем актуальное имя текущей сцены
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        bool currentlyInReality = (currentSceneName == realitySceneName);
+
+        // Проверка на рассогласование состояния (опционально, но полезно для отладки)
+        if (currentlyInReality != isInReality)
+        {
+            Debug.LogWarning($"[GameManager] Рассогласование состояния! Флаг isInReality ({isInReality}) не совпадает с текущей сценой ({currentSceneName}). Используем имя сцены.");
+            // Можно принудительно синхронизировать флаг: isInReality = currentlyInReality; (но лучше найти причину рассогласования)
+        }
+
+        string targetScene = currentlyInReality ? consciousnessSceneName : realitySceneName; // Определяем цель на основе ФАКТИЧЕСКОЙ текущей сцены
+        Debug.Log($"[GameManager] Текущая сцена: {currentSceneName}, Целевая сцена: {targetScene}");
         StartCoroutine(SwitchWorldCoroutine(targetScene));
     }
 
     public IEnumerator SwitchWorldCoroutine(string targetScene)
     {
-        Debug.Log($"[GameManager] SwitchWorldCoroutine стартует для сцены: {targetScene}");
+        Debug.Log($"[GameManager] SwitchWorldCoroutine стартует для сцены: {targetScene}, вызывая LoadSceneInternalCoroutine");
+        yield return StartCoroutine(LoadSceneInternalCoroutine(targetScene, true, true));
+    }
+
+    public IEnumerator LoadSceneAsync(string sceneName)
+    {
+        Debug.Log($"[GameManager] LoadSceneAsync стартует для сцены: {sceneName}, вызывая LoadSceneInternalCoroutine");
+        yield return StartCoroutine(LoadSceneInternalCoroutine(sceneName, false, false));
+    }
+
+    // --- Универсальная корутина загрузки сцены (Обертка) --- 
+    private IEnumerator LoadSceneInternalCoroutine(string sceneToLoad, bool cleanupPreviousScene, bool updateInRealityFlag)
+    {
+        Debug.Log($"[GameManager] LoadSceneInternalCoroutine: Загрузка {sceneToLoad}, Очистка: {cleanupPreviousScene}, Обновление флага: {updateInRealityFlag}");
+        isTransitioning = true; 
+        _loadingErrorOccurred = false; // Сброс флага перед запуском
+
+        // 1. Начинаем затемнение и ждем его завершения
         yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
-        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(targetScene);
-        if (loadOperation == null)
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: FadeOut завершен, экран темный.");
+
+        // 2. Запускаем вложенную корутину для выполнения основной логики загрузки
+        //    УБИРАЕМ try...catch вокруг этого вызова, чтобы избежать CS1626.
+        //    ВНИМАНИЕ: Необработанные исключения из ExecuteLoadingSequence прервут эту корутину здесь!
+        yield return StartCoroutine(ExecuteLoadingSequence(sceneToLoad, cleanupPreviousScene, updateInRealityFlag));
+       
+        // 3. Проверяем результат выполнения вложенной корутины (флаг мог быть установлен и внутри нее)
+        bool errorOccurred = _loadingErrorOccurred;
+
+        // ---> ДОБАВЛЯЕМ ЗАДЕРЖКУ ПЕРЕД FADE IN <--- 
+        if (!errorOccurred) // Добавляем задержку только если не было ошибки
         {
-            Debug.LogError($"[GameManager] Не удалось начать загрузку сцены {targetScene}");
+             Debug.Log("[GameManager] LoadSceneInternalCoroutine: Дополнительная задержка (1 кадр) перед FadeIn...");
+             yield return null; // Ждем один кадр, чтобы все устаканилось
+        }
+        // ---> КОНЕЦ ЗАДЕРЖКИ <--- 
+
+        // 4. Начинаем осветление экрана и ждем его завершения
+        //    Этот код НЕ выполнится, если ExecuteLoadingSequence выбросил необработанное исключение
+        Debug.Log(errorOccurred 
+            ? "[GameManager] LoadSceneInternalCoroutine: Произошла ошибка во время загрузки, начинаем StartFadeIn для возврата."
+            : "[GameManager] LoadSceneInternalCoroutine: Начинаем StartFadeIn после успешной загрузки.");
+            
+        yield return ScreenFader.Instance.StartFadeIn(transitionDuration, fadeColor); 
+
+        // 5. Завершение перехода (установка флага и логгирование)
+        //    Этот код НЕ выполнится, если ExecuteLoadingSequence выбросил необработанное исключение
             isTransitioning = false;
+        Debug.Log(errorOccurred
+            ? $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} ПРЕРВАН из-за ошибки (после FadeIn)."
+            : $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} полностью УСПЕШНО завершен (после FadeIn).");
+        
+        // Если была ОБРАБОТАННАЯ ошибка (установлен флаг), выходим из корутины здесь
+        if (errorOccurred) 
+        {
             yield break;
         }
+    }
 
-        loadOperation.allowSceneActivation = false;
-        CleanupCurrentScene();
-        while (loadOperation.progress < 0.9f)
+    // --- Вложенная корутина для выполнения фактической загрузки и подготовки --- 
+    // ПРИМЕЧАНИЕ: Эта корутина должна сама обрабатывать ожидаемые ошибки и устанавливать флаг _loadingErrorOccurred.
+    // Необработанные исключения приведут к остановке родительской корутины.
+    private IEnumerator ExecuteLoadingSequence(string sceneToLoad, bool cleanupPreviousScene, bool updateInRealityFlag)
+    {
+        // Очистка предыдущей сцены (если требуется)
+        // Предполагаем, что CleanupCurrentScene() сама обрабатывает свои ошибки или они не критичны
+        if (cleanupPreviousScene)
         {
-            Debug.Log($"[GameManager] Прогресс загрузки: {loadOperation.progress:P0}");
+        CleanupCurrentScene();
+        }
+
+        // Асинхронная загрузка новой сцены
+        AsyncOperation operation = null;
+        try
+        {
+            operation = SceneManager.LoadSceneAsync(sceneToLoad); 
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[GameManager] ExecuteLoadingSequence: Исключение при запуске SceneManager.LoadSceneAsync для '{sceneToLoad}': {ex.Message}");
+            _loadingErrorOccurred = true;
+            yield break; // Прерываем эту корутину, родительская увидит флаг
+        }
+
+        if (operation == null)
+        {
+            Debug.LogError($"[GameManager] ExecuteLoadingSequence: SceneManager.LoadSceneAsync вернул null для сцены '{sceneToLoad}'!");
+            _loadingErrorOccurred = true;
+            yield break; // Прерываем эту корутину, родительская увидит флаг
+        }
+        
+        // Если мы здесь, операция создана
+        operation.allowSceneActivation = false;
+        Debug.Log($"[GameManager] ExecuteLoadingSequence: Активация сцены {sceneToLoad} отложена");
+
+        // Ожидание загрузки
+        while (operation.progress < 0.9f)
+        {
+            // Тут вряд ли будет исключение, но если будет - оно вылетит наверх
+            Debug.Log($"[GameManager] ExecuteLoadingSequence: Прогресс загрузки {sceneToLoad}: {operation.progress:P0}");
             yield return null;
         }
-        loadOperation.allowSceneActivation = true;
-        yield return loadOperation;
-        isInReality = !isInReality;
-        Debug.Log("[GameManager] Сцена активирована, переключение завершено");
-        isTransitioning = false;
-        UpdateUIState();
 
-        // Сохраняем имя уже активной сцены после загрузки!
-        PlayerPrefs.SetString("LastScene", SceneManager.GetActiveScene().name);
+        // Активация сцены
+        Debug.Log($"[GameManager] ExecuteLoadingSequence: Загрузка {sceneToLoad} завершена, активируем сцену");
+        operation.allowSceneActivation = true;
+        yield return operation; // Ждем полной активации. Исключения тут маловероятны.
+        Debug.Log($"[GameManager] ExecuteLoadingSequence: Сцена {sceneToLoad} активирована");
+
+        // --- Далее идет логика, специфичная для GameManager после загрузки сцены ---
+        // Если в этих методах возникнут исключения, они будут пойманы в LoadSceneInternalCoroutine
+
+        // Обновление состояния игры (если требуется)
+        if (updateInRealityFlag)
+        {
+        isInReality = !isInReality;
+            Debug.Log($"[GameManager] ExecuteLoadingSequence: Флаг isInReality обновлен: {isInReality}");
+        }
+
+        // Обновление UI и сохранение
+        UpdateUIState();
+        PlayerPrefs.SetString("LastScene", sceneToLoad); // Сохраняем имя новой активной сцены
         PlayerPrefs.Save();
 
-        // Универсальное восстановление состояния сцены
-        playerRestored = false;
-        RestoreSceneState(SceneManager.GetActiveScene().name);
+        // Восстановление состояния сцены
+        RestoreSceneState(sceneToLoad);
 
-        // Ждём, пока игрок будет полностью восстановлен (жёсткое восстановление через 2 кадра)
+        // Ожидание восстановления игрока (с таймаутом) - ЗАМЕНЯЕМ ЛОГИКУ
+        /*
         float waitTime = 0f;
         float maxWait = 2f; // максимум 2 секунды ожидания
         while (!playerRestored && waitTime < maxWait)
         {
-            waitTime += Time.unscaledDeltaTime;
-            yield return null;
-        }
-        
-        // --- Показываем монолог при возвращении в реальность ПОСЛЕ восстановления состояния, если босс был убит ---
-        if (SceneManager.GetActiveScene().name == realitySceneName && PlayerPrefs.GetInt("BossDefeated", 0) == 1)
+            if (sceneToLoad == realitySceneName)
         {
-            var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
-            if (monologueManager != null)
-            {
-                Debug.Log("[GameManager] Показываем монолог после убийства босса (SwitchWorldCoroutine)");
-                monologueManager.PlayMonologue(bossReturnMonologueID);
+            waitTime += Time.unscaledDeltaTime;
             }
             else
             {
-                Debug.LogWarning("[GameManager] MonologueManager не найден в сцене!");
+                break; // Не ждем восстановления в других сценах
             }
-            PlayerPrefs.SetInt("BossDefeated", 0); // Сбросить флаг, чтобы монолог не показывался повторно
-            PlayerPrefs.Save();
+            yield return null;
+        }
+        if (!playerRestored && sceneToLoad == realitySceneName)
+        {
+            Debug.LogWarning($"[GameManager] ExecuteLoadingSequence: Игрок не был помечен как восстановленный за {maxWait} сек в сцене {sceneToLoad}");
+        }
+        */
+        
+        // Новое ожидание: ждем завершения корутины ForceRestorePlayerPositionCoroutine
+        if (sceneToLoad == realitySceneName && _lastForceRestoreCoroutine != null)
+        {
+            Debug.Log("[GameManager] ExecuteLoadingSequence: Ожидание завершения ForceRestorePlayerPositionCoroutine...");
+            yield return _lastForceRestoreCoroutine;
+            Debug.Log("[GameManager] ExecuteLoadingSequence: ForceRestorePlayerPositionCoroutine завершен.");
+            _lastForceRestoreCoroutine = null; // Сброс для следующего раза
+        }
+        else if (sceneToLoad == realitySceneName)
+        {
+            // Этого не должно происходить, если RestorePlayerStateCoroutineUniversal был вызван и нашел игрока.
+            // Возможно, игрок не был найден в RestorePlayerStateCoroutineUniversal.
+            Debug.LogWarning("[GameManager] ExecuteLoadingSequence: _lastForceRestoreCoroutine был null после RestoreSceneState для Reality. Не удалось дождаться ForceRestore.");
         }
 
-        yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
+        // ---> ЯВНАЯ ПРОВЕРКА И УСТАНОВКА ФЛАГА isPlayerInTransitionZone ПОСЛЕ ВОССТАНОВЛЕНИЯ <--- 
+        if (sceneToLoad == realitySceneName)
+        {
+            // Небольшая задержка на всякий случай, чтобы объекты точно инициализировались
+            yield return null; 
+            
+            var triggerObj = FindObjectByNameIncludingInactive("SceneTransitionTrigger"); // Ищем триггер
+            var player = FindObjectOfType<RealityPlayerController>(); // Ищем игрока
+
+            if (triggerObj != null && player != null)
+            {
+                Collider triggerCollider = triggerObj.GetComponent<Collider>();
+                if (triggerCollider != null)
+                {
+                    // Проверяем, активен ли сам триггер и его коллайдер
+                    if (triggerObj.activeInHierarchy && triggerCollider.enabled)
+                    {
+                        bool isInside = triggerCollider.bounds.Contains(player.transform.position);
+                        SetPlayerInTransitionZone(isInside);
+                        Debug.Log($"[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера. Игрок {(isInside ? "ВНУТРИ" : "СНАРУЖИ")}. Позиция игрока: {player.transform.position}, Границы триггера: {triggerCollider.bounds}");
+                    }
+                    else
+                    {
+                        // Если триггер или коллайдер неактивны, считаем, что игрок не в зоне
+                        SetPlayerInTransitionZone(false);
+                        Debug.LogWarning($"[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера. Триггер ({triggerObj.activeInHierarchy}) или его коллайдер ({triggerCollider.enabled}) неактивны. Установлено isPlayerInTransitionZone = false.");
+                    }
+                }
+                 else
+                {
+                    Debug.LogError("[GameManager] ExecuteLoadingSequence: Не найден Collider на SceneTransitionTrigger!");
+                    SetPlayerInTransitionZone(false); // На всякий случай
+                }
+            }
+            else
+            {
+                if (triggerObj == null) Debug.LogError("[GameManager] ExecuteLoadingSequence: Не найден SceneTransitionTrigger для проверки зоны!");
+                if (player == null) Debug.LogError("[GameManager] ExecuteLoadingSequence: Не найден RealityPlayerController для проверки зоны!");
+                SetPlayerInTransitionZone(false); // Считаем, что не в зоне, если кого-то не нашли
+            }
+        }
+        // ---> КОНЕЦ ЯВНОЙ ПРОВЕРКИ <--- 
+
+        // Показ монолога при возвращении в реальность (если босс был убит)
+        if (sceneToLoad == realitySceneName && PlayerPrefs.GetInt("BossDefeated", 0) == 1 && PlayerPrefs.GetInt("PlayedBossReturnMonologue", 0) == 0)
+        {
+            try
+            {
+                var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
+                if (monologueManager != null)
+                {
+                    Debug.Log("[GameManager] ExecuteLoadingSequence: Показываем монолог после убийства босса (первый раз)");
+                    monologueManager.PlayMonologue(bossReturnMonologueID);
+                    // Устанавливаем флаг, что монолог проигран
+                    PlayerPrefs.SetInt("PlayedBossReturnMonologue", 1);
+                    PlayerPrefs.Save(); // Сохраняем изменение флага
+                }
+                else
+                {
+                    Debug.LogWarning("[GameManager] ExecuteLoadingSequence: MonologueManager не найден в сцене!");
+                }
+            }
+            catch (System.Exception monoEx)
+            {
+                Debug.LogError($"[GameManager] ExecuteLoadingSequence: Ошибка при показе монолога босса: {monoEx.Message}");
+                // Не устанавливаем _loadingErrorOccurred = true, т.к. это не критично для перехода
+            }
+        }
+        
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Завершена успешно (флаг ошибки не установлен).");
     }
 
     private void CleanupCurrentScene()
@@ -284,100 +484,6 @@ public class GameManager : MonoBehaviour
         Debug.Log("[GameManager] Очистка сцены завершена");
     }
 
-    public IEnumerator LoadSceneAsync(string sceneName)
-    {
-        Debug.Log($"[GameManager] Начало fade-out перед загрузкой сцены: {sceneName}");
-        yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
-        Debug.Log($"[GameManager] Начало асинхронной загрузки сцены: {sceneName}");
-        AsyncOperation operation = null;
-        bool sceneExists = false;
-        try
-        {
-            Debug.Log($"[GameManager] Проверка существования сцены: {sceneName}");
-            sceneExists = !SceneUtility.GetBuildIndexByScenePath(sceneName).Equals(-1);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"[GameManager] Ошибка при проверке сцены {sceneName}: {e.Message}");
-            isTransitioning = false;
-            yield break;
-        }
-
-        if (!sceneExists)
-        {
-            Debug.LogError($"[GameManager] Сцена {sceneName} не найдена в Build Settings!");
-            isTransitioning = false;
-            yield break;
-        }
-
-        Debug.Log($"[GameManager] Сцена {sceneName} найдена, начинаем загрузку");
-        yield return StartCoroutine(LoadSceneOperation(sceneName));
-        Debug.Log($"[GameManager] Fade-in после загрузки сцены: {sceneName}");
-
-        // Универсальное восстановление состояния сцены с ожиданием, как в SwitchWorldCoroutine
-        playerRestored = false;
-        RestoreSceneState(sceneName);
-        float waitTime = 0f;
-        float maxWait = 2f;
-        while (!playerRestored && waitTime < maxWait)
-        {
-            waitTime += Time.unscaledDeltaTime;
-            yield return null;
-        }
-        
-        // --- Показываем монолог при возвращении в реальность ПОСЛЕ восстановления состояния, если босс был убит ---
-        if (sceneName == realitySceneName && PlayerPrefs.GetInt("BossDefeated", 0) == 1)
-        {
-            var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
-            if (monologueManager != null)
-            {
-                Debug.Log("[GameManager] Показываем монолог после убийства босса (LoadSceneAsync)");
-                monologueManager.PlayMonologue(bossReturnMonologueID);
-            }
-            else
-            {
-                Debug.LogWarning("[GameManager] MonologueManager не найден в сцене!");
-            }
-            PlayerPrefs.SetInt("BossDefeated", 0); // Сбросить флаг, чтобы монолог не показывался повторно
-            PlayerPrefs.Save();
-        }
-
-        yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
-    }
-
-    private IEnumerator LoadSceneOperation(string sceneName)
-    {
-        Debug.Log($"[GameManager] Создание операции загрузки для сцены: {sceneName}");
-        AsyncOperation operation = null;
-        try
-        {
-            operation = SceneManager.LoadSceneAsync(sceneName);
-            Debug.Log("[GameManager] Операция загрузки создана успешно");
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"[GameManager] Ошибка при создании операции загрузки сцены {sceneName}: {e.Message}");
-            isTransitioning = false;
-            yield break;
-        }
-
-        operation.allowSceneActivation = false;
-        Debug.Log("[GameManager] Активация сцены отложена");
-
-        // Ждем загрузки сцены
-        while (operation.progress < 0.9f)
-        {
-            Debug.Log($"[GameManager] Прогресс загрузки: {operation.progress:P0}");
-            yield return null;
-        }
-
-        Debug.Log("[GameManager] Загрузка завершена, активируем сцену");
-        operation.allowSceneActivation = true;
-        yield return operation;
-        Debug.Log("[GameManager] Сцена активирована");
-        isTransitioning = false;
-    }
-
     public bool IsInReality()
     {
         return isInReality;
@@ -402,32 +508,6 @@ public class GameManager : MonoBehaviour
         {
             currencyUIPanel.SetActive(GetCurrentState() == GameState.Consciousness);
         }
-    }
-
-    public void SwitchState()
-    {
-        if (!isTransitioning)
-        {
-            StartCoroutine(TransitionState());
-        }
-    }
-
-    private IEnumerator TransitionState()
-    {
-        isTransitioning = true;
-        yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
-        
-        // Очищаем текущую сцену
-        CleanupCurrentScene();
-        
-        // Загружаем новую сцену
-        string targetScene = isInReality ? consciousnessSceneName : realitySceneName;
-        yield return StartCoroutine(LoadSceneAsync(targetScene));
-        
-        isInReality = !isInReality;
-        isTransitioning = false;
-        UpdateUIState();
-        yield return ScreenFader.Instance.FadeIn(transitionDuration, fadeColor);
     }
 
     /// Обработка смерти игрока
@@ -489,23 +569,39 @@ public class GameManager : MonoBehaviour
         if (sceneName == realitySceneName)
         {
             var player = FindObjectOfType<RealityPlayerController>();
-            if (player != null)
+            
+            // ---> ПРОВЕРКА ПЕРЕД СОХРАНЕНИЕМ <--- 
+            if (player != null && player.gameObject.activeInHierarchy)
             {
                 var pos = player.transform.position;
                 var rot = player.transform.eulerAngles;
+                Debug.Log($"[GameManager] SaveSceneState({sceneName}): === СОХРАНЕНИЕ ПОЗИЦИИ ИГРОКА: {pos} | Вращение: {rot} ==="); 
                 PlayerPrefs.SetFloat($"{sceneName}_Player_Pos_X", pos.x);
                 PlayerPrefs.SetFloat($"{sceneName}_Player_Pos_Y", pos.y);
                 PlayerPrefs.SetFloat($"{sceneName}_Player_Pos_Z", pos.z);
                 PlayerPrefs.SetFloat($"{sceneName}_Player_Rot_X", rot.x);
                 PlayerPrefs.SetFloat($"{sceneName}_Player_Rot_Y", rot.y);
                 PlayerPrefs.SetFloat($"{sceneName}_Player_Rot_Z", rot.z);
-                Debug.Log($"[GameManager] SaveSceneState: Сохраняю позицию и вращение игрока для {sceneName}: ({pos.x}, {pos.y}, {pos.z}), rotation: ({rot.x}, {rot.y}, {rot.z})");
+
+                // Сохранение поворота камеры
+                var cameraController = player.GetComponentInChildren<FirstPersonCameraController>(); // Ищем камеру в дочерних объектах игрока
+                if (cameraController != null && cameraController.gameObject.activeInHierarchy)
+                {  
+                    float camRotX = cameraController.GetVerticalRotation();
+                    Debug.Log($"[GameManager] SaveSceneState({sceneName}): === СОХРАНЕНИЕ ПОВОРОТА КАМЕРЫ (X): {camRotX} ===");
+                    PlayerPrefs.SetFloat($"{sceneName}_Camera_Rot_X", camRotX);
+                }
+                else 
+                {   
+                    Debug.LogWarning($"[GameManager] SaveSceneState({sceneName}): FirstPersonCameraController не найден или неактивен у игрока! Поворот камеры не сохранен.");
+                }
             }
             else
             {
-                if (PlayerPrefs.GetInt("IsNewGame", 0) == 0)
-                    Debug.LogError($"[GameManager] SaveSceneState: RealityPlayerController не найден при сохранении для {sceneName}!");
+                 Debug.LogWarning($"[GameManager] SaveSceneState({sceneName}): RealityPlayerController не найден или неактивен! Состояние игрока и камеры не сохранено.");
             }
+
+            // Сохранение состояния SceneTransitionTrigger (независимо от игрока)
             var triggerObj = FindObjectByNameIncludingInactive("SceneTransitionTrigger");
             if (triggerObj != null)
             {
@@ -517,9 +613,14 @@ public class GameManager : MonoBehaviour
                 if (PlayerPrefs.GetInt("IsNewGame", 0) == 0)
                     Debug.LogError($"[GameManager] SaveSceneState: SceneTransitionTrigger не найден при сохранении для {sceneName}!");
             }
+            
             PlayerPrefs.SetInt("IsNewGame", 0); // После первого сохранения сбрасываем флаг
             PlayerPrefs.Save();
-            Debug.Log($"[GameManager] Состояние игрока и SceneTransitionTrigger сохранено в PlayerPrefs для {sceneName}");
+            Debug.Log($"[GameManager] Состояние сцены {sceneName} сохранено в PlayerPrefs."); // Изменено сообщение
+        }
+        else
+        {
+             Debug.Log($"[GameManager] SaveSceneState: Сохранение состояния для сцены '{sceneName}' не реализовано.");
         }
     }
 
@@ -537,14 +638,17 @@ public class GameManager : MonoBehaviour
     private IEnumerator RestorePlayerStateCoroutineUniversal(string sceneName)
     {
         RealityPlayerController player = null;
+        FirstPersonCameraController cameraController = null; // Найдем камеру заранее
         for (int i = 0; i < 30; i++)
         {
             player = FindObjectOfType<RealityPlayerController>();
-            if (player != null)
+            cameraController = FindObjectOfType<FirstPersonCameraController>();
+            if (player != null && cameraController != null) // Ждем и игрока, и камеру
                 break;
             yield return null;
         }
-        if (player != null)
+
+        if (player != null && cameraController != null)
         {
             bool foundAny = false;
             float x = PlayerPrefs.GetFloat($"{sceneName}_Player_Pos_X", float.NaN);
@@ -553,25 +657,42 @@ public class GameManager : MonoBehaviour
             float rx = PlayerPrefs.GetFloat($"{sceneName}_Player_Rot_X", float.NaN);
             float ry = PlayerPrefs.GetFloat($"{sceneName}_Player_Rot_Y", float.NaN);
             float rz = PlayerPrefs.GetFloat($"{sceneName}_Player_Rot_Z", float.NaN);
+            float camX = PlayerPrefs.GetFloat($"{sceneName}_Camera_Rot_X", float.NaN); // Читаем поворот камеры
+
             if (!float.IsNaN(x) && !float.IsNaN(y) && !float.IsNaN(z) && !float.IsNaN(rx) && !float.IsNaN(ry) && !float.IsNaN(rz))
             {
                 foundAny = true;
-                Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Восстанавливаю позицию: ({x}, {y}, {z}), rotation: ({rx}, {ry}, {rz}) для {sceneName}");
-                player.transform.position = new Vector3(x, y, z);
-                player.transform.eulerAngles = new Vector3(rx, ry, rz);
-                // Синхронизируем вращение камеры с transform игрока
-                var cameraController = FindObjectOfType<FirstPersonCameraController>();
-                if (cameraController != null)
+                Vector3 restoredPos = new Vector3(x, y, z);
+                Vector3 restoredRot = new Vector3(rx, ry, rz);
+                Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal({sceneName}): === ЧТЕНИЕ ПОЗИЦИИ ИЗ PREFS: PlayerPos={restoredPos} PlayerRot={restoredRot} CamRotX={camX} ===");
+                
+                // Восстанавливаем игрока
+                Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Восстанавливаю игрока Pos={restoredPos}, Rot={restoredRot}");
+                player.transform.position = restoredPos;
+                player.transform.eulerAngles = restoredRot;
+
+                // ---> Восстанавливаем поворот камеры <---
+                if (!float.IsNaN(camX))
                 {
-                    cameraController.SyncRotationWithTransform();
-                    Debug.Log("[GameManager] Синхронизировал вращение камеры с transform игрока после восстановления");
+                    Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Восстанавливаю поворот камеры CamRotX={camX}");
+                    cameraController.SetVerticalRotation(camX); 
                 }
-                Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Восстановление позиции и вращения игрока успешно для {sceneName}");
+                else
+                {
+                     Debug.LogWarning($"[GameManager] RestorePlayerStateCoroutineUniversal({sceneName}): Нет сохраненного поворота камеры (Camera_Rot_X)!");
+                }
+
+                // Синхронизируем вращение камеры (на всякий случай, хотя SetVerticalRotation уже должен был применить)
+                cameraController.SyncRotationWithTransform();
+                Debug.Log("[GameManager] Синхронизировал вращение камеры с transform игрока после восстановления");
+                
+                Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Восстановление позиции и вращения игрока/камеры успешно для {sceneName}");
                 Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Позиция игрока сразу после восстановления: {player.transform.position}");
                 yield return null;
                 Debug.Log($"[GameManager] RestorePlayerStateCoroutineUniversal: Позиция игрока через кадр после восстановления: {player.transform.position}");
-                // Жёсткое восстановление позиции и вращения через 2 кадра
-                StartCoroutine(ForceRestorePlayerPositionCoroutine(player, new Vector3(x, y, z), new Vector3(rx, ry, rz)));
+                
+                // Жёсткое восстановление - передаем и поворот камеры
+                _lastForceRestoreCoroutine = StartCoroutine(ForceRestorePlayerPositionCoroutine(player, restoredPos, restoredRot, camX));
             }
             else
             {
@@ -581,26 +702,35 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            if (PlayerPrefs.GetInt("IsNewGame", 0) == 0)
-                Debug.LogError($"[GameManager] RestorePlayerStateCoroutineUniversal: RealityPlayerController не найден даже после ожидания для {sceneName}!");
+             if (PlayerPrefs.GetInt("IsNewGame", 0) == 0) {
+                if(player == null) Debug.LogError($"[GameManager] RestorePlayerStateCoroutineUniversal: RealityPlayerController не найден даже после ожидания для {sceneName}!");
+                if(cameraController == null) Debug.LogError($"[GameManager] RestorePlayerStateCoroutineUniversal: FirstPersonCameraController не найден даже после ожидания для {sceneName}!");
+             }
         }
     }
 
-    // Жёсткое восстановление позиции и вращения игрока через 2 кадра
-    private IEnumerator ForceRestorePlayerPositionCoroutine(RealityPlayerController player, Vector3 pos, Vector3 rot)
+    // Жёсткое восстановление - добавляем параметр для поворота камеры
+    private IEnumerator ForceRestorePlayerPositionCoroutine(RealityPlayerController player, Vector3 pos, Vector3 rot, float camRotX)
     {
         yield return null;
         yield return null;
         player.transform.position = pos;
         player.transform.eulerAngles = rot;
-        Debug.Log($"[GameManager] ForceRestorePlayerPositionCoroutine: Жёстко восстановил позицию: {player.transform.position}, rotation: {player.transform.eulerAngles}");
+        Debug.Log($"[GameManager] ForceRestorePlayerPositionCoroutine: Жёстко восстановил позицию игрока: {player.transform.position}, rotation: {player.transform.eulerAngles}");
+        
         var cameraController = FindObjectOfType<FirstPersonCameraController>();
         if (cameraController != null)
         {
-            cameraController.SyncRotationWithTransform();
+            // ---> Повторно устанавливаем поворот камеры <---
+            if (!float.IsNaN(camRotX))
+            {
+                cameraController.SetVerticalRotation(camRotX);
+                Debug.Log($"[GameManager] ForceRestorePlayerPositionCoroutine: Жёстко восстановил поворот камеры CamRotX={camRotX}");
+            }
+            cameraController.SyncRotationWithTransform(); // Синхронизируем после установки
             Debug.Log("[GameManager] ForceRestorePlayerPositionCoroutine: Синхронизировал вращение камеры с transform игрока после жёсткого восстановления");
         }
-        playerRestored = true;
+        Debug.Log($"[GameManager] ForceRestorePlayerPositionCoroutine: === ФИНАЛЬНАЯ ПОЗИЦИЯ ПОСЛЕ ЖЁСТКОГО ВОССТАНОВЛЕНИЯ: {player.transform.position} ===");
     }
 
     private IEnumerator RestoreSceneTransitionTriggerActiveUniversal(string sceneName)
@@ -644,24 +774,106 @@ public class GameManager : MonoBehaviour
     // Универсальный поиск объекта по имени, включая неактивные
     private GameObject FindObjectByNameIncludingInactive(string name)
     {
-        var allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
-        foreach (var t in allTransforms)
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach (GameObject obj in allObjects)
         {
-            if (t.hideFlags == HideFlags.None && t.name == name)
-                return t.gameObject;
+            if (obj.name == name && obj.scene.isLoaded)
+            {
+                return obj;
+            }
         }
         return null;
     }
-}
 
-/// Класс для хранения состояния игрового мира
-[System.Serializable]
-public class GameWorldState
-{
-    public Vector3 playerPosition;
-    public Quaternion playerRotation;
-    public System.Collections.Generic.Dictionary<string, object> interactableStates = 
-        new System.Collections.Generic.Dictionary<string, object>();
-    
-    // Добавьте другие параметры состояния мира по необходимости
+    #region Final Monologue Handling
+
+    // Метод для поиска и кэширования MonologueManager
+    private void FindMonologueManager()
+    {
+        if (monologueManagerInstance == null)
+        {
+            monologueManagerInstance = FindObjectOfType<MonologueManager>();
+            if (monologueManagerInstance == null)
+            {
+                Debug.LogError("[GameManager] MonologueManager не найден в сцене!");
+            }
+        }
+    }
+
+    // Публичный метод, вызываемый из FinalInteractable
+    public void ListenForFinalMonologue(int monologueID)
+    {
+        if (monologueID < 0) return;
+        FindMonologueManager(); // Убедимся, что ссылка есть
+        if (monologueManagerInstance == null) return; // Не можем слушать без менеджера
+
+        Debug.Log($"[GameManager] Начинаем слушать завершение монолога ID: {monologueID}");
+        listeningForMonologueID = monologueID;
+
+        // Отписываемся на всякий случай, потом подписываемся
+        monologueManagerInstance.OnMonologueComplete -= HandleFinalMonologueCompletion;
+        monologueManagerInstance.OnMonologueComplete += HandleFinalMonologueCompletion;
+    }
+
+    // Обработчик события завершения монолога
+    private void HandleFinalMonologueCompletion(int completedMonologueID)
+    {
+        Debug.Log($"[GameManager] Получено событие OnMonologueComplete для ID: {completedMonologueID}. Ожидаем: {listeningForMonologueID}");
+        if (completedMonologueID == listeningForMonologueID && listeningForMonologueID != -1)
+        {
+            Debug.Log($"[GameManager] Завершился ожидаемый монолог {completedMonologueID}. Запускаем финальную последовательность.");
+
+            // Отписываемся
+            if (monologueManagerInstance != null)
+            {
+                monologueManagerInstance.OnMonologueComplete -= HandleFinalMonologueCompletion;
+            }
+            listeningForMonologueID = -1; // Сбрасываем ожидание
+
+            // Запускаем корутину сохранения и показа экрана
+            StartCoroutine(EndGameSequenceCoroutine());
+        }
+    }
+
+    // Корутина финальной последовательности
+    private IEnumerator EndGameSequenceCoroutine()
+    {
+        Debug.Log("[GameManager] Начинаем сохранение перед финальным экраном...");
+        SaveGame(); // Сохраняем последнюю сцену
+        // Убедись, что мы сохраняем состояние нужной сцены (вероятно, Reality)
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        if (currentSceneName == realitySceneName)
+        {
+            SaveSceneState(realitySceneName); // Сохраняем позицию и т.д.
+        }
+        else
+        {
+            Debug.LogWarning($"[GameManager] Попытка сохранить состояние сцены '{currentSceneName}', но сохранение реализовано только для '{realitySceneName}'.");
+        }
+        PlayerPrefs.Save(); // Принудительно записываем PlayerPrefs
+
+        yield return null; // Ждем кадр
+
+        Debug.Log("[GameManager] Показываем финальный экран...");
+        if (endScreenPrefab != null)
+        {
+            Instantiate(endScreenPrefab); // Создаем экран
+        }
+        else
+        {
+            Debug.LogError("[GameManager] Префаб финального экрана (endScreenPrefab) не назначен в инспекторе GameManager!");
+            // Как запасной вариант, можно сразу загрузить меню?
+            // SceneManager.LoadScene("MainMenu");
+        }
+        // Дальше скрипт на самом endScreenPrefab обработает клик и загрузит меню.
+    }
+
+    #endregion
+
+    // ---> Добавляем публичный метод для управления флагом извне <--- 
+    public void SetPlayerInTransitionZone(bool isInZone)
+    {
+        isPlayerInTransitionZone = isInZone;
+        Debug.Log($"[GameManager] Игрок {(isInZone ? "вошел в" : "вышел из")} зоны перехода. isPlayerInTransitionZone = {isPlayerInTransitionZone}");
+    }
 } 

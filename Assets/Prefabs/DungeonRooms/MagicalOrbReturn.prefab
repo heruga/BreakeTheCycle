@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3831465356249292464}
   - component: {fileID: 8223886724993121567}
-  - component: {fileID: 3844557681509179225}
+  - component: {fileID: 3372066338045434214}
   m_Layer: 6
   m_Name: MagicalOrbReturn
   m_TagString: Untagged
@@ -56,7 +56,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.25
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3844557681509179225
+--- !u!114 &3372066338045434214
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2447425353559552074}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4d3b7ba8aafd754d838484e985981a8, type: 3}
+  m_Script: {fileID: 11500000, guid: 1cc43d4e2aa64a04fa60c4bab5b61d55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   interactionRadius: 2
@@ -73,6 +73,7 @@ MonoBehaviour:
   onInteractEvent:
     m_PersistentCalls:
       m_Calls: []
+  interactionRadiusColor: {r: 0, g: 1, b: 0, a: 0.2}
 --- !u!1 &6753991910841010942
 GameObject:
   m_ObjectHideFlags: 0

@@ -58,7 +58,6 @@ public class ConsciousnessController : MonoBehaviour
     
     [Header("Взаимодействие")]
     [SerializeField] private float interactionRange = 2f;
-    [SerializeField] private Vector3 interactionBoxSize = new Vector3(2f, 2f, 2f);
     [SerializeField] private LayerMask interactionMask;
     [SerializeField] private LayerMask inspectableMask;
     
@@ -576,16 +575,18 @@ public class ConsciousnessController : MonoBehaviour
         }
     }
     
+    #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        // Отрисовка радиуса взаимодействия
-        Gizmos.color = Color.yellow;
+        // Отрисовка радиуса взаимодействия (OverlapSphere)
+        Gizmos.color = Color.green; // Зеленый цвет для области взаимодействия
         Gizmos.DrawWireSphere(transform.position, interactionRange);
 
         // Отрисовка радиуса атаки
         Gizmos.color = attackGizmoColor;
         Gizmos.DrawWireSphere(transform.position, attackRadius);
     }
+    #endif
 
     private void OnDestroy()
     {

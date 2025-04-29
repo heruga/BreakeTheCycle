@@ -17,6 +17,10 @@ namespace DungeonGeneration
         [SerializeField] private bool showDebugGizmos = true;
         [SerializeField] private Color debugLineColor = Color.yellow;
 
+        // --- ДОБАВЛЕНО: Глобальный флаг для очистки всех комнат ---
+        public bool forceAllRoomsCleared = false;
+        // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+
         private List<RoomNode> roomNodes = new List<RoomNode>();
         private Dictionary<Vector2Int, RoomManager> roomInstances = new Dictionary<Vector2Int, RoomManager>();
         private RoomNode startRoomNode;

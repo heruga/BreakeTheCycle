@@ -23,6 +23,9 @@ public class InspectionCamera : MonoBehaviour
         [SerializeField] private bool isolatedView = true;
         [SerializeField] private LayerMask inspectableLayer;
 
+        [Header("Lighting")]
+        [SerializeField] private Light dedicatedInspectionLight;
+
         [Header("Camera Positioning")]
         [SerializeField] private float offsetX = -0.3f; // Смещение от -1 до 1, где 0 - центр
         [SerializeField] private bool useOffset = true;
@@ -56,6 +59,11 @@ public class InspectionCamera : MonoBehaviour
             SaveInitialTransform();
             SetupCamera();
             FindAllInspectableObjects();
+
+            if (dedicatedInspectionLight != null)
+            {
+                dedicatedInspectionLight.enabled = false;
+            }
         }
 
         private void FindAllInspectableObjects()
@@ -68,26 +76,12 @@ public class InspectionCamera : MonoBehaviour
         {
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = backgroundColor;
-            UpdateCameraCullingMask();
             
-            // Настраиваем матрицу проекции камеры
             Matrix4x4 m = cam.projectionMatrix;
-            m[0, 2] = offsetX; // Смещаем проекцию по X
+            m[0, 2] = offsetX;
             cam.projectionMatrix = m;
             
-            if (showDebug) Debug.Log("Настройка камеры завершена (изолированный режим)");
-        }
-
-        private void UpdateCameraCullingMask()
-        {
-            if (isolatedView)
-            {
-                cam.cullingMask = inspectableLayer;
-            }
-            else
-            {
-                cam.cullingMask = ~(1 << LayerMask.NameToLayer("UI"));
-            }
+            if (showDebug) Debug.Log("Настройка камеры завершена");
         }
 
         private void SaveInitialTransform()
@@ -99,7 +93,6 @@ public class InspectionCamera : MonoBehaviour
 
         private Vector3 CalculateCameraPosition(Vector3 targetPosition, float viewportX)
         {
-            // Вычисляем позицию камеры так, чтобы объект оказался в нужной точке экрана
             Vector3 basePosition = targetPosition + Vector3.back * initialDistance;
             float horizontalOffset = (viewportX - 0.5f) * initialDistance * 2f;
             return basePosition + Vector3.right * horizontalOffset;
@@ -122,23 +115,19 @@ public class InspectionCamera : MonoBehaviour
             isInspecting = true;
             currentTarget = target;
             this.target = target.transform;
-
-            // Сбрасываем углы вращения
+            
             currentVerticalAngle = 0f;
             currentHorizontalAngle = 0f;
-
-            // Сохраняем начальное положение и поворот объекта (на всякий случай)
+            
             originalPosition = target.transform.position;
             originalRotation = target.transform.rotation;
-
-            // Находим общий bounds для всех Renderer-ов объекта
+            
             Renderer[] renderers = target.GetComponentsInChildren<Renderer>();
             if (renderers.Length > 0)
             {
                 Bounds bounds = renderers[0].bounds;
                 foreach (Renderer r in renderers)
                     bounds.Encapsulate(r.bounds);
-                // Применяем spawnPositionOffset как дополнительное смещение центра
                 lookAtPoint = bounds.center + inspectable.spawnPositionOffset;
                 Debug.Log($"[InspectionCamera] pivot: {target.transform.position}, bounds.center: {bounds.center}, lookAtPoint (с offset): {lookAtPoint}");
             }
@@ -147,48 +136,56 @@ public class InspectionCamera : MonoBehaviour
                 lookAtPoint = target.transform.position + inspectable.spawnPositionOffset;
                 Debug.Log($"[InspectionCamera] pivot: {target.transform.position}, bounds.center: (нет рендереров), lookAtPoint (с offset): {lookAtPoint}");
             }
-
-            // Устанавливаем начальное расстояние и ограничения зума из настроек объекта
+            
             currentDistance = initialDistance * inspectable.defaultZoomValue;
             minDistance = initialDistance * inspectable.minMaxZoom.x;
             maxDistance = initialDistance * inspectable.minMaxZoom.y;
-
+            
             if (showDebug) Debug.Log($"Настройки зума — Мин: {minDistance}, Макс: {maxDistance}, Текущий: {currentDistance}");
-
-            // Устанавливаем смещение матрицы проекции
+            
             float projectionOffset = useOffset ? offsetX : 0f;
             if (inspectable.spawnPositionOffset != Vector3.zero)
             {
                 projectionOffset = inspectable.spawnPositionOffset.x / 5f;
             }
-
+            
             Matrix4x4 m = cam.projectionMatrix;
             m[0, 2] = projectionOffset;
             cam.projectionMatrix = m;
-
-            // Устанавливаем позицию камеры с учетом начального расстояния
+            
             Vector3 direction = Quaternion.Euler(currentVerticalAngle, currentHorizontalAngle, 0) * Vector3.back;
             transform.position = lookAtPoint + direction * currentDistance;
             transform.LookAt(lookAtPoint);
-
-            // Включаем камеру
+            
             if (cam != null)
             {
                 cam.enabled = true;
-                UpdateCameraCullingMask();
-                if (showDebug) Debug.Log($"Настройка камеры — Позиция: {transform.position}, Смотрит на: {lookAtPoint}, Смещение проекции: {projectionOffset}");
-            }
-
-            // Применяем начальный поворот из настроек
-            target.transform.rotation = Quaternion.Euler(inspectable.spawnRotationOffset);
-
-            // Находим все инспектируемые объекты и скрываем их
-            FindAllInspectableObjects();
-            foreach (var obj in allInspectableObjects)
-            {
-                if (obj.gameObject != target)
+                cam.cullingMask = inspectableLayer;
+                if (showDebug)
                 {
-                    obj.gameObject.SetActive(false);
+                    string layerName = LayerMask.LayerToName(Mathf.RoundToInt(Mathf.Log(inspectableLayer.value, 2)));
+                    Debug.Log($"Настройка камеры — Позиция: {transform.position}, Смотрит на: {lookAtPoint}, Смещение проекции: {projectionOffset}, Culling Mask: {layerName}");
+                 }
+            }
+            
+            if (dedicatedInspectionLight != null)
+            {
+                dedicatedInspectionLight.enabled = true;
+                if (showDebug) Debug.Log($"Выделенный свет '{dedicatedInspectionLight.name}' включен.");
+            }
+            
+            target.transform.rotation = Quaternion.Euler(inspectable.spawnRotationOffset);
+            
+            if (isolatedView)
+            {
+                FindAllInspectableObjects();
+                foreach (var obj in allInspectableObjects)
+                {
+                    if (obj.gameObject != target)
+                    {
+                        obj.gameObject.SetActive(false);
+                        if (showDebug) Debug.Log($"Скрыт другой объект: {obj.gameObject.name}");
+                    }
                 }
             }
         }
@@ -201,11 +198,14 @@ public class InspectionCamera : MonoBehaviour
             {
                 foreach (var obj in allInspectableObjects)
                 {
-                    obj.gameObject.SetActive(true);
+                    if (obj != null && obj.gameObject != null)
+                    {
+                        obj.gameObject.SetActive(true);
+                        if (showDebug) Debug.Log($"Показан другой объект: {obj.gameObject.name}");
+                    }
                 }
             }
             
-            // Возвращаем предмет в исходное положение и поворот
             if (currentTarget != null)
             {
                 currentTarget.transform.position = originalPosition;
@@ -217,13 +217,19 @@ public class InspectionCamera : MonoBehaviour
             if (cam != null)
             {
                 cam.enabled = false;
-                if (showDebug) Debug.Log("Inspection camera disabled");
+                if (showDebug) Debug.Log("Камера осмотра выключена");
+            }
+
+            if (dedicatedInspectionLight != null)
+            {
+                dedicatedInspectionLight.enabled = false;
+                if (showDebug) Debug.Log($"Выделенный свет '{dedicatedInspectionLight.name}' выключен.");
             }
 
             transform.position = initialPosition;
             transform.rotation = initialRotation;
             
-            if (showDebug) Debug.Log("Stopped inspection, returned to initial position");
+            if (showDebug) Debug.Log("Осмотр завершен, возвращено исходное состояние");
         }
     
         private void Update()
@@ -240,12 +246,10 @@ public class InspectionCamera : MonoBehaviour
             {
                 float mouseX = Input.GetAxis("Mouse X") * rotationSpeedRightMouse;
                 float mouseY = Input.GetAxis("Mouse Y") * rotationSpeedRightMouse;
-
-                // Обновляем углы
+                
                 currentHorizontalAngle += mouseX;
                 currentVerticalAngle = Mathf.Clamp(currentVerticalAngle - mouseY, minVerticalAngle, maxVerticalAngle);
-
-                // Всегда вращаем камеру вокруг lookAtPoint
+                
                 Vector3 direction = Quaternion.Euler(currentVerticalAngle, currentHorizontalAngle, 0) * Vector3.back;
                 transform.position = lookAtPoint + direction * currentDistance;
                 transform.LookAt(lookAtPoint);
@@ -257,13 +261,10 @@ public class InspectionCamera : MonoBehaviour
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (scroll != 0)
             {
-                // Сохраняем текущее направление от lookAtPoint к камере
                 Vector3 directionToCamera = (transform.position - lookAtPoint).normalized;
-
-                // Изменяем дистанцию с учетом ограничений из InspectableObject
+                
                 currentDistance = Mathf.Clamp(currentDistance - scroll * zoomSpeed, minDistance, maxDistance);
-
-                // Устанавливаем новую позицию камеры, сохраняя направление
+                
                 transform.position = lookAtPoint + directionToCamera * currentDistance;
                 transform.LookAt(lookAtPoint);
             }

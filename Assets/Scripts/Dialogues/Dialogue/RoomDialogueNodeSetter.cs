@@ -11,21 +11,15 @@ namespace BreakTheCycle.Dialogue
 
         private void Awake()
         {
-            Debug.Log($"[RoomDialogueNodeSetter] Awake: npcId={npcId}, startNodeId={startNodeId}, gameObject={gameObject.name}");
-            string playedKey = $"RoomDialogue_{npcId}_{startNodeId}_Played";
-            if (PlayerPrefs.GetInt(playedKey, 0) == 1)
-            {
-                Debug.Log($"[RoomDialogueNodeSetter] Диалог для NPC {npcId} с узлом {startNodeId} уже был проигран, не добавляем в очередь.");
-                return;
-            }
+            Debug.Log($"[RoomDialogueNodeSetter] Awake: npcId={npcId}, startNodeId={startNodeId}, gameObject={gameObject.name}. Attempting to enqueue.");
+            
             if (!string.IsNullOrEmpty(npcId) && DialogueStartNodeQueue.Instance != null)
             {
-                DialogueStartNodeQueue.Instance.SetStartNode(npcId, startNodeId);
-                Debug.Log($"[RoomDialogueNodeSetter] Для NPC {npcId} назначен стартовый узел {startNodeId}");
+                DialogueStartNodeQueue.Instance.EnqueueStartNode(npcId, startNodeId);
             }
             else
             {
-                Debug.LogWarning($"[RoomDialogueNodeSetter] Не удалось добавить в очередь: npcId={npcId}, DialogueStartNodeQueue.Instance={(DialogueStartNodeQueue.Instance != null)}");
+                Debug.LogWarning($"[RoomDialogueNodeSetter] Cannot enqueue: npcId is empty or DialogueStartNodeQueue.Instance is null.");
             }
         }
     }

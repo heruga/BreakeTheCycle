@@ -53,4 +53,22 @@ public class FirstPersonCameraController : MonoBehaviour
         targetHorizontalRotation = euler.y;
         targetVerticalRotation = Mathf.Clamp(euler.x, -verticalRotationLimit, verticalRotationLimit);
     }
+
+    // --- Публичные методы для GameManager ---
+    public float GetVerticalRotation()
+    {
+        return targetVerticalRotation;
+    }
+
+    public void SetVerticalRotation(float angle)
+    {
+        // Устанавливаем целевой угол, учитывая ограничения
+        targetVerticalRotation = Mathf.Clamp(angle, -verticalRotationLimit, verticalRotationLimit);
+        // Сразу применяем к текущему углу, чтобы избежать скачка при следующем Update
+        currentVerticalRotation = targetVerticalRotation;
+        // Применяем к transform камеры немедленно
+        transform.localEulerAngles = new Vector3(currentVerticalRotation, 0, 0);
+        Debug.Log($"[FirstPersonCameraController] SetVerticalRotation: Установлен угол {angle}, результат targetVerticalRotation: {targetVerticalRotation}");
+    }
+    // --- Конец публичных методов ---
 } 
