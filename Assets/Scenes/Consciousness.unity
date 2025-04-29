@@ -1805,6 +1805,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasHP
       objectReference: {fileID: 0}
+    - target: {fileID: 4798795628578228844, guid: ffa10b838c1b45b4d9df5b9e58b50c61, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.000061035156
+      objectReference: {fileID: 0}
     - target: {fileID: 4842213595473704320, guid: ffa10b838c1b45b4d9df5b9e58b50c61, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -1884,6 +1888,10 @@ PrefabInstance:
     - target: {fileID: 4842213595473704320, guid: ffa10b838c1b45b4d9df5b9e58b50c61, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7440810421429326498, guid: ffa10b838c1b45b4d9df5b9e58b50c61, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3386,6 +3394,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1327510462}
   m_CullTransparentMesh: 1
+--- !u!1 &1380421496
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1380421497}
+  - component: {fileID: 1380421498}
+  m_Layer: 0
+  m_Name: DialogueActionHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1380421497
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1380421496}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 450.47427, y: 626.1274, z: 418.33243}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1380421498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1380421496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faed361b44d1bf240950337aec65103a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1397274564
 GameObject:
   m_ObjectHideFlags: 0
@@ -3956,11 +4008,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6229333563870419022, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: moveSpeed
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
+      propertyPath: chaseDistance
+      value: 7.19
       objectReference: {fileID: 0}
     - target: {fileID: 7562053696551056484, guid: 814bdce36e3c29e4984a10e3968756ca, type: 3}
       propertyPath: emotionHandler
@@ -5237,3 +5293,4 @@ SceneRoots:
   - {fileID: 2084776589}
   - {fileID: 1761938895}
   - {fileID: 802721757}
+  - {fileID: 1380421497}

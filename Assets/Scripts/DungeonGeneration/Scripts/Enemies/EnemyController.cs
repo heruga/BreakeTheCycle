@@ -271,7 +271,7 @@ namespace DungeonGeneration.Scripts.Enemies
             agent.isStopped = false;
             Vector3 targetPos = player.transform.position;
             agent.SetDestination(targetPos);
-            Debug.Log($"[EnemyController] {gameObject.name}: NavMeshAgent движется к {targetPos}");
+            // Debug.Log($"[EnemyController] {gameObject.name}: NavMeshAgent движется к {targetPos}");
             lastTargetPosition = targetPos;
             lastPathUpdateTime = Time.time;
             if (animator != null)

@@ -310,7 +310,7 @@ namespace DungeonGeneration.Scripts
                 Debug.Log($"[RoomManager] Враг {enemy.name} погиб. Осталось врагов: {activeEnemies.Count}");
             }
 
-            if (activeEnemies.Count == 0 && roomNode != null)
+            if (activeEnemies.Count == 0 && roomNode != null && !isRoomCleared)
             {
                 Debug.Log($"[RoomManager] Все враги волны {currentWave} побеждены");
                 if (currentWave < totalWaves)
@@ -319,12 +319,64 @@ namespace DungeonGeneration.Scripts
                 }
                 else
                 {
-                    roomNode.ClearRoom();
-                    isRoomCleared = true;
-                    OnRoomCleared?.Invoke();
-                    Debug.Log("[RoomManager] Все волны завершены, комната очищена!");
+                    // Логика очистки комнаты при нормальном завершении
+                    ClearRoomInternal();
                 }
             }
+        }
+
+        /// <summary>
+        /// Внутренний метод для установки флагов и вызова события очистки.
+        /// </summary>
+        private void ClearRoomInternal()
+        {
+             if (isRoomCleared) return; // Не очищать повторно
+
+             if (roomNode != null)
+             {
+                 roomNode.ClearRoom();
+             }
+             isRoomCleared = true;
+             OnRoomCleared?.Invoke();
+             Debug.Log("[RoomManager] Комната очищена!");
+        }
+
+        /// <summary>
+        /// Принудительно очищает комнату, уничтожая всех активных врагов.
+        /// Вызывается извне (например, через DialogueActions).
+        /// </summary>
+        public void ForceClearRoomAndDestroyEnemies()
+        {
+            Debug.Log($"[RoomManager] Принудительная очистка комнаты {gameObject.name}...");
+
+            // Уничтожаем активных врагов
+            if (activeEnemies != null && activeEnemies.Count > 0)
+            {
+                Debug.Log($"[RoomManager] Уничтожение {activeEnemies.Count} активных врагов.");
+                // Создаем копию списка для безопасного обхода и удаления
+                List<GameObject> enemiesToDestroy = new List<GameObject>(activeEnemies);
+                foreach (var enemy in enemiesToDestroy)
+                {
+                    if (enemy != null)
+                    {
+                        // Отписываемся от события смерти, если оно было
+                         var enemyHealth = enemy.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
+                         if (enemyHealth != null)
+                         {
+                             enemyHealth.OnDeath -= HandleEnemyDeath;
+                         }
+                        Destroy(enemy);
+                    }
+                }
+                activeEnemies.Clear(); // Очищаем оригинальный список
+            }
+            else
+            {
+                 Debug.Log("[RoomManager] Нет активных врагов для уничтожения.");
+            }
+
+            // Устанавливаем флаги и вызываем событие очистки
+             ClearRoomInternal();
         }
 
         private void OnTriggerEnter(Collider other)

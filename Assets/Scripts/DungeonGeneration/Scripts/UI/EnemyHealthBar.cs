@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class EnemyHealthBar : MonoBehaviour
 {
-    [SerializeField] private Image fillImage; // Сюда перетащи Image полоски (Fill)
+    [SerializeField] private Slider healthSlider; // Теперь ссылка на Slider
     [SerializeField] private Vector3 offset = new Vector3(0, 2f, 0); // Стандартное смещение, если не найден коллайдер
 
     private Transform target;
@@ -25,13 +25,13 @@ public class EnemyHealthBar : MonoBehaviour
     public void SetHealth(float percent)
     {
         UnityEngine.Debug.Log($"[EnemyHealthBar] SetHealth called with percent: {percent}");
-        if (fillImage == null)
+        if (healthSlider == null)
         {
-            UnityEngine.Debug.LogError("[EnemyHealthBar] fillImage is null!");
+            UnityEngine.Debug.LogError("[EnemyHealthBar] healthSlider is null!");
             return;
         }
-        fillImage.fillAmount = Mathf.Clamp01(percent);
-        UnityEngine.Debug.Log($"[EnemyHealthBar] fillImage.fillAmount is now: {fillImage.fillAmount}");
+        healthSlider.value = Mathf.Clamp01(percent);
+        UnityEngine.Debug.Log($"[EnemyHealthBar] healthSlider.value is now: {healthSlider.value}");
     }
 
     private void LateUpdate()

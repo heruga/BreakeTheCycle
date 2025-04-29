@@ -149,8 +149,15 @@ public class Template_UIManager : MonoBehaviour
         var data = VIDE_Data.VIDE_Data.nodeData;
         if (VIDE_Data.VIDE_Data.isActive)
         {
-            //Scroll through Player dialogue options if dialogue is not paused and we are on a player node
-            //For player nodes, NodeData.commentIndex is the index of the picked choice
+            // --- Обработка нажатия для NPC-узлов ---
+            if (!data.pausedAction && !animatingText && !data.isPlayer && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0)))
+            {
+                Debug.Log("[UI] Вызов Next() для NPC-узла (переключение комментария или переход)");
+                VIDE_Data.VIDE_Data.Next();
+                return; // Важно!
+            }
+
+            // --- Обработка выбора для Player-узлов ---
             if (!data.pausedAction && !animatingText && data.isPlayer && !useNavigation)
             {
                 if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
@@ -177,24 +184,20 @@ public class Template_UIManager : MonoBehaviour
                 // --- ВЫБОР РЕПЛИКИ ПО ENTER или ЛКМ ---
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0))
                 {
-                    Debug.Log($"[UI] Выбрана реплика: {data.commentIndex} — {data.comments[data.commentIndex]}");
-                    SelectChoice(data.commentIndex);
+                    Debug.Log($"[UI] Выбрана реплика игрока: {data.commentIndex} — {data.comments[data.commentIndex]}");
+                    SelectChoice(data.commentIndex); // Вызываем SelectChoice для player-узлов
+                    return; // Важно!
                 }
             }
 
-            // --- ЗАВЕРШЕНИЕ ДИАЛОГА ПО ENTER/ЛКМ НА NPC/END NODE ---
-            if (!data.isPlayer && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0)))
-            {
-                Debug.Log("[UI] Пошаговый показ комментариев NPC через OnContinuePressed");
-                OnContinuePressed();
-                return;
-            }
-
-            //Detect interact key
+            // --- Обработка interactionKey (закомментировано, т.к. может мешать) ---
+            /*
             if (Input.GetKeyDown(interactionKey))
             {
+                // Возможно, здесь не нужно вызывать Interact, если активен NPC-узел?
                 Interact(VIDE_Data.VIDE_Data.assigned);
             }
+            */
         }
         //Note you could also use Unity's Navi system, in which case you would tick the useNavigation flag.
     }
@@ -228,10 +231,17 @@ public class Template_UIManager : MonoBehaviour
             b.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = "";
             b.transform.GetChild(0).GetComponent<TextMeshProUGUI>().color = Color.white;
         }
-        if (NPC_Container != null && NPC_Container.gameObject != null)
+        // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
+        if (NPC_Container != null && NPC_Container.gameObject != null) 
             NPC_Container.SetActive(false);
-        if (playerContainer != null && playerContainer.gameObject != null)
+        else 
+            Debug.LogWarning("[UpdateUI] NPC_Container is null or destroyed!");
+            
+        if (playerContainer != null && playerContainer.gameObject != null) 
             playerContainer.SetActive(false);
+        else 
+            Debug.LogWarning("[UpdateUI] playerContainer is null or destroyed!");
+        // --- КОНЕЦ ДОБАВЛЕНИЯ ---
 
         // --- ДОБАВЛЕНО: Проверка playOnce и уникального ключа ---
         bool playOnce = false;
@@ -254,11 +264,8 @@ public class Template_UIManager : MonoBehaviour
         string playedKey = $"Monologue_{dialogueType}_{data.nodeID}_Played";
         if (playOnce && PlayerPrefs.GetInt(playedKey, 0) == 1)
         {
-            Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} уже был показан ранее, пропускаем.");
-            if (data.isPlayer)
-                CallNext();
-            else
-                OnContinuePressed();
+            Debug.Log($"[UpdateUI] Узел {data.nodeID} типа {dialogueType} уже был показан ранее, пропускаем через Next().");
+            VIDE_Data.VIDE_Data.Next(); // Пропускаем узел через Next()
             return;
         }
         // --- КОНЕЦ ДОБАВЛЕНИЯ ---
@@ -266,53 +273,82 @@ public class Template_UIManager : MonoBehaviour
         // Выводим текст в зависимости от типа узла
         if (!data.isPlayer)
         {
-            NPC_Container.SetActive(true);
-            if (data.comments != null && data.commentIndex < data.comments.Length)
-            {
-                NPC_Text.text = data.comments[data.commentIndex];
-                Debug.Log($"[UpdateUI] NPC_Text.text = {NPC_Text.text}");
+            // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
+            if (NPC_Container != null && NPC_Container.gameObject != null) {
+                NPC_Container.SetActive(true);
+                if (NPC_Text != null) {
+                    if (data.comments != null && data.commentIndex < data.comments.Length)
+                    {
+                        NPC_Text.text = data.comments[data.commentIndex];
+                        Debug.Log($"[UpdateUI] NPC_Text.text = {NPC_Text.text}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[UpdateUI] Нет комментариев для NPC!");
+                        NPC_Text.text = ""; // Очищаем на всякий случай
+                    }
+                }
+                else Debug.LogWarning("[UpdateUI] NPC_Text is null!");
+                
+                if (NPC_label != null) {
+                     // Имя NPC из поля Tag
+                    if (!string.IsNullOrEmpty(data.tag))
+                        NPC_label.text = data.tag;
+                    else
+                        NPC_label.text = "NPC";
+                    Debug.Log($"[UpdateUI] NPC_label.text = {NPC_label.text}");
+                }
+                else Debug.LogWarning("[UpdateUI] NPC_label is null!");
             }
-            else
-            {
-                Debug.LogWarning("[UpdateUI] Нет комментариев для NPC!");
-            }
-            // Имя NPC из поля Tag
-            if (!string.IsNullOrEmpty(data.tag))
-                NPC_label.text = data.tag;
-            else
-                NPC_label.text = "NPC";
-            Debug.Log($"[UpdateUI] NPC_label.text = {NPC_label.text}");
+            else Debug.LogWarning("[UpdateUI] NPC_Container is null or destroyed!");
+             // --- КОНЕЦ ДОБАВЛЕНИЯ ---
         }
         else
         {
-            if (playerContainer != null && playerContainer.gameObject != null)
+            // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
+            if (playerContainer != null && playerContainer.gameObject != null) {
                 playerContainer.SetActive(true);
-            if (data.comments != null)
-            {
-                for (int i = 0; i < data.comments.Length && i < maxPlayerChoices.Count; i++)
+                if (data.comments != null)
                 {
-                    if (maxPlayerChoices[i] == null || maxPlayerChoices[i].gameObject == null) continue;
-                    maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = data.comments[i];
-                    Debug.Log($"[UpdateUI] PlayerChoice[{i}] = {data.comments[i]}");
-                    var btn = maxPlayerChoices[i];
-                    int choiceIndex = i;
-                    btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(() => {
-                        VIDE_Data.VIDE_Data.nodeData.commentIndex = choiceIndex;
-                        Debug.Log($"[UI] Клик по варианту: {choiceIndex} — {data.comments[choiceIndex]}");
-                        if (data.isPlayer)
-                            CallNext();
-                        else
-                            OnContinuePressed();
-                    });
+                    for (int i = 0; i < data.comments.Length && i < maxPlayerChoices.Count; i++)
+                    {
+                        if (maxPlayerChoices[i] == null || maxPlayerChoices[i].gameObject == null) continue;
+                        var tmpText = maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+                        if (tmpText != null) {
+                            tmpText.text = data.comments[i];
+                            Debug.Log($"[UpdateUI] PlayerChoice[{i}] = {data.comments[i]}");
+                        }
+                        else Debug.LogWarning($"[UpdateUI] TextMeshProUGUI not found on child 0 of player choice {i}!");
+                        
+                        var btn = maxPlayerChoices[i];
+                        int choiceIndex = i;
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(() => {
+                            VIDE_Data.VIDE_Data.nodeData.commentIndex = choiceIndex;
+                            Debug.Log($"[UI] Клик по варианту: {choiceIndex} — {data.comments[choiceIndex]}");
+                            if (data.isPlayer) // Проверка нужна, чтобы избежать вызова для NPC
+                                CallNext();
+                        });
+                    }
+                    // Очищаем текст у неиспользуемых кнопок
+                    for (int i = data.comments.Length; i < maxPlayerChoices.Count; i++)
+                    {
+                         if (maxPlayerChoices[i] == null || maxPlayerChoices[i].gameObject == null) continue;
+                         var tmpText = maxPlayerChoices[i].transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+                         if (tmpText != null) tmpText.text = "";
+                    }
                 }
+                if (playerLabel != null) {
+                    // Имя игрока из поля Tag
+                    if (!string.IsNullOrEmpty(data.tag))
+                        playerLabel.text = data.tag;
+                    else
+                        playerLabel.text = "Игрок";
+                    Debug.Log($"[UpdateUI] playerLabel.text = {playerLabel.text}");
+                } else Debug.LogWarning("[UpdateUI] playerLabel is null!");
             }
-            // Имя игрока из поля Tag
-            if (!string.IsNullOrEmpty(data.tag))
-                playerLabel.text = data.tag;
-            else
-                playerLabel.text = "Игрок";
-            Debug.Log($"[UpdateUI] playerLabel.text = {playerLabel.text}");
+            else Debug.LogWarning("[UpdateUI] playerContainer is null or destroyed!");
+             // --- КОНЕЦ ДОБАВЛЕНИЯ ---
         }
 
         // После показа узла с playOnce сохраняем ключ
@@ -324,34 +360,16 @@ public class Template_UIManager : MonoBehaviour
         }
     }
 
-    // Новый метод для пошагового показа комментариев NPC
-    void OnContinuePressed()
-    {
-        var data = VIDE_Data.VIDE_Data.nodeData;
-        if (!data.isPlayer)
-        {
-            if (data.commentIndex < data.comments.Length - 1)
-            {
-                data.commentIndex++;
-                Debug.Log($"[OnContinuePressed] Показываем следующий комментарий NPC: {data.commentIndex}");
-                UpdateUI(data);
-            }
-            else
-            {
-                Debug.Log("[OnContinuePressed] Все комментарии NPC показаны, переходим к следующему узлу");
-                VIDE_Data.VIDE_Data.Next();
-            }
-        }
-        else
-        {
-            // Логика для выбора игрока (оставляем как есть)
-        }
-    }
-
     void EndDialogue(VIDE_Data.VIDE_Data.NodeData data)
     {
         Debug.Log("[EndDialogue] Диалог завершён!");
-        dialogueContainer.SetActive(false); // Скрываем окно диалога
+        // --- ДОБАВЛЕНО: Проверка ссылок перед использованием ---
+        if (dialogueContainer != null && dialogueContainer.gameObject != null) 
+            dialogueContainer.SetActive(false); // Скрываем окно диалога
+        else 
+            Debug.LogWarning("[EndDialogue] dialogueContainer is null or destroyed!");
+        // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+        
         // Включаем управление игроком обратно
         if (PlayerControlManager.Instance != null)
             PlayerControlManager.Instance.SetControlsEnabled(true);
@@ -364,10 +382,16 @@ public class Template_UIManager : MonoBehaviour
             if (npcInteract != null)
             {
                 string npcId = npcInteract.npcId;
-                int nodeId = npcAssign.overrideStartNode;
+                int nodeId = npcAssign.overrideStartNode; // Используем overrideStartNode, если он задан
+                if (nodeId < 0 && data != null) // Если override не задан, пытаемся взять ID последнего узла
+                {    
+                    nodeId = data.nodeID;
+                }
+                
                 if (!string.IsNullOrEmpty(npcId) && nodeId >= 0)
                 {
-                    string playedKey = $"RoomDialogue_{npcId}_{nodeId}_Played";
+                    // Ключ теперь использует overrideStartNode или последний nodeID
+                    string playedKey = $"RoomDialogue_{npcId}_{nodeId}_Played"; 
                     PlayerPrefs.SetInt(playedKey, 1);
                     PlayerPrefs.Save();
                     Debug.Log($"[Template_UIManager] Сохранили факт проигрывания диалога: {playedKey}");
@@ -380,7 +404,10 @@ public class Template_UIManager : MonoBehaviour
 
     void OnDestroy()
     {
+        // Отписываемся от событий, чтобы избежать утечек и ошибок
+        VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
         VIDE_Data.VIDE_Data.OnEnd -= EndDialogue;
+        // VIDE_Data.OnActionNode -= ActionHandler; // Если бы мы использовали это событие
     }
 
     #endregion

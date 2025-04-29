@@ -66,7 +66,6 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float attackDamage = 80f;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float attackCooldown = 1f;
-    [SerializeField] private float chaseDistance = 10f;
     [SerializeField] private float attackRadius = 199f; // Радиус области атаки
     [SerializeField] private LayerMask enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
     private float lastAttackTime;
@@ -582,10 +581,6 @@ public class ConsciousnessController : MonoBehaviour
         // Отрисовка радиуса взаимодействия
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactionRange);
-
-        // Отрисовка радиуса преследования
-        Gizmos.color = chaseGizmoColor;
-        Gizmos.DrawWireSphere(transform.position, chaseDistance);
 
         // Отрисовка радиуса атаки
         Gizmos.color = attackGizmoColor;
