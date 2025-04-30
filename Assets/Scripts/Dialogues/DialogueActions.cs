@@ -110,6 +110,9 @@ namespace BreakTheCycle.Actions
 
             dungeonGenerator.forceAllRoomsCleared = true;
             Debug.Log("[DialogueActions] Установлен глобальный флаг forceAllRoomsCleared = true");
+
+            PlayerPrefs.SetInt("BossDefeated", 1);
+            PlayerPrefs.Save(); // Сохраняем изменение сразу
         }
         
         // Вспомогательный метод для получения RoomManager. Может потребовать адаптации,

@@ -100,9 +100,11 @@ public class EmotionPanelInteractable : BaseInteractable
         if (emotionPanel != null)
         {
             emotionPanel.SetActive(false);
+            Debug.Log("[EmotionPanelInteractable] Закрытие панели эмоций. Скрытие курсора...");
             // Скрываем и блокируем курсор
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
+            Debug.Log($"[EmotionPanelInteractable] Состояние курсора после скрытия: visible={Cursor.visible}, lockState={Cursor.lockState}");
             
             // Опционально: включаем управление персонажем
             if (PlayerControlManager.Instance != null)

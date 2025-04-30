@@ -72,6 +72,16 @@ namespace DungeonGeneration.Scripts.Health
             {
                 Destroy(healthBar.gameObject);
             }
+            
+            // --- ДОБАВЛЕНО: Установка флага победы над боссом --- 
+            if (isBoss)
+            {
+                Debug.Log($"[EnemyHealth] Босс {gameObject.name} побежден! Устанавливаем флаг BossDefeated.");
+                PlayerPrefs.SetInt("BossDefeated", 1);
+                PlayerPrefs.Save(); // Сохраняем сразу
+            }
+            // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+            
             base.Die();
             
             // Добавляем валюту при смерти врага

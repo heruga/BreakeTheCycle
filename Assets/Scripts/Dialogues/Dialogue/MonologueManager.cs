@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using VIDE_Data;
 using System.Collections;
 using TMPro;
+using UnityEngine.SceneManagement; // Добавляем для доступа к SceneManager
 
 namespace BreakTheCycle.Dialogue
 {
@@ -39,7 +40,24 @@ namespace BreakTheCycle.Dialogue
 
         void Start()
         {
-            PlayMonologue(0);
+            // Проверяем, что текущая сцена - "Reality" перед автоматическим запуском монолога с ID 0
+            string currentScene = SceneManager.GetActiveScene().name;
+            Debug.Log($"[MonologueManager] Start в сцене: {currentScene}");
+
+            // Проверяем, находимся ли мы в сцене "Reality" и начало новой игры
+            if (currentScene == "Reality" && PlayerPrefs.GetInt("IsNewGame", 0) == 1)
+            {
+                Debug.Log("[MonologueManager] Автоматический запуск начального монолога (ID 0) в сцене Reality");
+                PlayMonologue(0);
+                
+                // Сбрасываем флаг новой игры после показа монолога
+                PlayerPrefs.SetInt("IsNewGame", 0);
+                PlayerPrefs.Save();
+            }
+            else
+            {
+                Debug.Log($"[MonologueManager] Автоматический монолог не запущен. Сцена: {currentScene}, IsNewGame: {PlayerPrefs.GetInt("IsNewGame", 0)}");
+            }
         }
 
         void Update()

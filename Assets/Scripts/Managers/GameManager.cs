@@ -244,7 +244,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("[GameManager] LoadSceneInternalCoroutine: StartFadeIn ЗАВЕРШЕН."); // <-- Важный лог
 
         Debug.Log("[GameManager] LoadSceneInternalCoroutine: Шаг 5 - Установка isTransitioning = false...");
-        isTransitioning = false;
+            isTransitioning = false;
         Debug.Log(errorOccurred
             ? $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} ПРЕРВАН (после FadeIn)."
             : $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} УСПЕШНО ЗАВЕРШЕН (после FadeIn).");
@@ -289,7 +289,7 @@ public class GameManager : MonoBehaviour
             _loadingErrorOccurred = true;
             yield break;
         }
-        
+
         operation.allowSceneActivation = false;
         Debug.Log("[GameManager] ExecuteLoadingSequence: Ожидание загрузки (allowSceneActivation = false)...");
         while (operation.progress < 0.9f)
@@ -813,6 +813,9 @@ public class GameManager : MonoBehaviour
         if (endScreenPrefab != null)
         {
             Instantiate(endScreenPrefab); // Создаем экран
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            Debug.Log("[GameManager] Курсор разблокирован и сделан видимым для финального экрана.");
         }
         else
         {
