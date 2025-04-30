@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using DungeonGeneration.Scripts.Health;
+using TMPro;
 
 namespace DungeonGeneration.Scripts.UI
 {
@@ -8,6 +9,7 @@ namespace DungeonGeneration.Scripts.UI
     {
         [SerializeField] private RectTransform healthBarFill;
         [SerializeField] private PlayerHealth playerHealth;
+        [SerializeField] private TextMeshProUGUI healthText;
         
         private Vector3 originalScale;
 
@@ -16,11 +18,17 @@ namespace DungeonGeneration.Scripts.UI
             if (healthBarFill == null)
             {
                 Debug.LogError("HealthBarFill не назначен!");
-                return;
+            }
+            else
+            {
+                // Запоминаем исходный масштаб полоски здоровья
+                originalScale = healthBarFill.localScale;
             }
 
-            // Запоминаем исходный масштаб полоски здоровья
-            originalScale = healthBarFill.localScale;
+            if (healthText == null)
+            {
+                Debug.LogError("HealthText не назначен в инспекторе!");
+            }
 
             if (playerHealth == null)
             {
@@ -49,6 +57,12 @@ namespace DungeonGeneration.Scripts.UI
                     originalScale.y,
                     originalScale.z
                 );
+            }
+
+            if (healthText != null && playerHealth != null)
+            {
+                // Обновляем текстовое поле
+                healthText.text = $"{Mathf.CeilToInt(currentHealth)}/{Mathf.CeilToInt(playerHealth.GetMaxHealth())}";
             }
         }
 

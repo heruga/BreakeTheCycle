@@ -28,9 +28,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject endScreenPrefab; // Ссылка на префаб финального экрана
 
     [Header("Monologue Settings")]
-    public int bossReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после убийства босса
+    [SerializeField] public int bossReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после убийства босса
 
-    private bool isTransitioning = false;
+    [SerializeField] private bool isTransitioning = false;
     private bool isInReality = true;
     private Coroutine _lastForceRestoreCoroutine = null;
     private bool _loadingErrorOccurred = false; // Флаг для отслеживания ошибок во вложенной корутине
@@ -206,177 +206,131 @@ public class GameManager : MonoBehaviour
     public IEnumerator SwitchWorldCoroutine(string targetScene)
     {
         Debug.Log($"[GameManager] SwitchWorldCoroutine стартует для сцены: {targetScene}, вызывая LoadSceneInternalCoroutine");
-        yield return StartCoroutine(LoadSceneInternalCoroutine(targetScene, true, true));
+        yield return StartCoroutine(LoadSceneInternalCoroutine(targetScene, true));
     }
 
     public IEnumerator LoadSceneAsync(string sceneName)
     {
         Debug.Log($"[GameManager] LoadSceneAsync стартует для сцены: {sceneName}, вызывая LoadSceneInternalCoroutine");
-        yield return StartCoroutine(LoadSceneInternalCoroutine(sceneName, false, false));
+        yield return StartCoroutine(LoadSceneInternalCoroutine(sceneName, false));
     }
 
     // --- Универсальная корутина загрузки сцены (Обертка) --- 
-    private IEnumerator LoadSceneInternalCoroutine(string sceneToLoad, bool cleanupPreviousScene, bool updateInRealityFlag)
+    private IEnumerator LoadSceneInternalCoroutine(string sceneToLoad, bool cleanupPreviousScene)
     {
-        Debug.Log($"[GameManager] LoadSceneInternalCoroutine: Загрузка {sceneToLoad}, Очистка: {cleanupPreviousScene}, Обновление флага: {updateInRealityFlag}");
+        Debug.Log($"[GameManager] LoadSceneInternalCoroutine: НАЧАЛО для {sceneToLoad}");
         isTransitioning = true; 
-        _loadingErrorOccurred = false; // Сброс флага перед запуском
+        _loadingErrorOccurred = false;
 
-        // 1. Начинаем затемнение и ждем его завершения
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: Шаг 1 - FadeOut...");
         yield return ScreenFader.Instance.FadeOut(transitionDuration, fadeColor);
-        Debug.Log("[GameManager] LoadSceneInternalCoroutine: FadeOut завершен, экран темный.");
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: FadeOut завершен, перед запуском ExecuteLoadingSequence...");
 
-        // 2. Запускаем вложенную корутину для выполнения основной логики загрузки
-        //    УБИРАЕМ try...catch вокруг этого вызова, чтобы избежать CS1626.
-        //    ВНИМАНИЕ: Необработанные исключения из ExecuteLoadingSequence прервут эту корутину здесь!
-        yield return StartCoroutine(ExecuteLoadingSequence(sceneToLoad, cleanupPreviousScene, updateInRealityFlag));
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: Шаг 2 - Запуск ExecuteLoadingSequence...");
+        yield return StartCoroutine(ExecuteLoadingSequence(sceneToLoad, cleanupPreviousScene));
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: ExecuteLoadingSequence ЗАВЕРШЕН."); // <-- Важный лог
        
-        // 3. Проверяем результат выполнения вложенной корутины (флаг мог быть установлен и внутри нее)
         bool errorOccurred = _loadingErrorOccurred;
+        Debug.Log($"[GameManager] LoadSceneInternalCoroutine: Шаг 3 - Проверка ошибки. errorOccurred = {errorOccurred}");
 
-        // ---> ДОБАВЛЯЕМ ЗАДЕРЖКУ ПЕРЕД FADE IN <--- 
-        if (!errorOccurred) // Добавляем задержку только если не было ошибки
+        if (!errorOccurred)
         {
-             Debug.Log("[GameManager] LoadSceneInternalCoroutine: Дополнительная задержка (1 кадр) перед FadeIn...");
-             yield return null; // Ждем один кадр, чтобы все устаканилось
+             Debug.Log("[GameManager] LoadSceneInternalCoroutine: Дополнительная задержка (1 кадр)...");
+             yield return null; 
         }
-        // ---> КОНЕЦ ЗАДЕРЖКИ <--- 
 
-        // 4. Начинаем осветление экрана и ждем его завершения
-        //    Этот код НЕ выполнится, если ExecuteLoadingSequence выбросил необработанное исключение
-        Debug.Log(errorOccurred 
-            ? "[GameManager] LoadSceneInternalCoroutine: Произошла ошибка во время загрузки, начинаем StartFadeIn для возврата."
-            : "[GameManager] LoadSceneInternalCoroutine: Начинаем StartFadeIn после успешной загрузки.");
-            
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: Шаг 4 - StartFadeIn...");
         yield return ScreenFader.Instance.StartFadeIn(transitionDuration, fadeColor); 
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: StartFadeIn ЗАВЕРШЕН."); // <-- Важный лог
 
-        // 5. Завершение перехода (установка флага и логгирование)
-        //    Этот код НЕ выполнится, если ExecuteLoadingSequence выбросил необработанное исключение
-            isTransitioning = false;
+        Debug.Log("[GameManager] LoadSceneInternalCoroutine: Шаг 5 - Установка isTransitioning = false...");
+        isTransitioning = false;
         Debug.Log(errorOccurred
-            ? $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} ПРЕРВАН из-за ошибки (после FadeIn)."
-            : $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} полностью УСПЕШНО завершен (после FadeIn).");
+            ? $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} ПРЕРВАН (после FadeIn)."
+            : $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} УСПЕШНО ЗАВЕРШЕН (после FadeIn).");
         
-        // Если была ОБРАБОТАННАЯ ошибка (установлен флаг), выходим из корутины здесь
         if (errorOccurred) 
         {
-            yield break;
+            yield break; 
         }
     }
 
     // --- Вложенная корутина для выполнения фактической загрузки и подготовки --- 
     // ПРИМЕЧАНИЕ: Эта корутина должна сама обрабатывать ожидаемые ошибки и устанавливать флаг _loadingErrorOccurred.
     // Необработанные исключения приведут к остановке родительской корутины.
-    private IEnumerator ExecuteLoadingSequence(string sceneToLoad, bool cleanupPreviousScene, bool updateInRealityFlag)
+    private IEnumerator ExecuteLoadingSequence(string sceneToLoad, bool cleanupPreviousScene)
     {
-        // Очистка предыдущей сцены (если требуется)
-        // Предполагаем, что CleanupCurrentScene() сама обрабатывает свои ошибки или они не критичны
+        Debug.Log($"[GameManager] ExecuteLoadingSequence: НАЧАЛО для {sceneToLoad}");
+        
         if (cleanupPreviousScene)
         {
-        CleanupCurrentScene();
+            Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов CleanupCurrentScene...");
+            CleanupCurrentScene();
+            Debug.Log("[GameManager] ExecuteLoadingSequence: CleanupCurrentScene завершен.");
         }
 
-        // Асинхронная загрузка новой сцены
         AsyncOperation operation = null;
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Попытка LoadSceneAsync...");
         try
         {
             operation = SceneManager.LoadSceneAsync(sceneToLoad); 
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[GameManager] ExecuteLoadingSequence: Исключение при запуске SceneManager.LoadSceneAsync для '{sceneToLoad}': {ex.Message}");
+            Debug.LogError($"[GameManager] ExecuteLoadingSequence: ИСКЛЮЧЕНИЕ при запуске LoadSceneAsync: {ex.Message}");
             _loadingErrorOccurred = true;
-            yield break; // Прерываем эту корутину, родительская увидит флаг
+            yield break;
         }
+        Debug.Log("[GameManager] ExecuteLoadingSequence: LoadSceneAsync вызван.");
 
         if (operation == null)
         {
-            Debug.LogError($"[GameManager] ExecuteLoadingSequence: SceneManager.LoadSceneAsync вернул null для сцены '{sceneToLoad}'!");
+            Debug.LogError("[GameManager] ExecuteLoadingSequence: LoadSceneAsync вернул null!");
             _loadingErrorOccurred = true;
-            yield break; // Прерываем эту корутину, родительская увидит флаг
+            yield break;
         }
         
-        // Если мы здесь, операция создана
         operation.allowSceneActivation = false;
-        Debug.Log($"[GameManager] ExecuteLoadingSequence: Активация сцены {sceneToLoad} отложена");
-
-        // Ожидание загрузки
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Ожидание загрузки (allowSceneActivation = false)...");
         while (operation.progress < 0.9f)
         {
-            // Тут вряд ли будет исключение, но если будет - оно вылетит наверх
-            Debug.Log($"[GameManager] ExecuteLoadingSequence: Прогресс загрузки {sceneToLoad}: {operation.progress:P0}");
+            // Debug.Log($"[GameManager] ExecuteLoadingSequence: Прогресс загрузки: {operation.progress:P0}"); // Можно раскомментировать для детального лога
             yield return null;
         }
-
-        // Активация сцены
-        Debug.Log($"[GameManager] ExecuteLoadingSequence: Загрузка {sceneToLoad} завершена, активируем сцену");
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Загрузка >= 90%. Активация сцены...");
         operation.allowSceneActivation = true;
-        yield return operation; // Ждем полной активации. Исключения тут маловероятны.
-        Debug.Log($"[GameManager] ExecuteLoadingSequence: Сцена {sceneToLoad} активирована");
+        yield return operation; 
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Сцена активирована.");
 
-        // --- Далее идет логика, специфичная для GameManager после загрузки сцены ---
-        // Если в этих методах возникнут исключения, они будут пойманы в LoadSceneInternalCoroutine
+        // --- ИЗМЕНЕНО: Устанавливаем isInReality напрямую по имени сцены ---
+        isInReality = (sceneToLoad == realitySceneName);
+        Debug.Log($"[GameManager] ExecuteLoadingSequence: Флаг isInReality установлен: {isInReality} (на основе сцены '{sceneToLoad}')");
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-        // Обновление состояния игры (если требуется)
-        if (updateInRealityFlag)
-        {
-        isInReality = !isInReality;
-            Debug.Log($"[GameManager] ExecuteLoadingSequence: Флаг isInReality обновлен: {isInReality}");
-        }
-
-        // Обновление UI и сохранение
-        UpdateUIState();
-        PlayerPrefs.SetString("LastScene", sceneToLoad); // Сохраняем имя новой активной сцены
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов UpdateUIState и SaveGame...");
+        UpdateUIState(); 
+        PlayerPrefs.SetString("LastScene", sceneToLoad); 
         PlayerPrefs.Save();
+        Debug.Log("[GameManager] ExecuteLoadingSequence: UpdateUIState и SaveGame завершены.");
 
-        // Восстановление состояния сцены
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов RestoreSceneState...");
         RestoreSceneState(sceneToLoad);
+        Debug.Log("[GameManager] ExecuteLoadingSequence: RestoreSceneState вызван (запустил корутины восстановления)...");
 
-        // Ожидание восстановления игрока (с таймаутом) - ЗАМЕНЯЕМ ЛОГИКУ
-        /*
-        float waitTime = 0f;
-        float maxWait = 2f; // максимум 2 секунды ожидания
-        while (!playerRestored && waitTime < maxWait)
-        {
-            if (sceneToLoad == realitySceneName)
-        {
-            waitTime += Time.unscaledDeltaTime;
-            }
-            else
-            {
-                break; // Не ждем восстановления в других сценах
-            }
-            yield return null;
-        }
-        if (!playerRestored && sceneToLoad == realitySceneName)
-        {
-            Debug.LogWarning($"[GameManager] ExecuteLoadingSequence: Игрок не был помечен как восстановленный за {maxWait} сек в сцене {sceneToLoad}");
-        }
-        */
-        
-        // Новое ожидание: ждем завершения корутины ForceRestorePlayerPositionCoroutine
         if (sceneToLoad == realitySceneName && _lastForceRestoreCoroutine != null)
         {
-            Debug.Log("[GameManager] ExecuteLoadingSequence: Ожидание завершения ForceRestorePlayerPositionCoroutine...");
+            Debug.Log("[GameManager] ExecuteLoadingSequence: Ожидание ForceRestorePlayerPositionCoroutine...");
             yield return _lastForceRestoreCoroutine;
             Debug.Log("[GameManager] ExecuteLoadingSequence: ForceRestorePlayerPositionCoroutine завершен.");
-            _lastForceRestoreCoroutine = null; // Сброс для следующего раза
+            _lastForceRestoreCoroutine = null; 
         }
-        else if (sceneToLoad == realitySceneName)
-        {
-            // Этого не должно происходить, если RestorePlayerStateCoroutineUniversal был вызван и нашел игрока.
-            // Возможно, игрок не был найден в RestorePlayerStateCoroutineUniversal.
-            Debug.LogWarning("[GameManager] ExecuteLoadingSequence: _lastForceRestoreCoroutine был null после RestoreSceneState для Reality. Не удалось дождаться ForceRestore.");
-        }
-
-        // ---> ЯВНАЯ ПРОВЕРКА И УСТАНОВКА ФЛАГА isPlayerInTransitionZone ПОСЛЕ ВОССТАНОВЛЕНИЯ <--- 
+        
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера...");
         if (sceneToLoad == realitySceneName)
         {
-            // Небольшая задержка на всякий случай, чтобы объекты точно инициализировались
             yield return null; 
-            
-            var triggerObj = FindObjectByNameIncludingInactive("SceneTransitionTrigger"); // Ищем триггер
-            var player = FindObjectOfType<RealityPlayerController>(); // Ищем игрока
+            var triggerObj = FindObjectByNameIncludingInactive("SceneTransitionTrigger");
+            var player = FindObjectOfType<RealityPlayerController>();
 
             if (triggerObj != null && player != null)
             {
@@ -410,14 +364,14 @@ public class GameManager : MonoBehaviour
                 SetPlayerInTransitionZone(false); // Считаем, что не в зоне, если кого-то не нашли
             }
         }
-        // ---> КОНЕЦ ЯВНОЙ ПРОВЕРКИ <--- 
-
-        // Показ монолога при возвращении в реальность (если босс был убит)
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера ЗАВЕРШЕНА.");
+        
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Проверка и показ монолога босса...");
         if (sceneToLoad == realitySceneName && PlayerPrefs.GetInt("BossDefeated", 0) == 1 && PlayerPrefs.GetInt("PlayedBossReturnMonologue", 0) == 0)
         {
-            try
+            try 
             {
-                var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
+                 var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
                 if (monologueManager != null)
                 {
                     Debug.Log("[GameManager] ExecuteLoadingSequence: Показываем монолог после убийства босса (первый раз)");
@@ -437,8 +391,9 @@ public class GameManager : MonoBehaviour
                 // Не устанавливаем _loadingErrorOccurred = true, т.к. это не критично для перехода
             }
         }
+        Debug.Log("[GameManager] ExecuteLoadingSequence: Проверка и показ монолога босса ЗАВЕРШЕНЫ.");
         
-        Debug.Log("[GameManager] ExecuteLoadingSequence: Завершена успешно (флаг ошибки не установлен).");
+        Debug.Log("[GameManager] ExecuteLoadingSequence: КОНЕЦ успешного выполнения (флаг ошибки не установлен).");
     }
 
     private void CleanupCurrentScene()

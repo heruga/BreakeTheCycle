@@ -58,14 +58,14 @@ public class ScreenFader : MonoBehaviour
 
     public Coroutine StartFadeIn(float duration, Color color)
     {
-        if (currentFade != null) StopCoroutine(currentFade);
+        // if (currentFade != null) StopCoroutine(currentFade);
         currentFade = StartCoroutine(FadeRoutine(1, 0, duration, color));
         return currentFade;
     }
 
     public Coroutine FadeOut(float duration, Color color)
     {
-        if (currentFade != null) StopCoroutine(currentFade);
+        // if (currentFade != null) StopCoroutine(currentFade);
         currentFade = StartCoroutine(FadeRoutine(0, 1, duration, color));
         return currentFade;
     }

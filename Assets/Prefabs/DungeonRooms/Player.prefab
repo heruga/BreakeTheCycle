@@ -76,7 +76,6 @@ MonoBehaviour:
   directionChangeDotThreshold: 0.4
   abruptChangeSmoothing: 1.2
   interactionRange: 1.91
-  interactionBoxSize: {x: 3, y: 3, z: 3}
   interactionMask:
     serializedVersion: 2
     m_Bits: 64
@@ -86,7 +85,6 @@ MonoBehaviour:
   attackDamage: 80
   attackSpeed: 3
   attackCooldown: 1
-  chaseDistance: 9.06
   attackRadius: 3.86
   enemyLayerMask:
     serializedVersion: 2

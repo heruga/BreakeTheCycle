@@ -9,6 +9,7 @@ public class SceneTransitionTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
+            Debug.Log("[SceneTransitionTrigger] OnTriggerEnter СРАБОТАЛ для игрока!");
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.SetPlayerInTransitionZone(true);
@@ -24,6 +25,7 @@ public class SceneTransitionTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
+             Debug.Log("[SceneTransitionTrigger] OnTriggerExit СРАБОТАЛ для игрока!");
              if (GameManager.Instance != null)
             {
                 GameManager.Instance.SetPlayerInTransitionZone(false);

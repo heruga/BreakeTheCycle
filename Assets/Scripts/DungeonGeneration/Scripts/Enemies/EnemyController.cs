@@ -283,25 +283,27 @@ namespace DungeonGeneration.Scripts.Enemies
 
         private void HandleAttackingState()
         {
-            Debug.Log($"[EnemyController] {gameObject.name}: HandleAttackingState");
-            if (!agent.isStopped)
+            // Убедимся, что агент остановлен
+            if (agent.isOnNavMesh && agent.isStopped == false)
             {
                 agent.isStopped = true;
-                agent.ResetPath();
-                Debug.Log($"[EnemyController] {gameObject.name}: NavMeshAgent остановлен для атаки");
             }
+        
             RotateTowardsPlayer();
-            if (animator != null)
-            {
-                animator.SetBool(IsRunning, false);
-                Debug.Log($"[Animator][{gameObject.name}] SetBool isRunning = false (Attacking)");
-                animator.SetTrigger(IsAttacking);
-                Debug.Log($"[Animator][{gameObject.name}] SetTrigger isAttacking (Attacking)");
-            }
-            if (Time.time - lastAttackTime >= attackCooldown)
+
+            if (Time.time >= lastAttackTime + attackCooldown)
             {
                 AttackPlayer();
                 lastAttackTime = Time.time;
+            }
+
+            // Проверка, не вышел ли игрок из зоны атаки
+            float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+            if (distanceToPlayer > attackRange)
+            {
+                // Переход в состояние преследования
+                currentState = EnemyState.Chasing;
+                return; // Выход, чтобы не выполнять лишних проверок ниже
             }
         }
 

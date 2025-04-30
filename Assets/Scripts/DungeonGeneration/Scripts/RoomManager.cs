@@ -314,22 +314,18 @@ namespace DungeonGeneration.Scripts
 
         private void HandleEnemyDeath(GameObject enemy)
         {
-            if (enemy != null)
-            {
-                var enemyHealth = enemy.GetComponent<DungeonGeneration.Scripts.Health.EnemyHealth>();
-                bool wasBoss = enemyHealth != null && enemyHealth.IsBoss; // Запоминаем, был ли это босс
+            if (enemy == null) return;
 
-                // Проверяем, был ли убит босс (для PlayerPrefs)
-                if (wasBoss)
-                {
-                    PlayerPrefs.SetInt("BossDefeated", 1);
-                    PlayerPrefs.Save();
-                    Debug.Log("[RoomManager] Босс убит! Установлен флаг BossDefeated");
-                }
-                
-                activeEnemies.Remove(enemy);
-                Debug.Log($"[RoomManager] Враг {enemy.name} погиб. Осталось врагов: {activeEnemies.Count}");
+            if (enemy.CompareTag("Player"))
+            {
+                Debug.Log($"[RoomManager] Зарегистрирована смерть ИГРОКА ({enemy.name}), игнорируем в HandleEnemyDeath.");
+                return;
             }
+
+            Debug.Log($"[RoomManager] Зарегистрирована смерть объекта (врага?): {enemy.name}");
+
+            activeEnemies.Remove(enemy);
+            Debug.Log($"[RoomManager] Враг {enemy.name} удален из списка. Осталось врагов: {activeEnemies.Count}");
 
             if (activeEnemies.Count == 0 && roomNode != null && !isRoomCleared)
             {

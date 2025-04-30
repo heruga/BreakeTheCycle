@@ -97,7 +97,7 @@ namespace DungeonGeneration.Scripts.Health
                 return;
             }
 
-            base.Die();
+            // base.Die(); // <-- ВРЕМЕННО ЗАКОММЕНТИРОВАНО ДЛЯ ТЕСТА
             
             Debug.Log("[PlayerHealth] Игрок умер, загружаем сцену Reality");
             if (GameManager.Instance != null)
