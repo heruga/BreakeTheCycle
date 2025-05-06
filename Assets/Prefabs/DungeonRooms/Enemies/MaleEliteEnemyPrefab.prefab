@@ -146,9 +146,9 @@ MonoBehaviour:
   pathUpdateInterval: 0.5
   rotationSpeed: 5
   minPathUpdateDistance: 1
-  attackRange: 1
+  attackRange: 2.5
   attackDamage: 10
-  attackCooldown: 5
+  attackCooldown: 3
   aggroRange: 6
   updateIntervalOutsideView: 1
   maxPathUpdateRange: 30

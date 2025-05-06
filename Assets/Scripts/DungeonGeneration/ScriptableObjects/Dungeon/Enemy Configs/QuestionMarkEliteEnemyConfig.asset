@@ -18,6 +18,6 @@ MonoBehaviour:
   isBoss: 0
   isElite: 1
   spawnWeight: 1
-  minGroupSize: 1
+  minGroupSize: 2
   maxGroupSize: 3
   description: Stronger enemy that appears in later levels

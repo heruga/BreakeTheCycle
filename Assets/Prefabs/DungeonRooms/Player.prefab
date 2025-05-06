@@ -59,7 +59,7 @@ MonoBehaviour:
   decelerationSpeed: 12
   dashSpeed: 20
   dashDuration: 0.2
-  dashCooldown: 2
+  dashCooldown: 0.8
   cameraTransform: {fileID: 0}
   cameraHeight: 15
   cameraAngleX: 45
@@ -75,17 +75,17 @@ MonoBehaviour:
   useSpringEffect: 1
   directionChangeDotThreshold: 0.4
   abruptChangeSmoothing: 1.2
-  interactionRange: 1.91
+  interactionRange: 2.42
   interactionMask:
     serializedVersion: 2
     m_Bits: 64
   inspectableMask:
     serializedVersion: 2
     m_Bits: 512
-  attackDamage: 80
-  attackSpeed: 3
+  attackDamage: 20
+  attackSpeed: 0.1
   attackCooldown: 1
-  attackRadius: 3.86
+  attackRadius: 2.5
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 256
@@ -204,8 +204,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9db83465e3bb35a469a80f1ad5c15d3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 200
-  currentHealth: 200
+  maxHealth: 100
+  currentHealth: 100
   deathEffectPrefab: {fileID: 0}
 --- !u!1 &7892552270533140890
 GameObject:

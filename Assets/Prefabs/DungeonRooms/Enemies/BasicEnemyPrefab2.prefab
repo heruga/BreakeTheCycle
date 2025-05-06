@@ -79,11 +79,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55602d341ddb9ab499763a6d070450f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 100
+  maxHealth: 50
+  currentHealth: 50
   deathEffectPrefab: {fileID: 0}
   isBoss: 0
-  currencyDropAmount: 10
+  currencyDropAmount: 2
   bossMultiplier: 1
   healthBarPrefab: {fileID: 5781516032655189868, guid: 574da03ab1afb7041ad66acf7b6cce14, type: 3}
 --- !u!114 &8671881401524962815
@@ -101,10 +101,10 @@ MonoBehaviour:
   pathUpdateInterval: 0.5
   rotationSpeed: 5
   minPathUpdateDistance: 1
-  attackRange: 2.86
+  attackRange: 3
   attackDamage: 1
   attackCooldown: 1
-  aggroRange: 4.74
+  aggroRange: 4.7
   updateIntervalOutsideView: 1
   maxPathUpdateRange: 30
   showDebugLogs: 1

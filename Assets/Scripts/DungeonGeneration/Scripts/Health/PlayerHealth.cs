@@ -29,6 +29,7 @@ namespace DungeonGeneration.Scripts.Health
 
         public override void TakeDamage(float damage)
         {
+            Debug.Log("[PlayerHealth] TakeDamage вызван с damage: " + damage);
             if (damage <= 0)
             {
                 Heal(-damage);
@@ -43,9 +44,11 @@ namespace DungeonGeneration.Scripts.Health
 
             if (emotionSystem != null)
             {
+                Debug.Log("[PlayerHealth] EmotionSystem найден, проверяем, можно ли игнорировать урон (Отрицание)");
                 // Проверяем, можно ли игнорировать урон (Отрицание)
                 if (emotionSystem.ShouldIgnoreDamage())
                 {
+                    Debug.Log("[PlayerHealth] Урон игнорируется (Отрицание)");
                     return;
                 }
 

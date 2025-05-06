@@ -380,7 +380,7 @@ public class EmotionSystem : MonoBehaviour
         Emotion emotion = emotions.Find(e => e.type == emotionType);
         if (emotion == null) return;
 
-        int upgradeCost = 10 * emotion.level;
+        int upgradeCost = 1 * emotion.level;
         if (!CurrencyManager.Instance.SpendCurrency(upgradeCost))
         {
             // Недостаточно валюты, не улучшаем
