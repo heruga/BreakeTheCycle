@@ -44,6 +44,53 @@ public class EmotionPanelInteractable : BaseInteractable
         // Убедимся, что курсор скрыт при старте
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+
+        // Привязка обработчиков к кнопкам эмоций и LevelUp
+        string[] emotionNames = { "Determination", "Compassion", "Fear", "Acceptance", "Anger", "Denial" };
+        foreach (string emotionName in emotionNames)
+        {
+            Transform btnTransform = emotionPanel.transform.Find(emotionName);
+            if (btnTransform != null)
+            {
+                Button btn = btnTransform.GetComponent<Button>();
+                if (btn != null)
+                {
+                    btn.onClick.RemoveAllListeners();
+                    switch (emotionName)
+                    {
+                        case "Determination":
+                            btn.onClick.AddListener(() => emotionSystem.ToggleDetermination());
+                            break;
+                        case "Compassion":
+                            btn.onClick.AddListener(() => emotionSystem.ToggleCompassion());
+                            break;
+                        case "Fear":
+                            btn.onClick.AddListener(() => emotionSystem.ToggleFear());
+                            break;
+                        case "Acceptance":
+                            btn.onClick.AddListener(() => emotionSystem.ToggleAcceptance());
+                            break;
+                        case "Anger":
+                            btn.onClick.AddListener(() => emotionSystem.ToggleAnger());
+                            break;
+                        case "Denial":
+                            btn.onClick.AddListener(() => emotionSystem.ToggleDenial());
+                            break;
+                    }
+                }
+            }
+        }
+        // Привязка обработчика к кнопке LevelUp
+        Transform levelUpTransform = emotionPanel.transform.Find("LevelUp");
+        if (levelUpTransform != null)
+        {
+            Button levelUpBtn = levelUpTransform.GetComponent<Button>();
+            if (levelUpBtn != null)
+            {
+                levelUpBtn.onClick.RemoveAllListeners();
+                levelUpBtn.onClick.AddListener(() => emotionSystem.UpgradeMaxActiveEmotions());
+            }
+        }
     }
 
     public override void OnPlayerEnter()

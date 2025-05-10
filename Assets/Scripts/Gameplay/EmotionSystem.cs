@@ -126,6 +126,7 @@ public class EmotionSystem : MonoBehaviour
     private void Start()
     {
         // Находим компоненты
+        Debug.Log("Начинаем Start");
         playerHealth = FindObjectOfType<PlayerHealth>();
         playerController = FindObjectOfType<ConsciousnessController>();
         
@@ -136,7 +137,32 @@ public class EmotionSystem : MonoBehaviour
         
         FindUIElements();
         UpdateUITexts();
+        
+        // Отложенная инициализация UI
+        StartCoroutine(InitializeUIWithDelay());
+        
+        Debug.Log("End Start");
+    }
+
+    private IEnumerator InitializeUIWithDelay()
+    {
+        // Ждем один кадр, чтобы дать время на создание всех объектов
+        yield return null;
+        
+        // Пробуем инициализировать UI
+        InitializeUI();
+    }
+
+    public void InitializeUI()
+    {
+        Debug.Log("[EmotionSystem] Начинаем инициализацию UI");
         SetupEmotionTooltips();
+        
+        // Обновляем все UI элементы
+        foreach (Emotion emotion in emotions)
+        {
+            UpdateEmotionVisual(emotion.type, emotion.isActive);
+        }
     }
 
     private void Update()
@@ -201,64 +227,78 @@ public class EmotionSystem : MonoBehaviour
 
     private void SetupEmotionTooltips()
     {
+        Debug.Log("[EmotionSystem] Начинаем установку тултипов");
+        bool allObjectsFound = true;
+        
         foreach (EmotionType emotionType in Enum.GetValues(typeof(EmotionType)))
         {
+            Debug.Log($"[EmotionSystem] Начинаем установку тултипов для {emotionType}");
             GameObject emotionObject = GameObject.Find(emotionType.ToString());
-            if (emotionObject != null)
+            Debug.Log($"[EmotionSystem] Найден объект: {emotionObject != null}");
+            
+            if (emotionObject == null)
             {
-                // Add tooltip component
-                ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-                if (tooltip == null)
-                {
-                    tooltip = emotionObject.AddComponent<ToolTip>();
-                }
-                UpdateEmotionTooltip(emotionType, tooltip);
+                allObjectsFound = false;
+                Debug.LogWarning($"[EmotionSystem] Объект {emotionType} не найден!");
+                continue;
+            }
+            
+            // Add tooltip component
+            ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
+            if (tooltip == null)
+            {
+                tooltip = emotionObject.AddComponent<ToolTip>();
+            }
+            UpdateEmotionTooltip(emotionType, tooltip);
+            
+            // Add long hold handler for upgrading
+            LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
+            if (longHoldHandler == null)
+            {
+                longHoldHandler = emotionObject.AddComponent<LongHoldHandler>();
+                longHoldHandler.holdTime = 2f;
                 
-                // Add long hold handler for upgrading
-                LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
-                if (longHoldHandler == null)
+                // Create a local copy of emotionType to avoid closure issues
+                EmotionType capturedType = emotionType;
+                longHoldHandler.onLongHold = new UnityEngine.Events.UnityEvent();
+                longHoldHandler.onLongHold.AddListener(() => UpgradeEmotion(capturedType));
+                
+                // Add progress indicator
+                GameObject progressIndicator = new GameObject("UpgradeProgress");
+                progressIndicator.transform.SetParent(emotionObject.transform, false);
+                
+                RectTransform rectTransform = progressIndicator.AddComponent<RectTransform>();
+                rectTransform.anchorMin = new Vector2(0, 0);
+                rectTransform.anchorMax = new Vector2(1, 0);
+                rectTransform.pivot = new Vector2(0, 0);
+                rectTransform.sizeDelta = new Vector2(0, 8);
+                
+                Image progressImage = progressIndicator.AddComponent<Image>();
+                progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
+                progressImage.fillMethod = Image.FillMethod.Horizontal;
+                progressImage.type = Image.Type.Filled;
+                progressImage.fillAmount = 0;
+                
+                Outline outline = progressIndicator.AddComponent<Outline>();
+                outline.effectColor = new Color(1f, 1f, 0.5f, 0.5f);
+                outline.effectDistance = new Vector2(1, 1);
+                
+                if (!upgradeProgressImages.ContainsKey(capturedType))
                 {
-                    longHoldHandler = emotionObject.AddComponent<LongHoldHandler>();
-                    longHoldHandler.holdTime = 2f;
-                    
-                    // Create a local copy of emotionType to avoid closure issues
-                    EmotionType capturedType = emotionType;
-                    longHoldHandler.onLongHold = new UnityEngine.Events.UnityEvent();
-                    longHoldHandler.onLongHold.AddListener(() => UpgradeEmotion(capturedType));
-                    
-                    // Add progress indicator
-                    GameObject progressIndicator = new GameObject("UpgradeProgress");
-                    progressIndicator.transform.SetParent(emotionObject.transform, false);
-                    
-                    RectTransform rectTransform = progressIndicator.AddComponent<RectTransform>();
-                    rectTransform.anchorMin = new Vector2(0, 0);
-                    rectTransform.anchorMax = new Vector2(1, 0);
-                    rectTransform.pivot = new Vector2(0, 0);
-                    rectTransform.sizeDelta = new Vector2(0, 8); // Увеличиваем высоту для лучшей видимости
-                    
-                    Image progressImage = progressIndicator.AddComponent<Image>();
-                    progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f); // Увеличиваем непрозрачность
-                    progressImage.fillMethod = Image.FillMethod.Horizontal;
-                    progressImage.type = Image.Type.Filled;
-                    progressImage.fillAmount = 0;
-                    
-                    // Добавляем эффект свечения для лучшей видимости
-                    Outline outline = progressIndicator.AddComponent<Outline>();
-                    outline.effectColor = new Color(1f, 1f, 0.5f, 0.5f);
-                    outline.effectDistance = new Vector2(1, 1);
-                    
-                    // Store reference to progress image in dictionary
-                    if (!upgradeProgressImages.ContainsKey(capturedType))
-                    {
-                        upgradeProgressImages.Add(capturedType, progressImage);
-                    }
+                    upgradeProgressImages.Add(capturedType, progressImage);
                 }
             }
+        }
+        
+        if (!allObjectsFound)
+        {
+            Debug.LogWarning("[EmotionSystem] Не все объекты эмоций были найдены. UI может быть не полностью инициализирован.");
         }
     }
 
     private void UpdateEmotionTooltip(EmotionType emotionType, ToolTip tooltip)
     {
+        Debug.Log($"Обновляем тултип для {emotionType}");
         if (tooltip != null)
         {
             tooltip.SetTooltipText(GetEmotionDescription(emotionType));
@@ -493,28 +533,10 @@ public class EmotionSystem : MonoBehaviour
 
     public void OnPanelOpened()
     {
+        Debug.Log("[EmotionSystem] Панель эмоций открыта, начинаем инициализацию UI");
         FindUIElements(); // На случай, если панель создаётся заново
         UpdateUITexts();
-        // Обновляем цвета всех эмоций и тултипы
-        foreach (Emotion emotion in emotions)
-        {
-            UpdateEmotionVisual(emotion.type, emotion.isActive);
-            
-            GameObject emotionObject = GameObject.Find(emotion.type.ToString());
-            if (emotionObject != null)
-            {
-                ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-                if (tooltip != null)
-                {
-                    UpdateEmotionTooltip(emotion.type, tooltip);
-                }
-                else
-                {
-                    tooltip = emotionObject.AddComponent<ToolTip>();
-                    UpdateEmotionTooltip(emotion.type, tooltip);
-                }
-            }
-        }
+        InitializeUI(); // Инициализируем UI элементы
     }
 
     public bool IsEmotionActive(EmotionType emotionType)
@@ -537,7 +559,20 @@ public class EmotionSystem : MonoBehaviour
 
         string effectDescription = emotionEffects[type][emotion.level - 1];
         string status = emotion.isActive ? "Активна" : "Неактивна";
-        return $"{GetEmotionName(type)}\nУровень: {emotion.level}/3\nСтатус: {status}\n\nЭффект:\n{effectDescription}";
+        string result = $"{GetEmotionName(type)}\nУровень: {emotion.level}/3\nСтатус: {status}\n\nЭффект:\n{effectDescription}";
+
+        // Добавляем стоимость улучшения и инструкцию, если не максимальный уровень
+        if (emotion.level < 3)
+        {
+            int upgradeCost = 1 * emotion.level; // Стоимость улучшения (как в UpgradeEmotion)
+            result += $"\n\nСтоимость улучшения: {upgradeCost}";
+            result += "\nУдерживайте кнопку для улучшения";
+        }
+        else
+        {
+            result += "\n\nМаксимальный уровень";
+        }
+        return result;
     }
 
     // Получить локализованное название эмоции

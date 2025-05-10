@@ -127,7 +127,7 @@ MonoBehaviour:
   portalPrefab: {fileID: 7683842524561268291, guid: 1e5366c0f0b9b3848b08b4f038ec2c01, type: 3}
   bossSpawnPoint: {fileID: 0}
   totalWaves: 1
-  enemySpawnScatterRadius: 1
+  enemySpawnScatterRadius: 2
   enemyConfigs:
   - {fileID: 11400000, guid: 6ae5cd6f682f36c41b0c33eee9ed55b5, type: 2}
 --- !u!114 &4939898562784334261

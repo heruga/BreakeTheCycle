@@ -287,6 +287,11 @@ namespace DungeonGeneration.Scripts
                     {
                         enemyHealth.OnDeath += HandleEnemyDeath;
                     }
+                    var enemyController = enemy.GetComponent<EnemyController>();
+                    if (enemyController != null)
+                    {
+                        enemyController.SetSpawnOffset(new Vector3(offset2D.x, 0, offset2D.y));
+                    }
                     Debug.Log($"[RoomManager] Создан враг {enemy.name} (тип: {enemyConfig.enemyName}) на позиции {spawnPoint.position} (волна {currentWave})");
                 }
             }

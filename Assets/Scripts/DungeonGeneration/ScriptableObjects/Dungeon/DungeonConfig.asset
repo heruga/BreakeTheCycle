@@ -24,7 +24,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1788646d634dbdf4ebbd0d2c93e33b2d, type: 2}
   - {fileID: 11400000, guid: 45398882076791b47b5c774e06a1c814, type: 2}
   - {fileID: 11400000, guid: 85abf8534ed757a49b205f219dea9342, type: 2}
-  - {fileID: 11400000, guid: 581ed0b582619a54f899b89ac20f29c1, type: 2}
   ensureBossRoom: 1
   ensureStartRoom: 1
   randomizeRoomOrder: 0

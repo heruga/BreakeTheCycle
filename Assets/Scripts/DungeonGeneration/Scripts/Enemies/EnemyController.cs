@@ -56,6 +56,8 @@ namespace DungeonGeneration.Scripts.Enemies
             Returning
         }
 
+        private Vector3 spawnOffset; // Добавляем поле для хранения смещения при спавне
+
         private void Start()
         {
             DungeonGenerator.OnPlayerCreated += HandlePlayerCreated;
@@ -83,6 +85,7 @@ namespace DungeonGeneration.Scripts.Enemies
             agent.acceleration = 12f; // Быстрее достигает целевой скорости
             agent.angularSpeed = 360f; // Быстрее поворачивается
             agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance; // Менее точное, но более быстрое избегание препятствий
+            agent.stoppingDistance = 0.5f; // Увеличиваем stoppingDistance
             
             DebugLog($"Параметры NavMeshAgent:" +
                     $"\n - Speed: {agent.speed}" +
@@ -189,10 +192,13 @@ namespace DungeonGeneration.Scripts.Enemies
             {
                 currentState = EnemyState.Returning;
             }
-            else if (currentState == EnemyState.Returning && 
-                     Vector3.Distance(transform.position, startPosition) < 0.5f)
+            else if (currentState == EnemyState.Returning && agent.hasPath && 
+                     agent.remainingDistance <= agent.stoppingDistance && 
+                     !agent.pathPending)
             {
                 currentState = EnemyState.Idle;
+                agent.ResetPath();
+                DebugLog("Переход в Idle из Returning: агент достиг цели или не может двигаться дальше.");
             }
 
             if (previousState != currentState)
@@ -226,7 +232,7 @@ namespace DungeonGeneration.Scripts.Enemies
 
         private void HandleIdleState()
         {
-            Debug.Log($"[EnemyController] {gameObject.name}: HandleIdleState");
+            Debug.Log($"[EnemyController] {gameObject.name}: Вошёл в состояние Idle");
             if (!agent.isStopped)
             {
                 agent.isStopped = true;
@@ -257,7 +263,7 @@ namespace DungeonGeneration.Scripts.Enemies
 
             // Проверяем, достаточно ли сместился игрок для обновления пути
             float targetMovement = Vector3.Distance(player.transform.position, lastTargetPosition);
-           // Используем разные интервалы обновления в зависимости от видимости
+            // Используем разные интервалы обновления в зависимости от видимости
             float currentUpdateInterval = isInViewport ? pathUpdateInterval : updateIntervalOutsideView;
             return Time.time - lastPathUpdateTime >= currentUpdateInterval && 
                    (targetMovement > minPathUpdateDistance || currentState == EnemyState.Returning);
@@ -265,13 +271,12 @@ namespace DungeonGeneration.Scripts.Enemies
 
         private void HandleChasingState()
         {
-            Debug.Log($"[EnemyController] {gameObject.name}: HandleChasingState");
+            Debug.Log($"[EnemyController] {gameObject.name}: Вошёл в состояние Chasing");
             if (!ShouldUpdatePath()) return;
 
             agent.isStopped = false;
             Vector3 targetPos = player.transform.position;
             agent.SetDestination(targetPos);
-            // Debug.Log($"[EnemyController] {gameObject.name}: NavMeshAgent движется к {targetPos}");
             lastTargetPosition = targetPos;
             lastPathUpdateTime = Time.time;
             if (animator != null)
@@ -283,38 +288,45 @@ namespace DungeonGeneration.Scripts.Enemies
 
         private void HandleAttackingState()
         {
-            // Убедимся, что агент остановлен
+            Debug.Log($"[EnemyController] {gameObject.name}: Вошёл в состояние Attacking");
             if (agent.isOnNavMesh && agent.isStopped == false)
             {
                 agent.isStopped = true;
             }
-        
-            RotateTowardsPlayer();
 
+            if (animator != null)
+            {
+                animator.SetBool(IsRunning, false);
+                Debug.Log($"[Animator][{gameObject.name}] SetBool isRunning = false (Attacking)");
+            }
+            
+            RotateTowardsPlayer();
             if (Time.time >= lastAttackTime + attackCooldown)
             {
+                if (animator != null)
+                {
+                    animator.SetTrigger(IsAttacking);
+                }
                 AttackPlayer();
                 lastAttackTime = Time.time;
             }
-
-            // Проверка, не вышел ли игрок из зоны атаки
             float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
             if (distanceToPlayer > attackRange)
             {
-                // Переход в состояние преследования
                 currentState = EnemyState.Chasing;
-                return; // Выход, чтобы не выполнять лишних проверок ниже
+                return;
             }
         }
 
         private void HandleReturningState()
         {
-            Debug.Log($"[EnemyController] {gameObject.name}: HandleReturningState");
+            Debug.Log($"[EnemyController] {gameObject.name}: Вошёл в состояние Returning");
             if (Time.time - lastPathUpdateTime >= updateIntervalOutsideView)
             {
                 agent.isStopped = false;
-                agent.SetDestination(startPosition);
-                Debug.Log($"[EnemyController] {gameObject.name}: NavMeshAgent возвращается к стартовой позиции {startPosition}");
+                Vector3 targetPosition = startPosition + spawnOffset; // Используем сохраненное смещение
+                agent.SetDestination(targetPosition);
+                Debug.Log($"[EnemyController] {gameObject.name}: NavMeshAgent возвращается к стартовой позиции {targetPosition} (база: {startPosition}, смещение: {spawnOffset})");
                 lastPathUpdateTime = Time.time;
             }
             if (animator != null)
@@ -417,6 +429,11 @@ namespace DungeonGeneration.Scripts.Enemies
                 animator.SetTrigger(IsDead);
                 Debug.Log($"[Animator][{gameObject.name}] SetTrigger isDead (PlayDeathAnimation)");
             }
+        }
+
+        public void SetSpawnOffset(Vector3 offset)
+        {
+            spawnOffset = offset;
         }
     }
 } 
