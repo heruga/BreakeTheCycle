@@ -45,7 +45,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 2
-  m_Range: 7
+  m_Range: 11
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -254,7 +254,7 @@ Transform:
   m_GameObject: {fileID: 2548513684930595330}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.3, y: 1, z: 0}
+  m_LocalPosition: {x: -11.3, y: 2.33, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -272,6 +272,7 @@ GameObject:
   - component: {fileID: 6272361294782435817}
   - component: {fileID: 3548703412854154565}
   - component: {fileID: 5573240356103923390}
+  - component: {fileID: 6301964696170598496}
   m_Layer: 3
   m_Name: BossRoomPrefab
   m_TagString: Untagged
@@ -355,7 +356,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.26666668
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 571f1cc77f8ad37488a8495539cfbc49, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 571ed8bf0629b0a418f18d86638f7156, type: 2}
   m_BuildHeightMesh: 0
 --- !u!114 &5573240356103923390
 MonoBehaviour:
@@ -367,6 +368,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ec6add41e21784d49b45ee8cc5cf1f3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6301964696170598496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3135474786166386577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc16603b5b714d946a2b6e98f5926d82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   npcId: Handler

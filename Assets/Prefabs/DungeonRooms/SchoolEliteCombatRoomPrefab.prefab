@@ -58,7 +58,7 @@ Transform:
   m_GameObject: {fileID: 1430037285216365201}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3.53, y: 0, z: -0.36}
+  m_LocalPosition: {x: -7.81, y: 0, z: 2.61}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -76,6 +76,7 @@ GameObject:
   - component: {fileID: 1822199502395146143}
   - component: {fileID: 4939898562784334261}
   - component: {fileID: 3723248446645987698}
+  - component: {fileID: 7953722206901955879}
   m_Layer: 3
   m_Name: SchoolEliteCombatRoomPrefab
   m_TagString: Untagged
@@ -96,9 +97,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 8179489133976806665}
   - {fileID: 8995500266411366951}
   - {fileID: 5623762462714891430}
-  - {fileID: 8179489133976806665}
   - {fileID: 829911237301313803}
   - {fileID: 2244708481429268133}
   m_Father: {fileID: 0}
@@ -160,7 +161,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.26666668
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 77d5a9fd031a74b45a03ca34211a49a6, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 9fb8433520acd1b458305fcb29087e1e, type: 2}
   m_BuildHeightMesh: 0
 --- !u!114 &3723248446645987698
 MonoBehaviour:
@@ -172,6 +173,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ec6add41e21784d49b45ee8cc5cf1f3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7953722206901955879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000844315529111293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc16603b5b714d946a2b6e98f5926d82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   npcId: Handler
@@ -201,7 +214,7 @@ Transform:
   m_GameObject: {fileID: 3414921299043356267}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -9.98, y: 1, z: -9.85}
+  m_LocalPosition: {x: -9.98, y: 2.33, z: -9.85}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -232,7 +245,7 @@ Transform:
   m_GameObject: {fileID: 6495763691830307517}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.93728197, z: 0, w: 0.34857216}
-  m_LocalPosition: {x: 4.19, y: 0, z: -8.07}
+  m_LocalPosition: {x: 6.04, y: 0, z: -8.58}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -295,7 +308,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8010266384567587678}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 5.73, y: 2, z: 1.29}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -314,7 +327,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 2
-  m_Range: 7
+  m_Range: 11
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -561,6 +574,10 @@ PrefabInstance:
     - target: {fileID: 3756102866472423816, guid: 22a505ba3fe30c54d982c96fa87d51e9, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3863855386435217462, guid: 22a505ba3fe30c54d982c96fa87d51e9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -6.87
       objectReference: {fileID: 0}
     - target: {fileID: 4633904062505924164, guid: 22a505ba3fe30c54d982c96fa87d51e9, type: 3}
       propertyPath: m_StaticEditorFlags

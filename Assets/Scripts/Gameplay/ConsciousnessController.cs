@@ -63,7 +63,6 @@ public class ConsciousnessController : MonoBehaviour
     
     [Header("Бой")]
     [SerializeField] private float attackDamage = 80f;
-    [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float attackCooldown = 1f;
     [SerializeField] private float attackRadius = 199f; // Радиус области атаки
     [SerializeField] private LayerMask enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
@@ -89,6 +88,7 @@ public class ConsciousnessController : MonoBehaviour
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
     private EmotionSystem emotionSystem;
+    private Animator animator;
     
     private void Awake()
     {
@@ -96,6 +96,8 @@ public class ConsciousnessController : MonoBehaviour
         SetupCamera();
         lastMoveDirection = transform.forward;
         enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
+        animator = GetComponentInChildren<Animator>();
+        Debug.Log($"[ConsciousnessController] Animator component: {(animator == null ? "NOT FOUND" : "FOUND")}");
         
         Debug.Log($"[ConsciousnessController] Awake: controlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
     }
@@ -108,16 +110,10 @@ public class ConsciousnessController : MonoBehaviour
         {
             characterController = gameObject.AddComponent<CharacterController>();
         }
-        
-        // Настраиваем размеры CharacterController
-        characterController.height = 2f;
-        characterController.radius = 0.5f;
-        characterController.center = new Vector3(0, 1f, 0);
-        characterController.slopeLimit = 45f;
-        characterController.stepOffset = 0.3f;
-        
+ 
         // Устанавливаем позицию персонажа на правильную высоту
         Vector3 position = transform.position;
+        // position.y = 1f; // Эту строку тоже стоит проверить, нужна ли она, если центр берется из инспектора
         transform.position = position;
     }
     
@@ -255,6 +251,13 @@ public class ConsciousnessController : MonoBehaviour
             HandleMovement();
         }
 
+        // Поворот модели игрока
+        if (moveDirection != Vector3.zero && !isDashing) // Не поворачиваем во время dash
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+        }
+
         UpdateCameraPosition(false);
     }
 
@@ -272,6 +275,16 @@ public class ConsciousnessController : MonoBehaviour
             currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, decelerationSpeed * Time.fixedDeltaTime);
         }
 
+        // Получаем текущую фактическую скорость персонажа
+        float actualSpeed = currentVelocity.magnitude;
+
+        if (animator != null)
+        {
+            // Передаем фактическую скорость в параметр "ActualSpeed" аниматора
+            animator.SetFloat("ActualSpeed", actualSpeed);
+            // Debug.Log("[ConsciousnessController] Animator: ActualSpeed = " + actualSpeed); // Оставить для отладки, если нужно
+        }
+        
         // Применяем движение
         characterController.Move(currentVelocity * Time.fixedDeltaTime);
     }
@@ -296,6 +309,11 @@ public class ConsciousnessController : MonoBehaviour
         isDashing = true;
         dashTimeLeft = dashDuration;
         lastDashTime = Time.time;
+        if (animator != null)
+        {
+            animator.SetTrigger("isDashing");
+            Debug.Log("[ConsciousnessController] Animator: isDashing triggered");
+        }
     }
     
     private void UpdateCameraPosition(bool instant)
@@ -532,9 +550,15 @@ public class ConsciousnessController : MonoBehaviour
         if (Time.time < lastAttackTime + attackCooldown)
         {
             Debug.Log($"[Attack] Не атакуем: кулдаун. Time={Time.time:F2}, lastAttackTime={lastAttackTime:F2}, attackCooldown={attackCooldown}");
-                    return;
+            return;
         }
         lastAttackTime = Time.time;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("isAttack");
+            Debug.Log("[ConsciousnessController] Animator: isAttack triggered");
+        }
 
         Debug.Log($"[Attack] Вызван. enemyLayerMask={enemyLayerMask.value}, attackRadius={attackRadius}");
 

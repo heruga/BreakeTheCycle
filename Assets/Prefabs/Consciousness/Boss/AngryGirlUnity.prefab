@@ -52,6 +52,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: AngryGirlUnity
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: dd7cf8651ec40c14cb6322567f1aa216, type: 3}
+      propertyPath: m_Avatar
+      value: 
+      objectReference: {fileID: 9000000, guid: 6f6b0477b378c204c93f79194377d173, type: 3}
+    - target: {fileID: 5866666021909216657, guid: dd7cf8651ec40c14cb6322567f1aa216, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

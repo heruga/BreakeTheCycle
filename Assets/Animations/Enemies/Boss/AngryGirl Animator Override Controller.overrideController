@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AngryGirl Animator Override Controller
+  m_Controller: {fileID: 9100000, guid: 51f8202be81c59b418315f28781d5aa1, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: -203655887218126122, guid: bce0ba2b4618ee8478199699ebac6b0a, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 6f6b0477b378c204c93f79194377d173, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 18324e13716896249a66d13a9be0d48b, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 31a0d93ee5530bd44b38dcb730dd3a38, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 0baef760caeb8e44a8fbc633724733a3, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 5136f56c68e91d54099728240c159010, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 2b01f87bc277bca49a9074c6231b11d3, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 7faf28fcdfa35c548916970573161619, type: 3}

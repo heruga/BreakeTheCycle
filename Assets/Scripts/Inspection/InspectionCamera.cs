@@ -91,62 +91,57 @@ public class InspectionCamera : MonoBehaviour
             if (showDebug) Debug.Log($"Сохранён начальный трансформ — Позиция: {initialPosition}, Поворот: {initialRotation.eulerAngles}");
         }
 
-        private Vector3 CalculateCameraPosition(Vector3 targetPosition, float viewportX)
+        public void StartInspecting(InspectableObject inspectableObject)
         {
-            Vector3 basePosition = targetPosition + Vector3.back * initialDistance;
-            float horizontalOffset = (viewportX - 0.5f) * initialDistance * 2f;
-            return basePosition + Vector3.right * horizontalOffset;
-        }
-
-        public void StartInspecting(GameObject target)
-        {
-            if (target == null || !target.TryGetComponent<InspectableObject>(out var inspectable))
+            if (inspectableObject == null)
             {
-                Debug.LogError("Target object is not inspectable!");
+                Debug.LogError("InspectableObject is null!");
                 return;
             }
 
-            if (!target.activeInHierarchy)
+            GameObject targetGameObject = inspectableObject.gameObject;
+
+            if (!targetGameObject.activeInHierarchy)
             {
-                Debug.LogError($"Target object {target.name} is not active in hierarchy!");
+                Debug.LogError($"Target object {targetGameObject.name} is not active in hierarchy!");
                 return;
             }
 
             isInspecting = true;
-            currentTarget = target;
-            this.target = target.transform;
+            currentTarget = targetGameObject;
+            this.target = targetGameObject.transform;
             
             currentVerticalAngle = 0f;
             currentHorizontalAngle = 0f;
             
-            originalPosition = target.transform.position;
-            originalRotation = target.transform.rotation;
+            originalPosition = targetGameObject.transform.position;
+            originalRotation = targetGameObject.transform.rotation;
             
-            Renderer[] renderers = target.GetComponentsInChildren<Renderer>();
+            Renderer[] renderers = targetGameObject.GetComponentsInChildren<Renderer>();
             if (renderers.Length > 0)
             {
                 Bounds bounds = renderers[0].bounds;
                 foreach (Renderer r in renderers)
                     bounds.Encapsulate(r.bounds);
-                lookAtPoint = bounds.center + inspectable.spawnPositionOffset;
-                Debug.Log($"[InspectionCamera] pivot: {target.transform.position}, bounds.center: {bounds.center}, lookAtPoint (с offset): {lookAtPoint}");
+                lookAtPoint = bounds.center + inspectableObject.spawnPositionOffset;
+                Debug.Log($"[InspectionCamera] pivot: {targetGameObject.transform.position}, bounds.center: {bounds.center}, lookAtPoint (с offset): {lookAtPoint}");
             }
             else
             {
-                lookAtPoint = target.transform.position + inspectable.spawnPositionOffset;
-                Debug.Log($"[InspectionCamera] pivot: {target.transform.position}, bounds.center: (нет рендереров), lookAtPoint (с offset): {lookAtPoint}");
+                lookAtPoint = targetGameObject.transform.position + inspectableObject.spawnPositionOffset;
+                Debug.Log($"[InspectionCamera] pivot: {targetGameObject.transform.position}, bounds.center: (нет рендереров), lookAtPoint (с offset): {lookAtPoint}");
             }
             
-            currentDistance = initialDistance * inspectable.defaultZoomValue;
-            minDistance = initialDistance * inspectable.minMaxZoom.x;
-            maxDistance = initialDistance * inspectable.minMaxZoom.y;
+            currentDistance = initialDistance * inspectableObject.defaultZoomValue;
+            minDistance = initialDistance * inspectableObject.minMaxZoom.x;
+            maxDistance = initialDistance * inspectableObject.minMaxZoom.y;
             
             if (showDebug) Debug.Log($"Настройки зума — Мин: {minDistance}, Макс: {maxDistance}, Текущий: {currentDistance}");
             
             float projectionOffset = useOffset ? offsetX : 0f;
-            if (inspectable.spawnPositionOffset != Vector3.zero)
+            if (inspectableObject.spawnPositionOffset != Vector3.zero)
             {
-                projectionOffset = inspectable.spawnPositionOffset.x / 5f;
+                projectionOffset = inspectableObject.spawnPositionOffset.x / 5f;
             }
             
             Matrix4x4 m = cam.projectionMatrix;
@@ -174,14 +169,14 @@ public class InspectionCamera : MonoBehaviour
                 if (showDebug) Debug.Log($"Выделенный свет '{dedicatedInspectionLight.name}' включен.");
             }
             
-            target.transform.rotation = Quaternion.Euler(inspectable.spawnRotationOffset);
+            target.transform.rotation = Quaternion.Euler(inspectableObject.spawnRotationOffset);
             
             if (isolatedView)
             {
                 FindAllInspectableObjects();
                 foreach (var obj in allInspectableObjects)
                 {
-                    if (obj.gameObject != target)
+                    if (obj.gameObject != targetGameObject)
                     {
                         obj.gameObject.SetActive(false);
                         if (showDebug) Debug.Log($"Скрыт другой объект: {obj.gameObject.name}");

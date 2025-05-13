@@ -50,10 +50,40 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 916d1fe7d4e3b6e46b926fa07f49e64d, type: 3}
       propertyPath: m_Name
-      value: SadGirl
+      value: AngryGirl
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 916d1fe7d4e3b6e46b926fa07f49e64d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6020476130618466039}
   m_SourcePrefab: {fileID: 100100000, guid: 916d1fe7d4e3b6e46b926fa07f49e64d, type: 3}
+--- !u!1 &926897561344162845 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 916d1fe7d4e3b6e46b926fa07f49e64d, type: 3}
+  m_PrefabInstance: {fileID: 7997547655528780}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &6020476130618466039
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 926897561344162845}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: d55a8b8da2e13f94789056b9b463b520, type: 3}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

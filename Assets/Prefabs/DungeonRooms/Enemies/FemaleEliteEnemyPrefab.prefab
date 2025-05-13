@@ -53,7 +53,7 @@ MonoBehaviour:
   isBoss: 0
   currencyDropAmount: 10
   bossMultiplier: 5
-  healthBarPrefab: {fileID: 0}
+  healthBarPrefab: {fileID: 5781516032655189868, guid: 574da03ab1afb7041ad66acf7b6cce14, type: 3}
 --- !u!195 &6117292585945427543
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -97,7 +97,7 @@ MonoBehaviour:
   aggroRange: 10
   updateIntervalOutsideView: 1
   maxPathUpdateRange: 30
-  showDebugLogs: 1
+  showDebugLogs: 0
 --- !u!1 &8973082828617750619
 GameObject:
   m_ObjectHideFlags: 0
@@ -146,6 +146,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 22100000, guid: 0270adf9141c5f343ab0e69bbf9731a6, type: 2}
+    - target: {fileID: 1787643168993968553, guid: f1e317bc530c9e94bbfaf0c58dcbc186, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5000411232143376745, guid: f1e317bc530c9e94bbfaf0c58dcbc186, type: 3}
       propertyPath: m_Name
       value: FemaleForUnity
@@ -205,10 +209,41 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5000411232143376745, guid: f1e317bc530c9e94bbfaf0c58dcbc186, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8087196214939748627}
   m_SourcePrefab: {fileID: 100100000, guid: f1e317bc530c9e94bbfaf0c58dcbc186, type: 3}
 --- !u!4 &1601193931453220743 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5633676755726752723, guid: f1e317bc530c9e94bbfaf0c58dcbc186, type: 3}
   m_PrefabInstance: {fileID: 6347333621169265748}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2122116579926187325 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5000411232143376745, guid: f1e317bc530c9e94bbfaf0c58dcbc186, type: 3}
+  m_PrefabInstance: {fileID: 6347333621169265748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!136 &8087196214939748627
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2122116579926187325}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 17.36
+  m_Height: 85.65501
+  m_Direction: 1
+  m_Center: {x: 0, y: 42.32749, z: 0}

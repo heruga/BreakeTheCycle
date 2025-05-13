@@ -96,7 +96,11 @@ namespace Inspection
 
         private void StartInspection(InspectableObject obj)
         {
-            if (inspectionCamera == null) return;
+            if (inspectionCamera == null || obj == null) return;
+
+            currentObject = obj;
+            inspectionCamera.StartInspecting(obj);
+            Debug.Log($"[ObjectInspector] inspectionCamera активирована: {inspectionCamera.name}");
 
             // Отключаем основную камеру игрока на время осмотра
             if (mainCamera != null)
@@ -104,13 +108,10 @@ namespace Inspection
                 mainCamera.enabled = false;
                 Debug.Log($"[ObjectInspector] mainCamera отключена: {mainCamera.name}");
             }
-
-            currentObject = obj;
-            inspectionCamera.StartInspecting(obj.gameObject);
-            Debug.Log($"[ObjectInspector] inspectionCamera активирована: {inspectionCamera.name}");
-
-            // Активируем связанный объект, если он есть
-            obj.ActivateLinkedObject();
+            
+            // Это позволит InspectableObject выполнить свои действия, включая постановку узла диалога в очередь,
+            // если на нем настроен DialogueNodeEnqueuer.
+            currentObject.HandleInspectionActions(); 
 
             // Показываем UI с информацией об объекте
             if (inspectionUI != null)

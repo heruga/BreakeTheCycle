@@ -352,12 +352,19 @@ namespace DungeonGeneration.Scripts.Enemies
         {
             if (player == null) return false;
 
-            Vector3 directionToPlayer = player.transform.position - transform.position;
-            RaycastHit hit;
-            bool hasLineOfSight = Physics.Raycast(transform.position, directionToPlayer, out hit, aggroRange) 
-                                && hit.collider.gameObject == player;
-            
-            return hasLineOfSight;
+            Vector3 origin = transform.position + Vector3.up * 0.5f; // Немного поднять точку старта луча
+            Vector3 target = player.transform.position + Vector3.up * 0.5f; // И точку цели
+            Vector3 directionToPlayer = target - origin;
+            float distanceToPlayer = directionToPlayer.magnitude;
+
+            if (Physics.Raycast(origin, directionToPlayer.normalized, out RaycastHit hit, distanceToPlayer))
+            {
+                if (showDebugLogs) DebugLog($"Raycast hit: {hit.collider.name} (parent: {hit.collider.transform.parent?.name})", true);
+                
+                PlayerHealth playerHealth = hit.collider.GetComponentInParent<PlayerHealth>();
+                return playerHealth != null;
+            }
+            return false; 
         }
 
         private void AttackPlayer()

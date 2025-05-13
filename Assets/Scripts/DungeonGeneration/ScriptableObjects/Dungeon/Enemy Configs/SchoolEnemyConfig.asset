@@ -15,6 +15,7 @@ MonoBehaviour:
   enemyName: 
   enemyPrefabs:
   - {fileID: 9177482320510266313, guid: 410ae9c47af1f9e4fb77da74b2865180, type: 3}
+  - {fileID: 7584386333622134474, guid: 941f7ed110f1295448fd23cf8fc378c2, type: 3}
   isBoss: 0
   isElite: 1
   spawnWeight: 1

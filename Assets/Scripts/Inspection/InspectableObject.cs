@@ -1,4 +1,5 @@
 using UnityEngine;
+using BreakTheCycle.Dialogue;
 
 namespace Inspection
 {
@@ -30,6 +31,8 @@ namespace Inspection
         [Header("Activation")]
         public GameObject objectToActivate;
 
+        private DialogueNodeEnqueuer nodeEnqueuer;
+
         public string ObjectName => objectName;
         public string Description => description;
         public Color NameColor => nameColor;
@@ -37,10 +40,38 @@ namespace Inspection
         public int NameFontSize => nameFontSize;
         public int DescriptionFontSize => descriptionFontSize;
 
+        private void Awake()
+        {
+            nodeEnqueuer = GetComponent<DialogueNodeEnqueuer>();
+        }
+
         public void ActivateLinkedObject()
         {
             if (objectToActivate != null)
                 objectToActivate.SetActive(true);
+        }
+
+        public void HandleInspectionActions()
+        {
+            ActivateLinkedObject();
+
+            if (nodeEnqueuer != null)
+            {
+                Debug.Log($"[InspectableObject] Объект {gameObject.name} осмотрен. Пытаемся использовать DialogueNodeEnqueuer.");
+                bool success = nodeEnqueuer.TryEnqueueNode();
+                if (success)
+                {
+                    Debug.Log($"[InspectableObject] Узел для NPC '{nodeEnqueuer.npcId}' (startNodeId: {nodeEnqueuer.startNodeId}) успешно добавлен в очередь при осмотре {gameObject.name}.");
+                }
+                else
+                {   
+                    Debug.LogWarning($"[InspectableObject] Не удалось добавить узел в очередь при осмотре {gameObject.name}. Подробности см. в логах DialogueNodeEnqueuer.");
+                }
+            }
+            else
+            {
+                Debug.Log($"[InspectableObject] На объекте {gameObject.name} не найден компонент DialogueNodeEnqueuer. Постановка узла в очередь не выполняется при осмотре.");
+            }
         }
     }
 }

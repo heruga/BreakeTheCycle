@@ -15,7 +15,7 @@ namespace BreakTheCycle.Dialogue
         
         // Добавляем событие
         public event System.Action<int> OnMonologueComplete;
-
+        
         private VIDE_Assign monologueAssign;
         private bool isMonologueActive = false; // Флаг активности монолога
         private int currentMonologueID = -1; // ID текущего монолога
@@ -48,7 +48,7 @@ namespace BreakTheCycle.Dialogue
             if (currentScene == "Reality" && PlayerPrefs.GetInt("IsNewGame", 0) == 1)
             {
                 Debug.Log("[MonologueManager] Автоматический запуск начального монолога (ID 0) в сцене Reality");
-                PlayMonologue(0);
+            PlayMonologue(0);
                 
                 // Сбрасываем флаг новой игры после показа монолога
                 PlayerPrefs.SetInt("IsNewGame", 0);

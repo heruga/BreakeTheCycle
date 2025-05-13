@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Animations;
 
 namespace DungeonGeneration.Scripts.Health
 {
@@ -7,6 +8,7 @@ namespace DungeonGeneration.Scripts.Health
     {
         private EmotionSystem emotionSystem;
         private bool isDead = false;
+        private Animator animator;
 
         private void Start()
         {
@@ -16,6 +18,7 @@ namespace DungeonGeneration.Scripts.Health
             {
                 Debug.LogWarning("[PlayerHealth] EmotionSystem не найден при старте. Будет попытка найти его позже.");
             }
+            animator = GetComponent<Animator>();
         }
 
         private void Update()
@@ -56,6 +59,11 @@ namespace DungeonGeneration.Scripts.Health
                 damage = emotionSystem.ModifyIncomingDamage(damage);
             }
 
+            if (animator != null && !isDead)
+            {
+                animator.SetTrigger("isHit");
+            }
+
             base.TakeDamage(damage);
         }
 
@@ -87,6 +95,10 @@ namespace DungeonGeneration.Scripts.Health
         {
             if (isDead) return;
             isDead = true;
+            if (animator != null)
+            {
+                animator.SetTrigger("isDead");
+            }
             // Если EmotionSystem не найден, пробуем найти его
             if (emotionSystem == null)
             {
