@@ -128,5 +128,23 @@ namespace BreakTheCycle.Actions
              Debug.LogWarning("[DialogueActions] Не удалось найти контейнер подземелья, ищем все RoomManager на сцене.");
              return FindObjectsOfType<RoomManager>().ToList();
         }
+
+        /// <summary>
+        /// Вызывается из Action Node.
+        /// Начисляет указанное количество валюты игроку.
+        /// </summary>
+        /// <param name="amount">Количество валюты для начисления.</param>
+        public void AwardPlayerCurrency(int amount)
+        {
+            if (CurrencyManager.Instance != null)
+            {
+                Debug.Log($"[DialogueActions] Попытка начислить {amount} валюты.");
+                CurrencyManager.Instance.AddCurrency(amount);
+            }
+            else
+            {
+                Debug.LogError("[DialogueActions] CurrencyManager.Instance не найден. Невозможно начислить валюту.");
+            }
+        }
     }
 } 

@@ -1,0 +1,670 @@
+classDiagram
+    %% Remove MonoBehaviour and ScriptableObject references
+    %% ============================
+
+    %% Module: Core Management System
+    %% ============================
+    class GameManager {
+        <<singleton>>
+        +static GameManager Instance
+        +string realitySceneName
+        +string consciousnessSceneName
+        +float transitionDuration
+        +Color fadeColor
+        +int bossReturnMonologueID
+        -bool isTransitioning
+        -bool isInReality
+        -bool isPlayerInTransitionZone
+        +enum GameState
+        +void InitializeCurrencyManager()
+        +void SwitchWorld()
+        +IEnumerator SwitchWorldCoroutine(string)
+        +IEnumerator LoadSceneAsync(string)
+        +bool IsInReality()
+        +GameState GetCurrentState()
+        +void SwitchGameState()
+        +void HandlePlayerDeath()
+        +void StartNewGame()
+        +void ContinueGame()
+        +void ExitGame()
+        +void SaveGame()
+        +void ListenForFinalMonologue(int)
+        +void SetPlayerInTransitionZone(bool)
+    }
+
+    class ScreenFader {
+        <<singleton>>
+        +static ScreenFader Instance
+        -Canvas canvas
+        -Image fadeImage
+        -Coroutine currentFade
+        +void SetColor(Color)
+        +Coroutine StartFadeIn(float, Color)
+        +Coroutine FadeOut(float, Color)
+        -IEnumerator FadeRoutine(float, float, float, Color)
+    }
+
+    class MenuButtonHandler {
+        +void StartNewGame()
+        +void ExitGame()
+        +void ContinueGame()
+    }
+
+    class PlayerControlManager {
+        <<singleton>>
+        +static PlayerControlManager Instance
+        -bool controlsEnabled
+        +void SetControlsEnabled(bool)
+    }
+
+    %% Module: UI System
+    %% ===============
+    class ToolTipManager {
+        <<singleton>>
+        +static ToolTipManager Instance
+        -TextMeshProUGUI tipText
+        -RectTransform tipWindow
+        +void ShowTooltip(string, Vector2)
+        +void HideTooltip()
+    }
+
+    class ToolTip {
+        -string tooltipText
+        -float showDelay
+        -bool isPointerOver
+        -float pointerEnterTime
+        +void OnPointerEnter(PointerEventData)
+        +void OnPointerExit(PointerEventData)
+        +void SetTooltipText(string)
+    }
+    IPointerEnterHandler <|.. ToolTip
+    IPointerExitHandler <|.. ToolTip
+
+    class PauseMenuUI {
+        +GameObject pausePanel
+        +void OnMainMenuClicked()
+        +void OnContinueClicked()
+        +void OnSaveClicked()
+        -void SetPauseMenuState(bool)
+    }
+
+    class MainMenuCursor {
+        -void Start()
+    }
+
+    class LongHoldHandler {
+        +float holdTime
+        -bool isHolding
+        -float holdStartTime
+        +UnityEvent onLongHold
+        +UnityEvent onPointerDownEvent
+        +UnityEvent onPointerUpEvent
+        +bool IsHolding
+        +float HoldStartTime
+        +void OnPointerDown(PointerEventData)
+        +void OnPointerUp(PointerEventData)
+    }
+    IPointerDownHandler <|.. LongHoldHandler
+    IPointerUpHandler <|.. LongHoldHandler
+
+    class InteractionPromptUI {
+        +Image backgroundImage
+        +Image keyIcon
+        -float fadeDuration
+        -float scaleDuration
+        -CanvasGroup canvasGroup
+        -RectTransform rectTransform
+        +void ShowPrompt(string)
+        +void HidePrompt()
+    }
+
+    %% Define EventSystem interfaces
+    class IPointerEnterHandler {
+        <<interface>>
+        +void OnPointerEnter(PointerEventData)
+    }
+
+    class IPointerExitHandler {
+        <<interface>>
+        +void OnPointerExit(PointerEventData)
+    }
+
+    class IPointerDownHandler {
+        <<interface>>
+        +void OnPointerDown(PointerEventData)
+    }
+
+    class IPointerUpHandler {
+        <<interface>>
+        +void OnPointerUp(PointerEventData)
+    }
+
+    %% Module: Currency System
+    %% =====================
+    class CurrencyManager {
+        <<singleton>>
+        +static CurrencyManager Instance
+        -int currentCurrency
+        +event Action<int> OnCurrencyChanged
+        -const string PlayerPrefsCurrencyKey
+        +void AddCurrency(int amount)
+        +bool SpendCurrency(int amount)
+        +int GetCurrentCurrency()
+    }
+
+    class CurrencyUI {
+        -TMP_Text currencyText
+        -Image currencyIcon
+        -void TryInitializeCurrencyManager()
+        -void UpdateCurrencyDisplay(int newAmount)
+    }
+
+    class CurrencyPrefab {
+        -GameObject currencyCanvas
+        -TextMeshProUGUI currencyText
+        -Image currencyIcon
+        -Sprite defaultCurrencySprite
+        +static void CreateCurrencyUI()
+        -static Sprite CreateDefaultSprite()
+    }
+
+    %% Module: Dialogue System
+    %% =====================
+    class DialogueActions {
+        +void ReturnToRealityAndQueueDialogue()
+        +void ClearAllRoomsAndDisableSpawns()
+        -List<RoomManager> GetRoomManagers(DungeonGenerator)
+    }
+
+    class DialogueNodeEnqueuer {
+        +string npcId
+        +int startNodeId
+        +bool TryEnqueueNode()
+    }
+
+    class DialogueStartNodeQueue {
+        <<singleton>>
+        +static DialogueStartNodeQueue Instance
+        -Dictionary<string, Queue<int>> npcNodeQueues
+        -Dictionary<string, HashSet<int>> alreadyEnqueuedNodes
+        +void EnqueueStartNode(string, int)
+        +bool TryDequeueNextStartNode(string, out int)
+        +void ClearQueueForNpc(string)
+    }
+
+    class MonologueManager {
+        +GameObject monologuePanel
+        +TextMeshProUGUI monologueText
+        +event Action<int> OnMonologueComplete
+        -VIDE_Assign monologueAssign
+        -bool isMonologueActive
+        -int currentMonologueID
+        -int currentCommentIndex
+        +void PlayMonologue(int)
+        -void ShowCurrentComment()
+        -void HideMonologue()
+    }
+
+    class MonologueTriggerData {
+        +int monologueID
+    }
+
+    class NPCDialogueInteract {
+        +string npcId
+        -VIDE_Assign dialogueAssign
+        +void StartDialogue()
+        +void EndDialogue()
+    }
+
+    %% Module: Dungeon Generation System
+    %% ===============================
+    class DungeonGenerator {
+        -DungeonConfigSO dungeonConfig
+        -Transform dungeonContainer
+        -GameObject playerPrefab
+        -float generationDelay
+        -bool showDebugGizmos
+        -Color debugLineColor
+        +bool forceAllRoomsCleared
+        -List<RoomNode> roomNodes
+        -Dictionary<Vector2Int, RoomManager> roomInstances
+        -RoomNode startRoomNode
+        -GameObject playerInstance
+        -bool isGenerating
+        +static event Action<GameObject> OnPlayerCreated
+        +List<RoomNode> Rooms
+        +RoomNode StartRoom
+        +float RoomSpacing
+        +DungeonConfigSO DungeonConfig
+        -IEnumerator GenerateDungeonAsync()
+        -IEnumerator CreateStartRoom()
+        -IEnumerator CreateRooms()
+        -IEnumerator CreateBossRoom()
+        -IEnumerator PlacePlayer()
+        +void OnRoomCleared(RoomNode)
+        +RoomNode GetRoomNodeAtPosition(Vector3)
+        +void LoadRoom(string)
+        +void DestroyRoom(string)
+        +List<RoomNode> GetAvailableRooms()
+        +RoomNode GetBossRoom()
+    }
+
+    class RoomManager {
+        -bool isCleared
+        -List<GameObject> enemies
+        -Transform playerSpawnPoint
+        -Transform[] enemySpawnPoints
+        -RoomNode roomNode
+        +bool IsRoomCleared
+        +void InitRoom(RoomNode)
+        +void SpawnEnemies()
+        +void OnRoomCleared()
+        +Transform GetSpawnPoint()
+        +void SetPlayerInRoom(bool)
+    }
+
+    class RoomNode {
+        +Vector2Int Position
+        +RoomTypeSO RoomType
+        +string Id
+        +bool IsCleared
+        +List<string> ConnectedRoomIds
+        +bool IsActive
+        +bool IsVisited
+        +GameObject Instance
+    }
+
+    class DungeonConfigSO {
+        +int maxRooms
+        +float roomSpacing
+        +RoomTypeSO startRoomType
+        +RoomTypeSO bossRoomType
+        +RoomTypeSO[] roomTypes
+        +RoomTemplateSO[] roomTemplates
+        +float enemySpawnDelay
+    }
+
+    class RoomTypeSO {
+        +string typeName
+        +float weight
+        +bool canBeStart
+        +bool canBeBoss
+        +bool requiresClearing
+    }
+
+    class RoomTemplateSO {
+        +string templateName
+        +GameObject roomPrefab
+        +RoomTypeSO[] compatibleTypes
+        +bool canConnectLeft
+        +bool canConnectRight
+        +bool canConnectUp
+        +bool canConnectDown
+    }
+
+    class EnemyConfigSO {
+        +string enemyName
+        +GameObject enemyPrefab
+        +float minHealth
+        +float maxHealth
+        +float minDamage
+        +float maxDamage
+        +float spawnChance
+    }
+
+    class LootTableSO {
+        +RewardItemSO[] possibleRewards
+        +float[] weights
+    }
+
+    class RewardItemSO {
+        +string itemName
+        +GameObject itemPrefab
+        +int minAmount
+        +int maxAmount
+        +float dropChance
+    }
+
+    %% New Classes from DungeonGeneration/Scripts
+    class EnemyController {
+        -float pathUpdateInterval
+        -float rotationSpeed
+        -float attackRange
+        -float attackDamage
+        -float attackCooldown
+        -float aggroRange
+        -NavMeshAgent agent
+        -GameObject player
+        -EnemyState currentState
+        +enum EnemyState
+        -void InitializeAgent()
+        -void FindPlayer()
+        -void UpdateEnemyState()
+        -void HandleCurrentState()
+        -void AttackPlayer()
+        +void PlayHitAnimation()
+        +void PlayDeathAnimation()
+        +void SetSpawnOffset(Vector3)
+    }
+
+    class Health {
+        <<abstract>>
+        #float maxHealth
+        #float currentHealth
+        #GameObject deathEffectPrefab
+        +event Action<GameObject> OnDeath
+        +event Action<float> OnHealthChanged
+        +virtual void TakeDamage(float)
+        #virtual void Die()
+        +virtual float GetHealthPercentage()
+        +virtual float GetCurrentHealth()
+        +virtual float GetMaxHealth()
+    }
+
+    class PlayerHealth {
+        -EmotionSystem emotionSystem
+        -bool isDead
+        -Animator animator
+        +override void TakeDamage(float)
+        +void Heal(float)
+        +void SetHealth(float)
+        #override void Die()
+    }
+    Health <|-- PlayerHealth
+
+    class EnemyHealth {
+        -GameObject dropPrefab
+        -float dropChance
+        -EnemyController enemyController
+        -RoomManager parentRoom
+        +override void TakeDamage(float)
+        #override void Die()
+        -void DropReward()
+    }
+    Health <|-- EnemyHealth
+
+    class InteractablePortal {
+        -Color interactionRadiusColor
+        -RoomManager currentRoom
+        -DungeonGenerator dungeonGenerator
+        -GameObject player
+        -bool isInRange
+        +bool IsInRange
+        +override void OnInteract()
+        +override void OnPlayerEnter()
+        +override void OnPlayerExit()
+    }
+    BaseInteractable <|-- InteractablePortal
+
+    class InteractablePortalReality {
+        +override void OnInteract()
+    }
+    InteractablePortal <|-- InteractablePortalReality
+
+    %% Module: Player Controllers
+    %% ========================
+    class RealityPlayerController {
+        -float speed
+        -float gravity
+        -float jumpHeight
+        -float interactionRange
+        -KeyCode interactionKey
+        -LayerMask interactionMask
+        -Camera playerCamera
+        -CharacterController controller
+        -Vector3 playerVelocity
+        -IInteractable currentInteractable
+        -bool controlsEnabled
+        -bool firstMoveMonologuePlayed
+        -void Awake()
+        -void OnControlStateChanged(bool)
+        +void Update()
+    }
+
+    class ConsciousnessController {
+        -float moveSpeed
+        -float dashSpeed
+        -float dashDuration
+        -float dashCooldown
+        -Transform cameraTransform
+        -float attackDamage
+        -float attackRadius
+        -LayerMask enemyLayerMask
+        -Vector3 moveDirection
+        -CharacterController characterController
+        -EmotionSystem emotionSystem
+        -Animator animator
+        -void SetupPhysics()
+        -void SetupCamera()
+        -void OnControlStateChanged(bool)
+        -void HandleMovement()
+        -void Attack()
+        +float TakeDamage(float)
+        +bool ShouldDodgeAttack()
+        +void OnRoomEntered()
+        +void OnEnemyDefeated()
+        +bool TryRevive()
+    }
+
+    class FirstPersonCameraController {
+        -Camera mainCamera
+        -float mouseSensitivity
+        -float verticalRotation
+        -bool controlsEnabled
+        +void LookRotation()
+        +void SetControlsEnabled(bool)
+    }
+
+    %% Module: Emotion System
+    %% ===================
+    class EmotionSystem {
+        +Color activeColor
+        +Color inactiveColor
+        +int baseLevelUpCost
+        -int currentMaxEmotionsLevel
+        -List<Emotion> emotions
+        -int maxActiveEmotions
+        -int currentActiveEmotions
+        -Dictionary<EmotionType, string[]> emotionEffects
+        -Dictionary<EmotionType, int> roomIgnoreCounters
+        -bool hasUsedReviveInCurrentRoom
+        +enum EmotionType
+        +class Emotion
+        +void ToggleDetermination()
+        +void ToggleCompassion()
+        +void ToggleFear()
+        +void ToggleAcceptance()
+        +void ToggleAnger()
+        +void ToggleDenial()
+        -void ToggleEmotion(EmotionType)
+        +void UpgradeEmotion(EmotionType)
+        +void UpgradeMaxActiveEmotions()
+        +void OnPanelOpened()
+        +bool IsEmotionActive(EmotionType)
+        +int GetEmotionLevel(EmotionType)
+        +float ModifyIncomingDamage(float)
+        +float ModifyOutgoingDamage(float)
+        +void OnEnemyDefeated()
+        +bool ShouldIgnoreDamage()
+        +bool TryRevive()
+        +void OnEnterNewRoom()
+    }
+
+    class EmotionTooltip {
+        -RectTransform tooltipRect
+        -TMP_Text tooltipText
+        -CanvasGroup canvasGroup
+        -float fadeTime
+        +void ShowTooltip(string, Vector2)
+        +void HideTooltip()
+        -IEnumerator FadeTooltip(float, float)
+    }
+
+    %% Module: Inspection System
+    %% ======================
+    class InspectableObject {
+        +Vector3 spawnPositionOffset
+        +Vector3 spawnRotationOffset
+        +Vector2 minMaxZoom
+        +float defaultZoomValue
+        -string objectName
+        -string description
+        -Color nameColor
+        -Color descriptionColor
+        -GameObject objectToActivate
+        -DialogueNodeEnqueuer nodeEnqueuer
+        +string ObjectName
+        +string Description
+        +Color NameColor
+        +Color DescriptionColor
+        +void ActivateLinkedObject()
+        +void HandleInspectionActions()
+    }
+
+    class InspectionCamera {
+        -Camera inspectionCamera
+        -float rotationSpeed
+        -float zoomSpeed
+        -Vector2 minMaxZoom
+        -Transform inspectTarget
+        -bool isInspecting
+        -Vector3 currentRotation
+        -float currentZoom
+        +void StartInspecting(InspectableObject)
+        +void StopInspecting()
+        -void ProcessInspectionInput()
+        -void UpdateCameraPosition()
+    }
+
+    class InspectionWindowUI {
+        -CanvasGroup canvasGroup
+        -TMP_Text objectNameText
+        -TMP_Text descriptionText
+        -float fadeTime
+        +void ShowWindow(InspectableObject)
+        +void HideWindow()
+        -IEnumerator FadeCanvasGroup(float, float)
+    }
+
+    class ObjectInspector {
+        -InspectionCamera inspectionCamera
+        -Camera mainCamera
+        -InspectionWindowUI inspectionUI
+        -LayerMask inspectableLayer
+        -float maxInspectionDistance
+        -bool showDebug
+        -InspectableObject currentObject
+        -void TryStartInspection()
+        -void StartInspection(InspectableObject)
+        -void StopInspection()
+    }
+
+    %% Module: Interaction System
+    %% =======================
+    class IInteractable {
+        <<interface>>
+        +void OnInteract()
+    }
+
+    class BaseInteractable {
+        <<abstract>>
+        #float interactionRadius
+        #bool isInteractable
+        #UnityEvent onInteractEvent
+        +float InteractionRadius
+        +bool IsInteractable
+        +virtual void OnInteract()
+        +virtual void OnPlayerEnter()
+        +virtual void OnPlayerExit()
+    }
+    IInteractable <|.. BaseInteractable
+
+    class InteractableObject {
+        -VIDE_Assign videAssign
+        -Transform playerTransform
+        +bool IsPlayerInRange(Transform)
+        +override void OnInteract()
+    }
+    BaseInteractable <|-- InteractableObject
+
+    class EmotionPanelInteractable {
+        -GameObject emotionPanel
+        -EmotionSystem emotionSystem
+        -Button closeButton
+        -bool isPanelOpen
+        +override void OnPlayerEnter()
+        +override void OnPlayerExit()
+        +override void OnInteract()
+        -void OpenEmotionPanel()
+        +void CloseEmotionPanel()
+    }
+    BaseInteractable <|-- EmotionPanelInteractable
+
+    class FinalInteractable {
+        -int finalMonologueID
+        -float endGameDelay
+        +override void OnInteract()
+    }
+    BaseInteractable <|-- FinalInteractable
+
+    %% Relationships - Composition (strong ownership)
+    GameManager *-- ScreenFader : использует
+    DungeonGenerator *-- RoomNode : создает
+    DungeonGenerator *-- RoomManager : управляет
+    ObjectInspector *-- InspectionCamera : контролирует
+    ObjectInspector *-- InspectionWindowUI : контролирует
+    RoomManager *-- EnemyController : создает и управляет
+
+    %% Relationships - Aggregation (weak ownership)
+    EmotionPanelInteractable o-- EmotionSystem : ссылается
+    InspectableObject o-- DialogueNodeEnqueuer : ссылается
+    InteractableObject o-- MonologueTriggerData : ссылается
+    DungeonGenerator o-- DungeonConfigSO : настраивается с помощью
+    DungeonGenerator o-- RoomTemplateSO : использует шаблоны
+    DungeonGenerator o-- EnemyConfigSO : создает врагов с помощью
+    DungeonGenerator o-- LootTableSO : создает награды с помощью
+    EmotionSystem o-- ToolTipManager : использует всплывающие подсказки
+    ToolTip o-- ToolTipManager : использует менеджер показа/скрытия
+    NPCDialogueInteract o-- DialogueStartNodeQueue : ставит диалоги в очередь
+    InteractablePortal o-- RoomManager : проверяет статус очистки комнаты
+    InteractablePortal o-- DungeonGenerator : загружает комнаты
+
+    %% Relationships - Association (uses)
+    GameManager --> CurrencyManager : инициализирует
+    GameManager --> MonologueManager : запускает монологи
+    CurrencyUI --> CurrencyManager : подписывается на
+    CurrencyPrefab --> CurrencyManager : ссылается
+    DungeonGenerator --> RoomTypeSO : назначает типы
+    EmotionSystem --> ConsciousnessController : влияет на
+    MonologueManager --> GameManager : уведомляет
+    DialogueActions --> GameManager : управляет переключением миров
+    DialogueActions --> DialogueStartNodeQueue : ставит диалоги в очередь
+    DialogueNodeEnqueuer --> DialogueStartNodeQueue : добавляет узлы в очередь
+    ObjectInspector --> MonologueManager : воспроизводит монологи
+    InteractableObject --> MonologueManager : воспроизводит монологи
+    EmotionPanelInteractable --> PlayerControlManager : управляет вводом игрока
+    ObjectInspector --> PlayerControlManager : отключает управление при осмотре
+    PauseMenuUI --> PlayerControlManager : переключает управление игрока
+    PauseMenuUI --> GameManager : сохраняет игру
+    LongHoldHandler --> ToolTipManager : скрывает подсказки при нажатии
+    InteractionPromptUI --> InspectableObject : показывает подсказку для осмотра
+    MenuButtonHandler --> GameManager : вызывает методы состояния игры
+    MainMenuCursor --> PauseMenuUI : управление курсором
+    NPCDialogueInteract --> MonologueManager : запускает события диалога
+    NPCDialogueInteract --> DialogueStartNodeQueue : управляет очередями диалогов
+    PlayerHealth --> EmotionSystem : модифицирует получаемый урон
+    PlayerHealth --> GameManager : обрабатывает смерть и возрождение игрока
+    EnemyHealth --> EnemyController : запускает анимации
+    EnemyHealth --> RoomManager : уведомляет комнату о смерти врага
+    EnemyController --> PlayerHealth : наносит урон игроку
+    ConsciousnessController --> PlayerHealth : управляет здоровьем игрока
+    ConsciousnessController --> PlayerControlManager : получает изменения состояния управления
+    ConsciousnessController --> EmotionSystem : модифицирует боевые характеристики
+    ConsciousnessController --> RoomManager : получает уведомления о смене комнат
+    ConsciousnessController --> Animator : запускает анимации
+    RealityPlayerController --> FirstPersonCameraController : синхронизирует движение камеры
+    RealityPlayerController --> PlayerControlManager : получает изменения состояния управления
+    RealityPlayerController --> IInteractable : обнаруживает и взаимодействует с объектами
+    RealityPlayerController --> MonologueManager : запускает монолог первого движения
+    RealityPlayerController --> MonologueTriggerData : получает ID монолога
+    InteractablePortal --> GameManager : переключает миры

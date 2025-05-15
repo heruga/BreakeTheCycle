@@ -4,6 +4,7 @@ using VIDE_Data;
 using System.Collections;
 using TMPro;
 using UnityEngine.SceneManagement; // Добавляем для доступа к SceneManager
+using UnityEngine.EventSystems; // <--- ДОБАВЛЕНО
 
 namespace BreakTheCycle.Dialogue
 {
@@ -64,6 +65,11 @@ namespace BreakTheCycle.Dialogue
         {
             if (isMonologueActive && Input.GetMouseButtonDown(0))
             {
+                if (EventSystem.current.IsPointerOverGameObject())
+                {
+                    return;
+                }
+
                 if (VIDE_Data.VIDE_Data.nodeData != null && currentCommentIndex < VIDE_Data.VIDE_Data.nodeData.comments.Length - 1)
                 {
                     currentCommentIndex++;

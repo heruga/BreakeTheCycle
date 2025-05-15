@@ -13,7 +13,7 @@ public class EmotionSystem : MonoBehaviour
     public Color inactiveColor = Color.white; // Белый для неактивной эмоции
 
     [Header("Настройки улучшения")]
-    public int baseLevelUpCost = 100; // Базовая стоимость улучшения
+    public int baseLevelUpCost = 50; // Базовая стоимость улучшения
     private int currentMaxEmotionsLevel = 1; // Текущий уровень максимума эмоций
 
     private TextMeshProUGUI levelText;
@@ -52,9 +52,9 @@ public class EmotionSystem : MonoBehaviour
             EmotionType.Determination,
             new string[]
             {
-                "+10% к урону, если HP меньше 50%, +10% к скорости в бою с элитами",
-                "+15% к урону, если HP меньше 50%, +15% к скорости в бою с элитами",
-                "+20% к урону, если HP меньше 50%, +20% к скорости в бою с элитами"
+                "+10% к урону, если HP меньше 50%, +10% к скорости (постоянно)",
+                "+15% к урону, если HP меньше 50%, +15% к скорости (постоянно)",
+                "+20% к урону, если HP меньше 50%, +20% к скорости (постоянно)"
             }
         },
         {
@@ -79,9 +79,9 @@ public class EmotionSystem : MonoBehaviour
             EmotionType.Acceptance,
             new string[]
             {
-                "1 раз за комнату при смерти восстанавливает 20% HP",
-                "1 раз за комнату при смерти восстанавливает 35% HP",
-                "1 раз за комнату при смерти восстанавливает 50% HP"
+                "1 раз при смерти восстанавливает 20% HP",
+                "1 раз при смерти восстанавливает 35% HP",
+                "1 раз при смерти восстанавливает 50% HP"
             }
         },
         {
@@ -279,7 +279,7 @@ public class EmotionSystem : MonoBehaviour
                 progressImage.type = Image.Type.Filled;
                 progressImage.fillAmount = 0;
                 
-                Outline outline = progressIndicator.AddComponent<Outline>();
+                UnityEngine.UI.Outline outline = progressIndicator.AddComponent<UnityEngine.UI.Outline>();
                 outline.effectColor = new Color(1f, 1f, 0.5f, 0.5f);
                 outline.effectDistance = new Vector2(1, 1);
                 
@@ -420,7 +420,7 @@ public class EmotionSystem : MonoBehaviour
         Emotion emotion = emotions.Find(e => e.type == emotionType);
         if (emotion == null) return;
 
-        int upgradeCost = 1 * emotion.level;
+        int upgradeCost = 5 * emotion.level;
         if (!CurrencyManager.Instance.SpendCurrency(upgradeCost))
         {
             // Недостаточно валюты, не улучшаем
@@ -790,5 +790,30 @@ public class EmotionSystem : MonoBehaviour
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Возвращает суммарный модификатор скорости от активных эмоций.
+    /// </summary>
+    /// <returns>Модификатор скорости (например, 0.1f для +10%).</returns>
+    public float GetEmotionSpeedModifier()
+    {
+        float totalSpeedModifier = 0f;
+        foreach (var emotion in emotions)
+        {
+            if (!emotion.isActive) continue;
+
+            if (emotion.type == EmotionType.Determination)
+            {
+                switch (emotion.level)
+                {
+                    case 1: totalSpeedModifier += 0.10f; break; // +10%
+                    case 2: totalSpeedModifier += 0.15f; break; // +15%
+                    case 3: totalSpeedModifier += 0.20f; break; // +20%
+                }
+            }
+            // Здесь можно будет добавить другие эмоции, влияющие на скорость
+        }
+        return totalSpeedModifier;
     }
 }

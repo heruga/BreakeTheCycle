@@ -93,9 +93,9 @@ MonoBehaviour:
     isPlayer: 0
   - commentCount: 3
     s_comment:
-    - text: "\u0422\u044B \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0448\u044C\u2026
-        \u043F\u043E\u0434\u043E\u0437\u0440\u0438\u0442\u0435\u043B\u044C\u043D\u043E
-        \u0437\u043D\u0430\u043A\u043E\u043C\u043E."
+    - text: "\u0422\u044B \u0432\u044B\u0433\u043B\u044F\u0434\u0438\u0448\u044C
+        \u043F\u043E\u0434\u043E\u0437\u0440\u0438\u0442\u0435\u043B\u044C\u043D\u043E...
+        \u0437\u043D\u0430\u043A\u043E\u043C\u043E?"
       extraData: ExtraData
       inputSetIndex: 1
       outputNodeIndex: 3
@@ -110,7 +110,7 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    - text: "\u042D\u0442\u043E \u0432\u0441\u0451 \u0440\u0435\u0430\u043B\u044C\u043D\u043E?"
+    - text: "\u0413\u0434\u0435 \u043C\u044B?"
       extraData: ExtraData
       inputSetIndex: 1
       outputNodeIndex: 2
@@ -157,10 +157,10 @@ MonoBehaviour:
     isPlayer: 1
   - commentCount: 1
     s_comment:
-    - text: "\u0418\u043D\u043E\u0433\u0434\u0430 \u0441\u043E\u0431\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0435
-        \u0441\u043E\u0437\u043D\u0430\u043D\u0438\u0435 \u0440\u0430\u043D\u0438\u0442
-        \u043D\u0430\u043C\u043D\u043E\u0433\u043E \u0441\u0438\u043B\u044C\u043D\u0435\u0435,
-        \u0447\u0435\u043C \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0441\u0442\u044C"
+    - text: "\u041C\u044B \u0432 \u0442\u0432\u043E\u0435\u043C \u0421\u043E\u0437\u043D\u0430\u043D\u0438\u0438.
+        \u042D\u0442\u043E \u0440\u0435\u0430\u043B\u044C\u043D\u043E \u043D\u0430\u0441\u0442\u043E\u043B\u044C\u043A\u043E,
+        \u043D\u0430\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0442\u044B \u0441\u043C\u043E\u0436\u0435\u0448\u044C
+        \u0441\u0435\u0431\u0435 \u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u0438\u0442\u044C"
       extraData: ExtraData
       inputSetIndex: 2
       outputNodeIndex: 12
@@ -179,7 +179,7 @@ MonoBehaviour:
     rect:
       serializedVersion: 2
       x: 870
-      y: 90
+      y: 70
       width: 348
       height: 152.57
     pTag: 
@@ -192,11 +192,12 @@ MonoBehaviour:
     isPlayer: 0
   - commentCount: 2
     s_comment:
-    - text: "\u041D\u0443, \u0435\u0449\u0451 \u0431\u044B! \u042F \u2014 \u044D\u0442\u043E
-        \u0442\u044B. \u041C\u043E\u0436\u043D\u043E \u0441\u043A\u0430\u0437\u0430\u0442\u044C,
-        \u044F \u0442\u0432\u043E\u044F \u0441\u043E\u0432\u0435\u0441\u0442\u044C
-        \u0438 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u044F\u044F \u0440\u0435\u0448\u0438\u043C\u043E\u0441\u0442\u044C.
-        \u041E\u0431\u0440\u0430\u0437 \u043F\u0440\u043E\u0448\u043B\u043E\u0433\u043E"
+    - text: "\u041D\u0443, \u0435\u0449\u0451 \u0431\u044B! \u0423\u0436\u0435 \u0437\u0430\u0431\u044B\u043B\u0430
+        \u043A\u0430\u043A \u0432 \u0448\u043A\u043E\u043B\u0435 \u0432\u044B\u0433\u043B\u044F\u0434\u0435\u043B\u0430?
+        \u041C\u043E\u0436\u0435\u0448\u044C \u0441\u0447\u0438\u0442\u0430\u0442\u044C
+        \u043C\u0435\u043D\u044F \u043E\u0431\u0440\u0430\u0437\u043E\u043C \u0438\u0437
+        \u043F\u0440\u043E\u0448\u043B\u043E\u0433\u043E \u0438 \u0442\u0432\u043E\u0438\u043C
+        \u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u043C \u0433\u043E\u043B\u043E\u0441\u043E\u043C"
       extraData: ExtraData
       inputSetIndex: 3
       outputNodeIndex: 12
@@ -207,13 +208,13 @@ MonoBehaviour:
         x: 301
         y: 63
         width: 30
-        height: 61
+        height: 76
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    - text: "\u0412 \u043E\u0431\u0449\u0435\u043C, \u044F \u0437\u0434\u0435\u0441\u044C,
+    - text: "\u0412\u043E\u043E\u0431\u0449\u0435, \u044F \u0437\u0434\u0435\u0441\u044C,
         \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u043C\u043E\u0447\u044C \u0442\u0435\u0431\u0435.
-        \u0418\u043B\u0438 \u0445\u043E\u0442\u044F \u0431\u044B \u043F\u043E\u043F\u044B\u0442\u0430\u0442\u044C\u0441\u044F"
+        \u041D\u0443 \u0438\u043B\u0438 \u0445\u043E\u0442\u044F \u0431\u044B \u043F\u043E\u043F\u044B\u0442\u0430\u0442\u044C\u0441\u044F"
       extraData: ExtraData
       inputSetIndex: 3
       outputNodeIndex: -1
@@ -234,7 +235,7 @@ MonoBehaviour:
       x: 890
       y: -160
       width: 348
-      height: 214.67
+      height: 229.19
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -294,7 +295,7 @@ MonoBehaviour:
       audios: {fileID: 0}
       visible: 1
     - text: "\u041C\u043D\u0435 \u043D\u0435 \u0438\u043D\u0442\u0435\u0440\u0435\u0441\u043D\u043E
-        \u0432\u0441\u0435 \u0447\u0442\u043E \u0442\u044B \u0433\u043E\u0432\u043E\u0440\u0438\u0448\u044C"
+        \u0432\u0441\u0435, \u0447\u0442\u043E \u0442\u044B \u0433\u043E\u0432\u043E\u0440\u0438\u0448\u044C"
       extraData: ExtraData
       inputSetIndex: 5
       outputNodeIndex: 7
@@ -326,7 +327,8 @@ MonoBehaviour:
     isPlayer: 1
   - commentCount: 1
     s_comment:
-    - text: "\u0412\u044B\u0441\u043B\u0443\u0448\u0430\u0439 \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430"
+    - text: "\u0418 \u0432\u0441\u0435 \u0436\u0435 \u0432\u044B\u0441\u043B\u0443\u0448\u0430\u0439
+        \u043C\u0435\u043D\u044F \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430"
       extraData: ExtraData
       inputSetIndex: 6
       outputNodeIndex: 12
@@ -337,17 +339,17 @@ MonoBehaviour:
         x: 301
         y: 63
         width: 30
-        height: 23
+        height: 32
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
     ID: 6
     rect:
       serializedVersion: 2
-      x: 1680
-      y: 120
+      x: 1710
+      y: 20
       width: 348
-      height: 129
+      height: 138.05
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -410,8 +412,8 @@ MonoBehaviour:
     ID: 8
     rect:
       serializedVersion: 2
-      x: -60
-      y: 430
+      x: -70
+      y: 480
       width: 348
       height: 138.05
     pTag: 
@@ -424,9 +426,8 @@ MonoBehaviour:
     isPlayer: 0
   - commentCount: 2
     s_comment:
-    - text: "\u041A\u0430\u0436\u0435\u0442\u0441\u044F, \u043E\u043D\u0438 \u0442\u043E\u043B\u044C\u043A\u043E
-        \u0438 \u0436\u0434\u0443\u0442, \u0447\u0442\u043E\u0431\u044B \u043C\u0435\u043D\u044F
-        \u0440\u0430\u043D\u0438\u0442\u044C"
+    - text: "\u042F \u043D\u0435 \u043E\u0436\u0438\u0434\u0430\u043B\u0430, \u0447\u0442\u043E
+        \u043E\u043D\u0438 \u043D\u0430\u043F\u0430\u0434\u0443\u0442"
       extraData: ExtraData
       inputSetIndex: 9
       outputNodeIndex: 10
@@ -437,12 +438,11 @@ MonoBehaviour:
         x: 301
         y: 63
         width: 30
-        height: 32
+        height: 23
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    - text: "\u042D\u0442\u043E \u0432\u0441\u0451 \u043F\u0440\u043E\u0441\u0442\u043E
-        \u043C\u0435\u043B\u043E\u0447\u0438"
+    - text: "\u0414\u0430\u0436\u0435 \u043D\u0435 \u043F\u043E\u0447\u0443\u0432\u0441\u0442\u0432\u043E\u0432\u0430\u043B\u0430"
       extraData: ExtraData
       inputSetIndex: 9
       outputNodeIndex: 11
@@ -451,7 +451,7 @@ MonoBehaviour:
       outRect:
         serializedVersion: 2
         x: 300
-        y: 96
+        y: 87
         width: 30
         height: 23
       sprites: {fileID: 0}
@@ -460,10 +460,10 @@ MonoBehaviour:
     ID: 9
     rect:
       serializedVersion: 2
-      x: 400
-      y: 610
+      x: 390
+      y: 530
       width: 348
-      height: 162.05
+      height: 153
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -472,16 +472,16 @@ MonoBehaviour:
     varKeys:
     - playOnce
     isPlayer: 1
-  - commentCount: 1
+  - commentCount: 2
     s_comment:
     - text: "\u0422\u0430\u043A \u0438 \u0435\u0441\u0442\u044C. \u0418\u043D\u043E\u0433\u0434\u0430
-        \u0441\u0442\u0440\u0430\u0445\u0438 \u0438 \u0431\u043E\u043B\u044C \u043F\u0440\u043E\u0441\u0442\u043E
-        \u0441\u0442\u043E\u044F\u0442 \u043D\u0430 \u043C\u0435\u0441\u0442\u0435,
-        \u043D\u043E \u0441\u0442\u043E\u0438\u0442 \u043F\u043E\u0434\u043E\u0439\u0442\u0438
-        \u0431\u043B\u0438\u0436\u0435 \u2014 \u0438 \u043E\u043D\u0438 \u043E\u0436\u0438\u0432\u0430\u044E\u0442"
+        \u0441\u0442\u0440\u0430\u0445\u0438 \u0438 \u0431\u043E\u043B\u044C \u043A\u0430\u0436\u0443\u0442\u0441\u044F
+        \u0431\u0435\u0437\u043E\u0431\u0438\u0434\u043D\u044B\u043C\u0438, \u043D\u043E
+        \u0435\u0441\u043B\u0438 \u043E\u0431\u0440\u0430\u0442\u0438\u0442\u044C
+        \u043D\u0430 \u043D\u0438\u0445 \u0432\u043D\u0438\u043C\u0430\u043D\u0438\u0435..."
       extraData: ExtraData
       inputSetIndex: 10
-      outputNodeIndex: 13
+      outputNodeIndex: -1
       outActionIndex: -1
       showmore: 0
       outRect:
@@ -493,13 +493,30 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
+    - text: "\u0422\u043E \u043C\u043E\u0436\u043D\u043E \u043E\u0441\u043E\u0437\u043D\u0430\u0442\u044C
+        \u0432\u0441\u0435 \u0438\u0445 \u0432\u043B\u0438\u044F\u043D\u0438\u0435
+        \u043D\u0430 \u043D\u0430\u0441"
+      extraData: ExtraData
+      inputSetIndex: 10
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
     ID: 10
     rect:
       serializedVersion: 2
       x: 830
-      y: 460
+      y: 390
       width: 348
-      height: 167.1
+      height: 200.15
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -517,7 +534,7 @@ MonoBehaviour:
         \u043D\u0430 \u043D\u0438\u0445 \u0432\u043D\u0438\u043C\u0430\u043D\u0438\u044F"
       extraData: ExtraData
       inputSetIndex: 11
-      outputNodeIndex: 13
+      outputNodeIndex: -1
       outActionIndex: -1
       showmore: 0
       outRect:
@@ -529,11 +546,8 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    - text: "\u0418\u043D\u043E\u0433\u0434\u0430 \u0432\u0430\u0436\u043D\u043E
-        \u043E\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C\u0441\u044F
-        \u0438 \u043F\u043E\u043F\u0440\u043E\u0431\u043E\u0432\u0430\u0442\u044C
-        \u043F\u043E\u043D\u044F\u0442\u044C, \u0447\u0442\u043E \u0438\u043C\u0435\u043D\u043D\u043E
-        \u0431\u043E\u043B\u0438\u0442"
+    - text: "\u0425\u043E\u0440\u043E\u0448\u043E, \u0435\u0441\u043B\u0438 \u0442\u0435\u0431\u044F
+        \u044D\u0442\u043E \u043D\u0435 \u0431\u0435\u0441\u043F\u043E\u043A\u043E\u0438\u0442"
       extraData: ExtraData
       inputSetIndex: 11
       outputNodeIndex: -1
@@ -552,9 +566,9 @@ MonoBehaviour:
     rect:
       serializedVersion: 2
       x: 820
-      y: 630
+      y: 620
       width: 348
-      height: 214.67
+      height: 200.15
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -563,11 +577,11 @@ MonoBehaviour:
     varKeys:
     - playOnce
     isPlayer: 0
-  - commentCount: 3
+  - commentCount: 4
     s_comment:
-    - text: "\u0412 \u043B\u044E\u0431\u043E\u043C \u0441\u043B\u0443\u0447\u0430\u0435.
-        \u041D\u0435 \u0431\u043E\u0439\u0441\u044F \u043C\u0435\u043D\u044F, \u043F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430.
-        \u041C\u044B \u0436\u0435 \u0432 \u0442\u0432\u043E\u0435\u0439 \u0433\u043E\u043B\u043E\u0432\u0435"
+    - text: "\u0414\u0430\u0432\u0430\u0439 \u0432\u043C\u0435\u0441\u0442\u0435
+        \u043F\u043E\u043F\u0440\u043E\u0431\u0443\u0435\u043C \u0440\u0430\u0437\u043E\u0431\u0440\u0430\u0442\u044C\u0441\u044F
+        \u0432 \u0442\u0432\u043E\u0438\u0445 \u0432\u043E\u0441\u043F\u043E\u043C\u0438\u043D\u0430\u043D\u0438\u044F\u0445"
       extraData: ExtraData
       inputSetIndex: 12
       outputNodeIndex: -1
@@ -582,7 +596,12 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    - text: 
+    - text: "\u041A\u0441\u0442\u0430\u0442\u0438, \u0441\u0437\u0430\u0434\u0438
+        \u0442\u0435\u0431\u044F \u0442\u044B \u043C\u043E\u0436\u0435\u0448\u044C
+        \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u0441 \u043A\u0430\u043A\u0438\u043C\u0438
+        \u044D\u043C\u043E\u0446\u0438\u044F\u043C\u0438 \u0442\u044B \u0445\u043E\u0447\u0435\u0448\u044C
+        \u0441\u0440\u0430\u0436\u0430\u0442\u044C\u0441\u044F \u0441\u043E \u0441\u0432\u043E\u0438\u043C\u0438
+        \u0441\u0442\u0440\u0430\u0445\u0430\u043C\u0438"
       extraData: ExtraData
       inputSetIndex: 12
       outputNodeIndex: -1
@@ -597,12 +616,7 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    - text: "\u0421\u0437\u0430\u0434\u0438 \u0442\u0435\u0431\u044F \u0442\u044B
-        \u043C\u043E\u0436\u0435\u0448\u044C \u0432\u044B\u0431\u0440\u0430\u0442\u044C
-        \u0441 \u043A\u0430\u043A\u0438\u043C\u0438 \u044D\u043C\u043E\u0446\u0438\u044F\u043C\u0438
-        \u0442\u044B \u0445\u043E\u0447\u0435\u0448\u044C \u0441\u0440\u0430\u0436\u0430\u0442\u044C\u0441\u044F
-        \u0441\u043E \u0441\u0432\u043E\u0438\u043C\u0438 \u0441\u0442\u0430\u0445\u0430\u043C\u0438\n\\\n
-        \u0415\u0441\u043B\u0438 \u0436\u0435 \u0437\u0430\u0445\u043E\u0447\u0435\u0448\u044C
+    - text: "\u0415\u0441\u043B\u0438 \u0437\u0430\u0445\u043E\u0447\u0435\u0448\u044C
         \u0443\u0439\u0442\u0438, \u0442\u043E \u0441\u043B\u0435\u0432\u0430 \u043E\u0442
         \u0442\u0435\u0431\u044F - \u0432\u044B\u0445\u043E\u0434, \u0430 \u0441\u043F\u0440\u0430\u0432\u0430
         - \u0432\u0445\u043E\u0434. \u0412\u0445\u043E\u0434 \u0432\u0435\u0434\u0435\u0442
@@ -624,33 +638,12 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
-    ID: 12
-    rect:
-      serializedVersion: 2
-      x: 1350
-      y: -150
-      width: 348
-      height: 325.8
-    pTag: 
-    expand: 0
-    sprite: {fileID: 0}
-    vars:
-    - true
-    varKeys:
-    - playOnce
-    isPlayer: 0
-  - commentCount: 1
-    s_comment:
-    - text: "\u042D\u0442\u0430 \u043A\u043E\u043C\u043D\u0430\u0442\u0430 \u2014
-        \u043A\u0430\u043A \u0442\u0432\u043E\u0438 \u0432\u043E\u0441\u043F\u043E\u043C\u0438\u043D\u0430\u043D\u0438\u044F.
-        \u041E\u043D\u0438 \u043C\u043E\u0433\u0443\u0442 \u0440\u0430\u043D\u0438\u0442\u044C,
-        \u0435\u0441\u043B\u0438 \u043D\u0435 \u0431\u044B\u0442\u044C \u043E\u0441\u0442\u043E\u0440\u043E\u0436\u043D\u043E\u0439,
-        \u043D\u043E \u0435\u0441\u043B\u0438 \u043D\u0430\u0443\u0447\u0438\u0442\u044C\u0441\u044F
-        \u0441 \u043D\u0438\u043C\u0438 \u0436\u0438\u0442\u044C, \u043C\u043E\u0436\u043D\u043E
-        \u043D\u0430\u0439\u0442\u0438 \u0432 \u043D\u0438\u0445 \u0447\u0442\u043E-\u0442\u043E
-        \u0446\u0435\u043D\u043D\u043E\u0435"
+    - text: "\u041E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u043E \u0432\u043D\u043E\u0432\u044C
+        \u043F\u0440\u0438\u0445\u043E\u0434\u0438 \u043A\u043E \u043C\u043D\u0435,
+        \u0435\u0441\u043B\u0438 \u0437\u0430\u0445\u043E\u0447\u0435\u0448\u044C
+        \u043F\u043E\u0441\u0442\u0430\u0440\u0430\u0442\u044C\u0441\u044F \u0440\u0430\u0437\u043E\u0431\u0440\u0430\u0442\u044C\u0441\u044F"
       extraData: ExtraData
-      inputSetIndex: 13
+      inputSetIndex: 12
       outputNodeIndex: -1
       outActionIndex: -1
       showmore: 0
@@ -663,13 +656,46 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
+    ID: 12
+    rect:
+      serializedVersion: 2
+      x: 1300
+      y: -180
+      width: 348
+      height: 338.86002
+    pTag: 
+    expand: 0
+    sprite: {fileID: 0}
+    vars:
+    - true
+    varKeys:
+    - playOnce
+    isPlayer: 0
+  - commentCount: 1
+    s_comment:
+    - text: "\u0425\u043E\u0447\u0435\u0448\u044C \u043F\u043B\u043E\u0445\u043E\u0439,
+        \u043D\u043E \u043F\u043E\u043B\u0435\u0437\u043D\u044B\u0439 \u0441\u043E\u0432\u0435\u0442?"
+      extraData: ExtraData
+      inputSetIndex: 13
+      outputNodeIndex: 42
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 301
+        y: 63
+        width: 30
+        height: 32
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
     ID: 13
     rect:
       serializedVersion: 2
-      x: 1310
-      y: 580
+      x: 1260
+      y: 570
       width: 348
-      height: 196.14
+      height: 138.05
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -1047,21 +1073,21 @@ MonoBehaviour:
       x: 410
       y: 1500
       width: 348
-      height: 162.05
+      height: 276.05
     pTag: 
-    expand: 0
+    expand: 1
     sprite: {fileID: 0}
     vars:
     - true
     varKeys:
     - playOnce
     isPlayer: 1
-  - commentCount: 1
+  - commentCount: 2
     s_comment:
-    - text: "\u0422\u044B \u043F\u0440\u0430\u0432\u0430. \u0422\u044B \u2014 \u043D\u0435
+    - text: "\u0422\u044B \u043F\u0440\u0430\u0432\u0430. \u0422\u044B \u043D\u0435
         \u044F\u0440\u043B\u044B\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439
         \u0442\u0435\u0431\u0435 \u043D\u0430\u0432\u0435\u0441\u0438\u043B\u0438.
-        \u0422\u044B \u2014 \u0447\u0435\u043B\u043E\u0432\u0435\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439
+        \u0422\u044B \u0447\u0435\u043B\u043E\u0432\u0435\u043A, \u043A\u043E\u0442\u043E\u0440\u044B\u0439
         \u0441\u043C\u043E\u0433 \u043F\u0440\u043E\u0439\u0442\u0438 \u0447\u0435\u0440\u0435\u0437
         \u0431\u043E\u043B\u044C \u0438 \u043D\u0435 \u043F\u043E\u0442\u0435\u0440\u044F\u0442\u044C
         \u0441\u0435\u0431\u044F"
@@ -1079,13 +1105,28 @@ MonoBehaviour:
       sprites: {fileID: 0}
       audios: {fileID: 0}
       visible: 1
+    - text: "\u042D\u0442\u043E \u043C\u043D\u043E\u0433\u043E\u0433\u043E \u0441\u0442\u043E\u0438\u0442."
+      extraData: ExtraData
+      inputSetIndex: 22
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
     ID: 22
     rect:
       serializedVersion: 2
       x: 830
       y: 1440
       width: 348
-      height: 167.1
+      height: 191.1
     pTag: 
     expand: 0
     sprite: {fileID: 0}
@@ -1495,8 +1536,8 @@ MonoBehaviour:
     ID: 31
     rect:
       serializedVersion: 2
-      x: 100
-      y: -150
+      x: 330
+      y: -140
       width: 348
       height: 129
     pTag: 
@@ -1827,7 +1868,7 @@ MonoBehaviour:
     rect:
       serializedVersion: 2
       x: 1260
-      y: -350
+      y: -370
       width: 348
       height: 153
     pTag: 
@@ -1888,10 +1929,177 @@ MonoBehaviour:
     ID: 40
     rect:
       serializedVersion: 2
-      x: 1690
-      y: -280
+      x: 1700
+      y: -270
       width: 348
       height: 129
+    pTag: 
+    expand: 0
+    sprite: {fileID: 0}
+    vars: []
+    varKeys: []
+    isPlayer: 0
+  - commentCount: 1
+    s_comment:
+    - text: "\u0425\u043E\u0447\u0435\u0448\u044C \u043E\u0431\u0441\u0443\u0434\u0438\u0442\u044C
+        \u043A\u043D\u0438\u0438 \u043F\u043E \u043F\u0441\u0438\u0445\u043E\u043B\u043E\u0433\u0438\u0438?"
+      extraData: ExtraData
+      inputSetIndex: 41
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    ID: 43
+    rect:
+      serializedVersion: 2
+      x: 80
+      y: 3060
+      width: 348
+      height: 138.05
+    pTag: 
+    expand: 0
+    sprite: {fileID: 0}
+    vars: []
+    varKeys: []
+    isPlayer: 0
+  - commentCount: 3
+    s_comment:
+    - text: "\u0421\u043E\u0432\u0435\u0442 \u0435\u0441\u0442\u044C \u0441\u043E\u0432\u0435\u0442"
+      extraData: ExtraData
+      inputSetIndex: 42
+      outputNodeIndex: 43
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 301
+        y: 63
+        width: 30
+        height: 23
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    - text: "\u041D\u0435\u0442, \u043E\u043D \u0436\u0435 \u0432\u0440\u0435\u0434\u043D\u044B\u0439"
+      extraData: ExtraData
+      inputSetIndex: 42
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    - text: Comment...
+      extraData: ExtraData
+      inputSetIndex: 42
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    ID: 44
+    rect:
+      serializedVersion: 2
+      x: 1660
+      y: 580
+      width: 348
+      height: 177
+    pTag: 
+    expand: 0
+    sprite: {fileID: 0}
+    vars: []
+    varKeys: []
+    isPlayer: 1
+  - commentCount: 1
+    s_comment:
+    - text: "\u0422\u0435\u0431\u0435 \u043D\u0435 \u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u043E
+        \u043F\u043E"
+      extraData: ExtraData
+      inputSetIndex: 43
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    ID: 45
+    rect:
+      serializedVersion: 2
+      x: 2070
+      y: 510
+      width: 348
+      height: 129
+    pTag: 
+    expand: 0
+    sprite: {fileID: 0}
+    vars: []
+    varKeys: []
+    isPlayer: 0
+  - commentCount: 2
+    s_comment:
+    - text: Comment...
+      extraData: ExtraData
+      inputSetIndex: 44
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    - text: Comment...
+      extraData: ExtraData
+      inputSetIndex: 44
+      outputNodeIndex: -1
+      outActionIndex: -1
+      showmore: 0
+      outRect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 0
+        height: 0
+      sprites: {fileID: 0}
+      audios: {fileID: 0}
+      visible: 1
+    ID: 46
+    rect:
+      serializedVersion: 2
+      x: 2080
+      y: 760
+      width: 348
+      height: 153
     pTag: 
     expand: 0
     sprite: {fileID: 0}

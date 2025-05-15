@@ -5,6 +5,7 @@ using BreakTheCycle;
 using UnityEngine.SceneManagement;
 using DungeonGeneration.Scripts;
 using DungeonGeneration.Scripts.Health;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// Контроллер игрока для режима "Сознание" с изометрическим видом
@@ -218,6 +219,11 @@ public class ConsciousnessController : MonoBehaviour
         // Логика атаки
         if (Input.GetMouseButtonDown(0))
         {
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                Debug.Log("[ConsciousnessController] Клик на UI, атака отменена.");
+                return;
+            }
             Debug.Log("[ConsciousnessController] Попытка атаки (нажатие ЛКМ)");
             Attack();
         }
@@ -263,10 +269,17 @@ public class ConsciousnessController : MonoBehaviour
 
     private void HandleMovement()
     {
+        float currentMoveSpeed = moveSpeed;
+        if (emotionSystem != null)
+        {
+            float speedModifier = emotionSystem.GetEmotionSpeedModifier();
+            currentMoveSpeed *= (1f + speedModifier);
+        }
+
         if (moveDirection != Vector3.zero)
         {
             // Ускорение
-            targetVelocity = moveDirection * moveSpeed;
+            targetVelocity = moveDirection * currentMoveSpeed;
             currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, accelerationSpeed * Time.fixedDeltaTime);
         }
         else
@@ -298,6 +311,10 @@ public class ConsciousnessController : MonoBehaviour
         }
         else
         {
+            if (animator != null)
+            {
+                animator.SetBool("isDashing", false);
+            }
             isDashing = false;
             currentVelocity = Vector3.zero;
         }
@@ -311,8 +328,8 @@ public class ConsciousnessController : MonoBehaviour
         lastDashTime = Time.time;
         if (animator != null)
         {
-            animator.SetTrigger("isDashing");
-            Debug.Log("[ConsciousnessController] Animator: isDashing triggered");
+            animator.SetBool("isDashing", true);
+            Debug.Log("[ConsciousnessController] Animator: isDashing set to true");
         }
     }
     
@@ -488,42 +505,48 @@ public class ConsciousnessController : MonoBehaviour
         // Применяем эффект плавного ускорения и торможения камеры (эффект пружины)
         if (useSpringEffect && !instant)
         {
-            // Вычисляем разницу между текущей и предыдущей целевыми позициями
-            Vector3 targetVelocity = (targetPosition - previousTargetPosition) / Time.deltaTime;
-            
-            // Ограничиваем макс. скорость камеры при резких изменениях направления
-            if (isAbruptDirectionChange)
+            if (Time.deltaTime > 0f)
             {
-                // Ограничиваем скорость перемещения камеры при резком изменении направления
-                float maxSpeed = 5.0f + (Time.time - abruptChangeTime) / abruptChangeSmoothing * 15.0f;
-                if (targetVelocity.magnitude > maxSpeed)
+                // Вычисляем разницу между текущей и предыдущей целевыми позициями
+                Vector3 targetVelocity = (targetPosition - previousTargetPosition) / Time.deltaTime;
+            
+                // Ограничиваем макс. скорость камеры при резких изменениях направления
+                if (isAbruptDirectionChange)
                 {
-                    targetVelocity = targetVelocity.normalized * maxSpeed;
+                    // Ограничиваем скорость перемещения камеры при резком изменении направления
+                    float maxSpeed = 5.0f + (Time.time - abruptChangeTime) / abruptChangeSmoothing * 15.0f;
+                    if (targetVelocity.magnitude > maxSpeed)
+                    {
+                        targetVelocity = targetVelocity.normalized * maxSpeed;
+                    }
                 }
+            
+                // Применяем демпфирование к скорости камеры для плавного торможения
+                float dampingFactor = cameraDampingStrength;
+                if (isAbruptDirectionChange)
+                {
+                    // Увеличиваем демпфирование при резком изменении направления
+                    dampingFactor *= 1.5f;
+                }
+            
+                cameraVelocity = Vector3.Lerp(cameraVelocity, targetVelocity, Time.deltaTime * dampingFactor);
+            
+                // Добавляем скорость к текущей позиции камеры с одинаковым поведением для всех направлений
+                Vector3 dampedPosition = Vector3.SmoothDamp(
+                    cameraTransform.position,
+                    targetPosition,
+                    ref cameraVelocity,
+                    1f / smoothSpeed,
+                    isAbruptDirectionChange ? 8.0f : Mathf.Infinity,  // Ограничение максимальной скорости при резких изменениях
+                    Time.deltaTime
+                );
+            
+                // Обновляем позицию камеры
+                cameraTransform.position = dampedPosition;
             }
-            
-            // Применяем демпфирование к скорости камеры для плавного торможения
-            float dampingFactor = cameraDampingStrength;
-            if (isAbruptDirectionChange)
-            {
-                // Увеличиваем демпфирование при резком изменении направления
-                dampingFactor *= 1.5f;
-            }
-            
-            cameraVelocity = Vector3.Lerp(cameraVelocity, targetVelocity, Time.deltaTime * dampingFactor);
-            
-            // Добавляем скорость к текущей позиции камеры с одинаковым поведением для всех направлений
-            Vector3 dampedPosition = Vector3.SmoothDamp(
-                cameraTransform.position,
-                targetPosition,
-                ref cameraVelocity,
-                1f / smoothSpeed,
-                isAbruptDirectionChange ? 8.0f : Mathf.Infinity,  // Ограничение максимальной скорости при резких изменениях
-                Time.deltaTime
-            );
-            
-            // Обновляем позицию камеры
-            cameraTransform.position = dampedPosition;
+            // Если Time.deltaTime == 0f (например, в меню паузы),
+            // камера не будет обновляться этим блоком кода, предотвращая ошибку NaN.
+            // Она сохранит свою последнюю валидную позицию.
         }
         else if (instant)
         {

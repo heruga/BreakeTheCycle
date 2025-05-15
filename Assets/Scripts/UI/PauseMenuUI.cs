@@ -35,6 +35,23 @@ public class PauseMenuUI : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    public void ToggleInfoPanel(GameObject infoPanel)
+    {
+        if (infoPanel != null)
+        {
+            infoPanel.SetActive(!infoPanel.activeSelf);
+        }
+        else
+        {
+            Debug.LogError("InfoPanel не назначена для ToggleInfoPanel в PauseMenuUI!");
+        }
+    }
+
+    public void OpenPauseMenu()
+    {
+        SetPauseMenuState(true);
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))

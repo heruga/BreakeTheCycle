@@ -25,4 +25,16 @@ public class MenuButtonHandler : MonoBehaviour
         else
             Debug.LogError("GameManager.Instance не найден!");
     }
+
+    public void TogglePanel(GameObject panel)
+    {
+        if (panel != null)
+        {
+            panel.SetActive(!panel.activeSelf);
+        }
+        else
+        {
+            Debug.LogError("Панель не назначена для TogglePanel!");
+        }
+    }
 } 
