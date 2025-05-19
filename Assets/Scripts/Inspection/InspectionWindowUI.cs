@@ -1,5 +1,7 @@
 using UnityEngine;
 using TMPro;
+// Добавляем, если еще нет, для доступа к InspectableOutline, хотя он в том же namespace
+// using Inspection; 
 
 namespace Inspection
 {
@@ -16,6 +18,7 @@ namespace Inspection
         [SerializeField] private bool showOnStart = false;
 
         private CanvasGroup canvasGroup;
+        private InspectableOutline currentInspectedOutline; // Ссылка на компонент обводки текущего объекта
 
         private void Awake()
         {
@@ -65,6 +68,18 @@ namespace Inspection
                 itemDescriptionText.fontSize = inspectableObject.DescriptionFontSize;
             }
 
+            // Пытаемся найти и скрыть обводку на время осмотра
+            currentInspectedOutline = inspectableObject.GetComponent<InspectableOutline>();
+            if (currentInspectedOutline != null)
+            {
+                Debug.Log($"[InspectionWindowUI] Hiding outline for {inspectableObject.name} during inspection.");
+                currentInspectedOutline.HideOutline(); 
+            }
+            else
+            {
+                Debug.LogWarning($"[InspectionWindowUI] No InspectableOutline found on {inspectableObject.name} to hide.");
+            }
+
             // Отображение окна
             canvasGroup.alpha = 1;
             canvasGroup.interactable = true;
@@ -74,6 +89,9 @@ namespace Inspection
             {
                 windowPanel.SetActive(true);
             }
+            
+            // Здесь же нужно будет вызвать блокировку управления игроком
+            // PlayerControlManager.Instance?.SetControlsEnabled(false); // Пример
         }
 
         /// Скрывает окно инспекции
@@ -87,6 +105,19 @@ namespace Inspection
             {
                 windowPanel.SetActive(false);
             }
+
+            // Сбрасываем ссылку. Обводка восстановится при следующем Raycast от RealityPlayerController,
+            // когда управление вернется игроку.
+            if (currentInspectedOutline != null)
+            {
+                Debug.Log($"[InspectionWindowUI] Inspection window closed. Outline for {currentInspectedOutline.gameObject.name} will be managed by player controllers again.");
+                // Если вы хотите принудительно попытаться показать обводку сразу, можно добавить:
+                // currentInspectedOutline.ShowOutline(); // Но это может конфликтовать с логикой RealityPlayerController
+            }
+            currentInspectedOutline = null;
+            
+            // Здесь же нужно будет вызвать разблокировку управления игроком
+            // PlayerControlManager.Instance?.SetControlsEnabled(true); // Пример
         }
     }
 } 

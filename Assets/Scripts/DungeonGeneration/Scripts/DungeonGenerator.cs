@@ -37,6 +37,15 @@ namespace DungeonGeneration
 
         private void Start()
         {
+            // --- ДОБАВЛЕНО: Проверка на сцену "Reality" ---
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Reality")
+            {
+                Debug.Log("[DungeonGenerator] Обнаружена сцена 'Reality'. Экземпляр DungeonGenerator будет уничтожен, чтобы не мешать GameManager.");
+                Destroy(gameObject);
+                return;
+            }
+            // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+
             // Проверяем необходимые компоненты
             if (dungeonConfig == null || dungeonContainer == null || playerPrefab == null)
             {
@@ -190,8 +199,8 @@ namespace DungeonGeneration
             AssignRoomTypes();
             Debug.Log($"[DungeonGenerator] Всего создано комнат: {roomNodes.Count}");
             Debug.Log($"[DungeonGenerator] В конце GenerateDungeonStructure: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
-            yield return null;
-        }
+                yield return null;
+            }
 
         private IEnumerator CreateRooms()
         {
@@ -943,40 +952,59 @@ namespace DungeonGeneration
         // Проверяет, соответствует ли шаблон типу комнаты
         private bool TemplateMatchesRoomType(RoomTemplateSO template, RoomTypeSO roomType)
         {
-            // Здесь логика сопоставления шаблона и типа комнаты
-            // Например, сравниваем имена или используем специальное поле
-            
+            if (template == null || roomType == null) return false;
+
+            // Новая логика: проверяем, есть ли roomType в списке supportedRoomTypes шаблона
+            if (template.supportedRoomTypes != null && template.supportedRoomTypes.Contains(roomType))
+            {
+                Debug.Log($"[DungeonGenerator] Template {template.templateName} is compatible with RoomType {roomType.typeName} via supportedRoomTypes list.");
+                return true;
+            }
+
+            // Опционально: Можно оставить старую логику с проверкой имени как fallback или для отладки.
+            // Например, если важно сохранить совместимость со старыми шаблонами, не настроенными через supportedRoomTypes.
+            // Если вы решите ее оставить, раскомментируйте и адаптируйте код ниже.
+            /*
+            if (dungeonConfig != null) // Добавим проверку на null для dungeonConfig
+            {
             // Для стартовой комнаты
             if (roomType == dungeonConfig.startRoomType && template.templateName.Contains("Start"))
             {
-                Debug.Log($"[DungeonGenerator] Найден шаблон стартовой комнаты: {template.templateName}");
+                    Debug.LogWarning($"[DungeonGenerator] Template {template.templateName} matched Start Room by NAME. Consider adding to supportedRoomTypes.");
                 return true;
             }
             
             // Для комнаты босса
             if (roomType == dungeonConfig.bossRoomType && template.templateName.Contains("Boss"))
             {
+                    Debug.LogWarning($"[DungeonGenerator] Template {template.templateName} matched Boss Room by NAME. Consider adding to supportedRoomTypes.");
                 return true;
             }
             
             // Для базовой боевой комнаты
             if (roomType == dungeonConfig.basicCombatRoomType && template.templateName.Contains("Basic"))
             {
+                    Debug.LogWarning($"[DungeonGenerator] Template {template.templateName} matched Basic Combat Room by NAME. Consider adding to supportedRoomTypes.");
                 return true;
             }
             
             // Для элитной боевой комнаты
             if (roomType == dungeonConfig.eliteCombatRoomType && template.templateName.Contains("Elite"))
             {
+                    Debug.LogWarning($"[DungeonGenerator] Template {template.templateName} matched Elite Combat Room by NAME. Consider adding to supportedRoomTypes.");
                 return true;
+                }
             }
             
-            // Если имя шаблона содержит типовое имя комнаты
+            // Общий случай проверки по имени, если тип не специальный
             if (template.templateName.Contains(roomType.typeName))
             {
+                 Debug.LogWarning($"[DungeonGenerator] Template {template.templateName} matched {roomType.typeName} by NAME (fallback). Consider adding to supportedRoomTypes.");
                 return true;
             }
+            */
             
+            Debug.LogWarning($"[DungeonGenerator] Template {template.templateName} is NOT compatible with RoomType {roomType.typeName}. Check supportedRoomTypes list or template name for fallback.");
             return false;
         }
 
@@ -1192,9 +1220,26 @@ namespace DungeonGeneration
                  Debug.LogWarning("[DungeonGenerator] AssignRoomTypes: Не удалось найти самую дальнюю комнату (FindFurthestRoom вернул null). Босс-комната не будет назначена.");
             }
 
-            // 2. Сформировать список кандидатов для элитной комнаты (без стартовой и босса)
-            var eliteCandidates = allRooms.Where(r => r != bossRoom).ToList();
-             Debug.Log($"[DungeonGenerator] AssignRoomTypes: Кандидатов на элитную комнату: {eliteCandidates.Count}");
+            // 2. Найти ближайшую к стартовой комнату для базовой боевой
+            var firstBasicRoom = allRooms
+                .Where(r => r != bossRoom)
+                .OrderBy(r => Vector2.Distance(startRoomNode.Position, r.Position))
+                .FirstOrDefault();
+
+            if (firstBasicRoom != null && dungeonConfig.basicCombatRoomType != null)
+            {
+                Debug.Log($"[DungeonGenerator] AssignRoomTypes: Найдена ближайшая комната для первой базовой: {firstBasicRoom.Id}");
+                firstBasicRoom.SetRoomType(dungeonConfig.basicCombatRoomType);
+            }
+            else
+            {
+                Debug.LogWarning("[DungeonGenerator] AssignRoomTypes: Не удалось назначить первую базовую комнату!");
+            }
+
+            // 3. Сформировать список кандидатов для элитной комнаты (без стартовой, босса и первой базовой)
+            var eliteCandidates = allRooms.Where(r => r != bossRoom && r != firstBasicRoom).ToList();
+            Debug.Log($"[DungeonGenerator] AssignRoomTypes: Кандидатов на элитную комнату: {eliteCandidates.Count}");
+            
             if (eliteCandidates.Count > 0)
             {
                 int eliteIndex = UnityEngine.Random.Range(0, eliteCandidates.Count);
@@ -1203,18 +1248,18 @@ namespace DungeonGeneration
                     Debug.Log($"[DungeonGenerator] AssignRoomTypes: Выбираем элитную комнату: {eliteCandidates[eliteIndex].Id}. Присваиваем тип '{dungeonConfig.eliteCombatRoomType.typeName}'.");
                     eliteCandidates[eliteIndex].SetRoomType(dungeonConfig.eliteCombatRoomType);
                 }
-                 else
+                else
                 {
                     Debug.LogWarning("[DungeonGenerator] AssignRoomTypes: dungeonConfig.eliteCombatRoomType is NULL! Невозможно назначить тип элитной комнаты.");
                 }
             }
 
-            // 3. Остальные — basicCombatRoomType
-             Debug.Log("[DungeonGenerator] AssignRoomTypes: Назначаем базовый тип оставшимся комнатам...");
+            // 4. Остальные — basicCombatRoomType
+            Debug.Log("[DungeonGenerator] AssignRoomTypes: Назначаем базовый тип оставшимся комнатам...");
             int basicAssignedCount = 0;
             foreach (var room in allRooms)
             {
-                if (room.RoomType == null) // Если тип еще не назначен (не босс и не элитная)
+                if (room.RoomType == null) // Если тип еще не назначен (не босс, не элитная и не первая базовая)
                 {
                     if (dungeonConfig.basicCombatRoomType != null)
                     {
@@ -1223,11 +1268,11 @@ namespace DungeonGeneration
                     }
                     else
                     {
-                         Debug.LogWarning($"[DungeonGenerator] AssignRoomTypes: dungeonConfig.basicCombatRoomType is NULL! Невозможно назначить базовый тип комнате {room.Id}.");
+                        Debug.LogWarning($"[DungeonGenerator] AssignRoomTypes: dungeonConfig.basicCombatRoomType is NULL! Невозможно назначить базовый тип комнате {room.Id}.");
                     }
                 }
             }
-             Debug.Log($"[DungeonGenerator] AssignRoomTypes: Назначен базовый тип для {basicAssignedCount} комнат.");
+            Debug.Log($"[DungeonGenerator] AssignRoomTypes: Назначен базовый тип для {basicAssignedCount} комнат.");
 
             // Финальная проверка типов
             Debug.Log("[DungeonGenerator] AssignRoomTypes: Финальные типы комнат:");
@@ -1235,7 +1280,7 @@ namespace DungeonGeneration
             {
                 Debug.Log($"  - Комната: {node.Id}, Тип: {node.RoomType?.typeName ?? "!!! NULL !!!"}");
             }
-             Debug.Log("[DungeonGenerator] AssignRoomTypes: Завершено.");
+            Debug.Log("[DungeonGenerator] AssignRoomTypes: Завершено.");
         }
     }
 } 

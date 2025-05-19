@@ -46,8 +46,17 @@ public class InspectionCamera : MonoBehaviour
 
         private void Awake()
         {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
+            if (CursorManager.Instance != null)
+            {
+                CursorManager.Instance.SetGameplayState();
+            }
+            else
+            {
+                Debug.LogWarning("[InspectionCamera] CursorManager.Instance is null in Awake. Using fallback cursor state.");
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
+            }
+
             cam = GetComponent<Camera>();
             if (cam == null)
             {
@@ -93,6 +102,19 @@ public class InspectionCamera : MonoBehaviour
 
         public void StartInspecting(InspectableObject inspectableObject)
         {
+            if (CursorManager.Instance != null)
+            {
+                CursorManager.Instance.SetGameplayState();
+                Debug.Log($"[InspectionCamera StartInspecting] Cursor state AFTER manager call: LockState={Cursor.lockState}, Visible={Cursor.visible}");
+            }
+            else
+            {
+                Debug.LogWarning("[InspectionCamera] CursorManager.Instance is null in StartInspecting. Using fallback cursor state.");
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
+                Debug.Log($"[InspectionCamera StartInspecting] Cursor state AFTER FALLBACK: LockState={Cursor.lockState}, Visible={Cursor.visible}");
+            }
+
             if (inspectableObject == null)
             {
                 Debug.LogError("InspectableObject is null!");
@@ -224,6 +246,19 @@ public class InspectionCamera : MonoBehaviour
             transform.position = initialPosition;
             transform.rotation = initialRotation;
             
+            if (CursorManager.Instance != null)
+            {
+                CursorManager.Instance.SetGameplayState();
+                Debug.Log($"[InspectionCamera StopInspecting] Cursor state AFTER manager call: LockState={Cursor.lockState}, Visible={Cursor.visible}");
+            }
+            else
+            {
+                Debug.LogWarning("[InspectionCamera] CursorManager.Instance is null in StopInspecting. Using fallback cursor state.");
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
+                Debug.Log($"[InspectionCamera StopInspecting] Cursor state AFTER FALLBACK: LockState={Cursor.lockState}, Visible={Cursor.visible}");
+            }
+
             if (showDebug) Debug.Log("Осмотр завершен, возвращено исходное состояние");
         }
     

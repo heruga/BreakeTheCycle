@@ -70,7 +70,7 @@ MonoBehaviour:
   rotationSpeed: 5
   minPathUpdateDistance: 1
   attackRange: 3
-  attackDamage: 1
+  attackDamage: 5
   attackCooldown: 1
   aggroRange: 4.7
   updateIntervalOutsideView: 1
@@ -97,7 +97,7 @@ NavMeshAgent:
   m_Height: 2.4
   m_BaseOffset: 0
   m_WalkableMask: 1
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 3
 --- !u!1 &5813484384293190040
 GameObject:
   m_ObjectHideFlags: 0

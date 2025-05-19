@@ -56,7 +56,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: MaleLowPolyLAST
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5866666021909216657, guid: 2b1bf87033f81cf47956635e6c9b6a3b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

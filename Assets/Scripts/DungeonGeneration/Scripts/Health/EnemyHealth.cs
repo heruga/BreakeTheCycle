@@ -11,8 +11,6 @@ namespace DungeonGeneration.Scripts.Health
         [Header("Валюта")]
         [Tooltip("Количество валюты, выпадающей при смерти")]
         [SerializeField] private int currencyDropAmount = 10;
-        [Tooltip("Множитель валюты для босса")]
-        [SerializeField] private float bossMultiplier = 5f;
 
         [Header("UI")]
         [SerializeField] private GameObject healthBarPrefab;
@@ -100,12 +98,6 @@ namespace DungeonGeneration.Scripts.Health
             if (CurrencyManager.Instance != null)
             {
                 int amount = currencyDropAmount;
-                
-                // Если это босс, увеличиваем количество валюты
-                if (isBoss)
-                {
-                    amount = Mathf.RoundToInt(amount * bossMultiplier);
-                }
                 
                 CurrencyManager.Instance.AddCurrency(amount);
                 Debug.Log($"[EnemyHealth] После смерти {gameObject.name} выронил {amount} валюты");

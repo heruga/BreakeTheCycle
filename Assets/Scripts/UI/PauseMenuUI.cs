@@ -5,12 +5,21 @@ using BreakTheCycle;
 public class PauseMenuUI : MonoBehaviour
 {
     public GameObject pausePanel;
+    public static bool IsPaused { get; private set; }
 
     public void OnMainMenuClicked()
     {
         SetPauseMenuState(false);
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        if (CursorManager.Instance != null)
+        {
+            CursorManager.Instance.SetUIState();
+        }
+        else
+        {
+            Debug.LogWarning("[PauseMenuUI] CursorManager.Instance is null in OnMainMenuClicked. Using fallback cursor state.");
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
         SceneManager.LoadScene("MainMenu");
     }
 
@@ -30,8 +39,6 @@ public class PauseMenuUI : MonoBehaviour
         {
             Debug.LogError("GameManager.Instance не найден!");
         }
-
-        // Гарантируем сохранение всех данных PlayerPrefs
         PlayerPrefs.Save();
     }
 
@@ -58,8 +65,8 @@ public class PauseMenuUI : MonoBehaviour
         {
             if (pausePanel != null)
             {
-                bool isActive = pausePanel.activeSelf;
-                SetPauseMenuState(!isActive);
+                bool currentPauseState = pausePanel.activeSelf;
+                SetPauseMenuState(!currentPauseState);
             }
         }
     }
@@ -70,10 +77,56 @@ public class PauseMenuUI : MonoBehaviour
             pausePanel.SetActive(isActive);
 
         Time.timeScale = isActive ? 0f : 1f;
-        Cursor.visible = isActive;
-        Cursor.lockState = isActive ? CursorLockMode.None : CursorLockMode.Locked;
+        IsPaused = isActive;
+
+        if (CursorManager.Instance != null)
+        {
+            if (isActive)
+            {
+                CursorManager.Instance.SetUIState();
+            }
+            else
+            {
+                CursorManager.Instance.SetGameplayState();
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[PauseMenuUI] CursorManager.Instance is null in SetPauseMenuState. Using fallback cursor state.");
+            Cursor.visible = isActive;
+            Cursor.lockState = isActive ? CursorLockMode.None : CursorLockMode.Locked;
+        }
 
         if (PlayerControlManager.Instance != null)
-            PlayerControlManager.Instance.SetControlsEnabled(!isActive);
+        {
+            PlayerControlManager.Instance.SetUIControlsBlock(isActive);
+            Debug.Log($"[PauseMenuUI] SetUIControlsBlock called with {isActive}.");
+        }
     }
-} 
+
+    private void OnDisable()
+    {
+        if (IsPaused && pausePanel != null && !pausePanel.activeSelf)
+        {
+            IsPaused = false;
+            if (PlayerControlManager.Instance != null)
+            {
+                PlayerControlManager.Instance.SetUIControlsBlock(false);
+            }
+            Debug.LogWarning("[PauseMenuUI] IsPaused reset and UIControlsBlock(false) called in OnDisable as a fallback.");
+        }
+    }
+     private void OnDestroy()
+    {
+        if (IsPaused)
+        {
+            IsPaused = false;
+            if (PlayerControlManager.Instance != null)
+            {
+                PlayerControlManager.Instance.SetUIControlsBlock(false);
+            }
+            Time.timeScale = 1f;
+            Debug.LogWarning("[PauseMenuUI] IsPaused reset, UIControlsBlock(false) called, and Time.timeScale to 1 in OnDestroy.");
+        }
+    }
+}

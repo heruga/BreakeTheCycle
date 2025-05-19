@@ -4,7 +4,15 @@ public class MainMenuCursor : MonoBehaviour
 {
     void Start()
     {
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        if (CursorManager.Instance != null)
+        {
+            CursorManager.Instance.SetUIState();
+        }
+        else
+        {
+            Debug.LogWarning("[MainMenuCursor] CursorManager.Instance is null. Using fallback cursor state.");
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
     }
 } 

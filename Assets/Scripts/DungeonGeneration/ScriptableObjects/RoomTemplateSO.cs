@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace DungeonGeneration.ScriptableObjects
 {
@@ -8,6 +9,9 @@ namespace DungeonGeneration.ScriptableObjects
         [Header("Room Template Settings")]
         public string templateName;
         public GameObject roomPrefab;
+        
+        [Header("Room Type Compatibility")]
+        public List<RoomTypeSO> supportedRoomTypes = new List<RoomTypeSO>();
         
         [TextArea(3, 5)]
         public string description;

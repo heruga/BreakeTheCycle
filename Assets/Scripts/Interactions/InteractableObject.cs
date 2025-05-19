@@ -11,13 +11,13 @@ namespace BreakTheCycle
     {
         private VIDE_Assign videAssign;
         private Transform playerTransform;
-
+        
         private void Awake()
         {
             // Пытаемся найти компонент VIDE_Assign на объекте
             videAssign = GetComponent<VIDE_Assign>();
         }
-
+        
         /// <summary>
         /// Проверяет, находится ли игрок в радиусе взаимодействия
         /// </summary>
@@ -27,7 +27,7 @@ namespace BreakTheCycle
             float distance = Vector3.Distance(transform.position, player.position);
             return distance <= InteractionRadius;
         }
-
+        
         /// <summary>
         /// Взаимодействие с объектом: запускает диалог через VIDE, если компонент VIDE_Assign присутствует
         /// </summary>
@@ -39,7 +39,7 @@ namespace BreakTheCycle
                 Debug.Log($"[InteractableObject] Объект {gameObject.name} не интерактивен (IsInteractable = false)");
                 return;
             }
-
+            
             var trigger = GetComponent<BreakTheCycle.Dialogue.MonologueTriggerData>();
             if (trigger == null)
             {

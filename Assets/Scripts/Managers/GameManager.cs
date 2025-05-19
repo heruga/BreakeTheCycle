@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
     [Header("Transition Settings")]
     public float transitionDuration = 1f;
     public Color fadeColor = Color.black;
-    
+
     [Header("Managers")]
     [SerializeField] private bool initCurrencyManagerOnStart = true;
 
@@ -29,9 +29,11 @@ public class GameManager : MonoBehaviour
 
     [Header("Monologue Settings")]
     [SerializeField] public int bossReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после убийства босса
+    [SerializeField] public int deathReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после смерти в сознании
 
     [SerializeField] private bool isTransitioning = false;
     private bool isInReality = true;
+    private bool wasDeathInConsciousness = false; // Флаг смерти в сознании
     private Coroutine _lastForceRestoreCoroutine = null;
     private bool _loadingErrorOccurred = false; // Флаг для отслеживания ошибок во вложенной корутине
     private bool isPlayerInTransitionZone = false; // Флаг нахождения игрока в зоне перехода
@@ -207,6 +209,32 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log($"[GameManager] SwitchWorldCoroutine стартует для сцены: {targetScene}, вызывая LoadSceneInternalCoroutine");
         yield return StartCoroutine(LoadSceneInternalCoroutine(targetScene, true));
+
+        // Если мы возвращаемся в Реальность после смерти в Сознании
+        if (targetScene == realitySceneName && wasDeathInConsciousness)
+        {
+            Debug.Log("[GameManager] Возвращение в Реальность после смерти в Сознании, запускаем монолог");
+            Debug.Log($"[GameManager] deathReturnMonologueID = {deathReturnMonologueID}");
+            
+            // Ждем несколько кадров, чтобы убедиться, что сцена полностью загрузилась
+            for (int i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+
+            FindMonologueManager();
+            if (monologueManagerInstance != null)
+            {
+                Debug.Log("[GameManager] MonologueManager найден, запускаем монолог");
+                monologueManagerInstance.PlayMonologue(deathReturnMonologueID);
+            }
+            else
+            {
+                Debug.LogError("[GameManager] MonologueManager не найден после смерти в Сознании!");
+            }
+            wasDeathInConsciousness = false; // Сбрасываем флаг
+            Debug.Log("[GameManager] Флаг wasDeathInConsciousness сброшен");
+        }
     }
 
     public IEnumerator LoadSceneAsync(string sceneName)
@@ -248,10 +276,10 @@ public class GameManager : MonoBehaviour
         Debug.Log(errorOccurred
             ? $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} ПРЕРВАН (после FadeIn)."
             : $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} УСПЕШНО ЗАВЕРШЕН (после FadeIn).");
-        
+
         if (errorOccurred) 
         {
-            yield break; 
+            yield break;
         }
     }
 
@@ -265,7 +293,7 @@ public class GameManager : MonoBehaviour
         if (cleanupPreviousScene)
         {
             Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов CleanupCurrentScene...");
-            CleanupCurrentScene();
+        CleanupCurrentScene();
             Debug.Log("[GameManager] ExecuteLoadingSequence: CleanupCurrentScene завершен.");
         }
 
@@ -299,7 +327,7 @@ public class GameManager : MonoBehaviour
         }
         Debug.Log("[GameManager] ExecuteLoadingSequence: Загрузка >= 90%. Активация сцены...");
         operation.allowSceneActivation = true;
-        yield return operation; 
+        yield return operation;
         Debug.Log("[GameManager] ExecuteLoadingSequence: Сцена активирована.");
 
         // --- ИЗМЕНЕНО: Устанавливаем isInReality напрямую по имени сцены ---
@@ -468,30 +496,19 @@ public class GameManager : MonoBehaviour
     /// Обработка смерти игрока
     public void HandlePlayerDeath()
     {
-        Debug.Log("[GameManager] Обработка смерти игрока");
-        
-        // Получаем текущий контроллер игрока
-        RealityPlayerController playerController = FindObjectOfType<RealityPlayerController>();
-        ConsciousnessController consciousnessController = FindObjectOfType<ConsciousnessController>();
-        
-        // Пытаемся воскресить игрока
-        bool revived = false;
-        
-       if (consciousnessController != null)
+        Debug.Log("[GameManager] HandlePlayerDeath вызван");
+        if (!isInReality)
         {
-            revived = consciousnessController.TryRevive();
-        }
-        
-        // Если игрок не воскрес, загружаем последний чекпоинт
-        if (!revived)
-        {
-            // Здесь можно добавить логику загрузки последнего чекпоинта
-            Debug.Log("[GameManager] Игрок не воскрес, загрузка последнего чекпоинта");
+            Debug.Log("[GameManager] Смерть произошла в Сознании");
+            wasDeathInConsciousness = true;
+            Debug.Log($"[GameManager] Установлен флаг wasDeathInConsciousness = {wasDeathInConsciousness}");
+            SwitchWorld(); // Переключаемся обратно в Реальность
         }
     }
 
     public void StartNewGame()
     {
+        Outline.ClearRegisteredMeshes(); // Очищаем зарегистрированные меши для системы обводки
         Debug.Log("[GameManager] StartNewGame: очистка всех PlayerPrefs и запуск новой игры");
         PlayerPrefs.DeleteAll();
         PlayerPrefs.SetInt("IsNewGame", 1);
@@ -667,13 +684,31 @@ public class GameManager : MonoBehaviour
     // Жёсткое восстановление - добавляем параметр для поворота камеры
     private IEnumerator ForceRestorePlayerPositionCoroutine(RealityPlayerController player, Vector3 pos, Vector3 rot, float camRotX)
     {
-        yield return null;
-        yield return null;
+        CharacterController cc = player.GetComponent<CharacterController>();
+        bool ccWasEnabled = false;
+        if (cc != null)
+        {
+            ccWasEnabled = cc.enabled;
+            cc.enabled = false;
+        }
+
+        // Wait a frame for the CharacterController to be fully disabled and transform to be freely modifiable
+        yield return null; 
+
         player.transform.position = pos;
         player.transform.eulerAngles = rot;
+        
+        // Wait another frame to ensure the transform changes have propagated
+        yield return null; 
+
+        if (cc != null)
+        {
+            cc.enabled = ccWasEnabled; // Restore original state, usually true
+        }
+
         Debug.Log($"[GameManager] ForceRestorePlayerPositionCoroutine: Жёстко восстановил позицию игрока: {player.transform.position}, rotation: {player.transform.eulerAngles}");
         
-        var cameraController = FindObjectOfType<FirstPersonCameraController>();
+        var cameraController = player.GetComponentInChildren<FirstPersonCameraController>(); // GetComponentInChildren is safer
         if (cameraController != null)
         {
             // ---> Повторно устанавливаем поворот камеры <---
@@ -747,8 +782,13 @@ public class GameManager : MonoBehaviour
     {
         if (monologueManagerInstance == null)
         {
+            Debug.Log("[GameManager] Поиск MonologueManager в сцене...");
             monologueManagerInstance = FindObjectOfType<MonologueManager>();
-            if (monologueManagerInstance == null)
+            if (monologueManagerInstance != null)
+            {
+                Debug.Log("[GameManager] MonologueManager успешно найден");
+            }
+            else
             {
                 Debug.LogError("[GameManager] MonologueManager не найден в сцене!");
             }
@@ -814,8 +854,8 @@ public class GameManager : MonoBehaviour
         {
             Instantiate(endScreenPrefab); // Создаем экран
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            Debug.Log("[GameManager] Курсор разблокирован и сделан видимым для финального экрана.");
+            Cursor.visible = false; // Курсор должен быть невидимым
+            Debug.Log("[GameManager] Курсор разблокирован и СКРЫТ для финального экрана.");
         }
         else
         {

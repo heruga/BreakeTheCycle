@@ -1,4 +1,5 @@
 using UnityEngine;
+using BreakTheCycle;
 
 /// <summary>
 /// Управление камерой игрока в режиме от первого лица
@@ -28,6 +29,23 @@ public class FirstPersonCameraController : MonoBehaviour
 
     private void Update()
     {
+        // Проверяем, включено ли управление игроком
+        if (PlayerControlManager.Instance != null && !PlayerControlManager.Instance.ControlsEnabled)
+        {
+            // Если управление отключено (например, во время осмотра или в меню),
+            // не обрабатываем ввод мыши для вращения.
+            return; 
+        }
+
+        if (PlayerControlManager.Instance != null && PlayerControlManager.Instance.JustBecameEnabledThisFrame)
+        {
+            // Пропускаем обработку мыши в кадре, когда управление только что включилось,
+            // чтобы избежать рывка от последнего положения курсора на UI.
+            // Синхронизируем углы, чтобы сбросить любые дельты, которые могли накопиться.
+            SyncRotationWithTransform(); 
+            return; 
+        }
+
         // Получаем ввод мыши и масштабируем его
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
@@ -49,9 +67,31 @@ public class FirstPersonCameraController : MonoBehaviour
 
     public void SyncRotationWithTransform()
     {
-        Vector3 euler = transform.eulerAngles;
-        targetHorizontalRotation = euler.y;
-        targetVerticalRotation = Mathf.Clamp(euler.x, -verticalRotationLimit, verticalRotationLimit);
+        if (playerBody != null)
+        {
+            targetHorizontalRotation = playerBody.eulerAngles.y;
+        }
+        else
+        {
+            // Резервный вариант, если playerBody отсутствует (в идеале не должно происходить)
+            targetHorizontalRotation = transform.eulerAngles.y;
+        }
+
+        float currentLocalX = transform.localEulerAngles.x;
+        // Преобразуем угол X из диапазона [0, 360) в диапазон, близкий к [-180, 180)
+        if (currentLocalX > 180f)
+        {
+            currentLocalX -= 360f;
+        }
+        targetVerticalRotation = Mathf.Clamp(currentLocalX, -verticalRotationLimit, verticalRotationLimit);
+
+        // Обновляем также 'current' значения, чтобы сделать синхронизацию немедленной
+        // и избежать интерполяции от старых 'current' к новым 'target' значениям.
+        if (playerBody != null) // currentEulerAngles относится к playerBody
+        {
+            currentEulerAngles.y = targetHorizontalRotation;
+        }
+        currentVerticalRotation = targetVerticalRotation; // currentVerticalRotation относится к камере
     }
 
     // --- Публичные методы для GameManager ---

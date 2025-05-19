@@ -79,12 +79,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55602d341ddb9ab499763a6d070450f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 200
-  currentHealth: 200
+  maxHealth: 250
+  currentHealth: 250
   deathEffectPrefab: {fileID: 0}
   isBoss: 1
-  currencyDropAmount: 10
-  bossMultiplier: 5
+  currencyDropAmount: 666
   healthBarPrefab: {fileID: 5781516032655189868, guid: 574da03ab1afb7041ad66acf7b6cce14, type: 3}
 --- !u!195 &8898735863988073294
 NavMeshAgent:
@@ -94,9 +93,9 @@ NavMeshAgent:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7057867871735091530}
   m_Enabled: 1
-  m_AgentTypeID: 0
+  m_AgentTypeID: 287145453
   m_Radius: 0.97
-  m_Speed: 7
+  m_Speed: 8
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -107,7 +106,7 @@ NavMeshAgent:
   m_Height: 4.88
   m_BaseOffset: 0
   m_WalkableMask: 1
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 3
 --- !u!114 &4242683562334009062
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -536,6 +535,6 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.57689565
-  m_Height: 3.3407092
+  m_Height: 3.384811
   m_Direction: 1
-  m_Center: {x: 0, y: 1.611556, z: -0.07689556}
+  m_Center: {x: 0, y: 1.6336069, z: -0.07689556}

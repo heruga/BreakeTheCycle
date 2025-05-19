@@ -6,6 +6,8 @@ using UnityEngine.SceneManagement;
 using DungeonGeneration.Scripts;
 using DungeonGeneration.Scripts.Health;
 using UnityEngine.EventSystems;
+using Inspection;
+using System.Collections.Generic;
 
 /// <summary>
 /// Контроллер игрока для режима "Сознание" с изометрическим видом
@@ -15,7 +17,6 @@ public class ConsciousnessController : MonoBehaviour
     [Header("Движение")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float rotationSpeed = 15f;
-    [SerializeField] private LayerMask groundLayerMask;
     [SerializeField] private float accelerationSpeed = 8f; // Скорость ускорения
     [SerializeField] private float decelerationSpeed = 12f; // Скорость замедления
     [Header("Dash")]
@@ -67,6 +68,7 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private float attackCooldown = 1f;
     [SerializeField] private float attackRadius = 199f; // Радиус области атаки
     [SerializeField] private LayerMask enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
+    [SerializeField] private float dashAttackDamage = 20f; // Урон во время дэша
     private float lastAttackTime;
 
     [Header("Визуализация")]
@@ -90,6 +92,11 @@ public class ConsciousnessController : MonoBehaviour
     private Vector3 targetVelocity;
     private EmotionSystem emotionSystem;
     private Animator animator;
+
+    // Поля для отслеживания объектов с активной обводкой
+    private HashSet<BaseInteractable> previouslyInRangeInteractables = new HashSet<BaseInteractable>();
+    private HashSet<MonoBehaviour> previouslyInRangeInspectables = new HashSet<MonoBehaviour>();
+    private HashSet<EnemyHealth> enemiesHitThisDash = new HashSet<EnemyHealth>();
     
     private void Awake()
     {
@@ -111,7 +118,7 @@ public class ConsciousnessController : MonoBehaviour
         {
             characterController = gameObject.AddComponent<CharacterController>();
         }
- 
+        
         // Устанавливаем позицию персонажа на правильную высоту
         Vector3 position = transform.position;
         // position.y = 1f; // Эту строку тоже стоит проверить, нужна ли она, если центр берется из инспектора
@@ -120,8 +127,17 @@ public class ConsciousnessController : MonoBehaviour
     
     private void Start()
     {
+        if (CursorManager.Instance != null)
+        {
+            CursorManager.Instance.SetGameplayState();
+        }
+        else
+        {
+            Debug.LogWarning("[ConsciousnessController] CursorManager.Instance is null. Using fallback cursor state.");
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        }
+
         if (PlayerControlManager.Instance != null)
             PlayerControlManager.Instance.SetControlsEnabled(true);
         Debug.Log($"[ConsciousnessController] Start: controlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
@@ -170,6 +186,10 @@ public class ConsciousnessController : MonoBehaviour
             currentVelocity = Vector3.zero;
             targetVelocity = Vector3.zero;
             isDashing = false;
+            if (animator != null)
+            {
+                animator.SetFloat("ActualSpeed", 0f);
+            }
             // Можно добавить сброс ввода, если потребуется
         }
     }
@@ -178,6 +198,7 @@ public class ConsciousnessController : MonoBehaviour
     {
         if (!PlayerControlManager.Instance.ControlsEnabled)
         {
+            UpdateOutlines(true); // Вызываем с флагом "очистить все", если контролы выключены
             return;
         }
 
@@ -205,6 +226,9 @@ public class ConsciousnessController : MonoBehaviour
         {
             StartDash();
         }
+        
+        // Обновляем подсветку объектов
+        UpdateOutlines(false);
 
         // Взаимодействие с объектами (F — Interactable, E — Inspectable)
         if (Input.GetKeyDown(KeyCode.F))
@@ -219,28 +243,134 @@ public class ConsciousnessController : MonoBehaviour
         // Логика атаки
         if (Input.GetMouseButtonDown(0))
         {
-            if (EventSystem.current.IsPointerOverGameObject())
+            bool blockAttack = false;
+
+            // 1. Сначала проверяем, не был ли клик на активном элементе UI
+            if (EventSystem.current.IsPointerOverGameObject()) 
             {
-                Debug.Log("[ConsciousnessController] Клик на UI, атака отменена.");
-                return;
+                Debug.Log("[ConsciousnessController] Attack prevented: Click was on an active UI element.");
+                blockAttack = true;
             }
-            Debug.Log("[ConsciousnessController] Попытка атаки (нажатие ЛКМ)");
-            Attack();
+            // 2. Если не на активном UI, проверяем, не включилось ли управление только что
+            else if (PlayerControlManager.Instance != null && PlayerControlManager.Instance.JustBecameEnabledThisFrame)
+            {
+                Debug.Log("[ConsciousnessController] Attack prevented: Controls were just enabled this frame.");
+                blockAttack = true;
+            }
+
+            // Атакуем, только если не было причин блокировать.
+            // Проверка PlayerControlManager.Instance.ControlsEnabled здесь уже избыточна, 
+            // так как в начале Update() есть return, если ControlsEnabled == false.
+            // Но для дополнительной уверенности можно оставить, вреда не будет.
+            if (!blockAttack && (PlayerControlManager.Instance == null || PlayerControlManager.Instance.ControlsEnabled) ) 
+            {
+                Debug.Log("[ConsciousnessController] Попытка атаки (нажатие ЛКМ)");
+                Attack();
+            }
         }
     }
     
     private void TryInteractWithMask(LayerMask mask)
     {
         Collider[] colliders = Physics.OverlapSphere(transform.position, interactionRange, mask);
+        
+        // Обрабатываем все коллайдеры в радиусе взаимодействия
         foreach (var col in colliders)
         {
+            // Проверяем, является ли объект интерактивным
             var interactable = col.GetComponent<IInteractable>();
             if (interactable != null)
             {
+                // Для BaseInteractable вызываем событие вхождения в зону (обводка уже должна быть обработана в UpdateOutlines)
+                // var baseInteractable = interactable as BaseInteractable;
+                // if (baseInteractable != null)
+                // {
+                //     baseInteractable.OnPlayerEnter(); // OnPlayerEnter здесь не должен отвечать за обводку напрямую
+                // }
+                
                 interactable.OnInteract();
-                break;
+                break; // Взаимодействуем только с одним объектом за раз
+            }
+            
+            // Проверяем, является ли объект осматриваемым
+            // Используем GameObject.GetComponent вместо прямого вызова для избежания проблем с типом
+            var inspectableObject = col.gameObject;
+            var inspectOutlineComponent = inspectableObject.GetComponent(typeof(MonoBehaviour)) as MonoBehaviour;
+            
+            // Проверяем по имени типа, чтобы избежать проблем с сборкой
+            if (inspectOutlineComponent != null && 
+                inspectOutlineComponent.GetType().Name == "InspectableOutline" && 
+                mask == inspectableMask) // Убедимся что это именно для Inspectable объектов (клавиша E)
+            {
+                // Само взаимодействие (осмотр) должно быть частью IInteractable или отдельным методом
+                // Здесь мы только пытаемся инициировать взаимодействие. Обводка управляется в UpdateOutlines.
+                // Например, если InspectableObject реализует IInteractable:
+                (inspectOutlineComponent.GetComponent<IInteractable>())?.OnInteract();
+                break; 
             }
         }
+    }
+    
+    // Метод для обновления подсветки объектов в зоне взаимодействия
+    private void UpdateOutlines(bool clearAll)
+    {
+        HashSet<BaseInteractable> currentInRangeInteractables = new HashSet<BaseInteractable>();
+        HashSet<MonoBehaviour> currentInRangeInspectables = new HashSet<MonoBehaviour>();
+
+        if (!clearAll) // Если контролы включены, ищем объекты в зоне
+        {
+            // --- Обработка BaseInteractable ---
+            Collider[] interactableColliders = Physics.OverlapSphere(transform.position, interactionRange, interactionMask);
+            foreach (var col in interactableColliders)
+            {
+                var baseInteractable = col.GetComponent<BaseInteractable>();
+                if (baseInteractable != null)
+                {
+                    currentInRangeInteractables.Add(baseInteractable);
+                    if (!previouslyInRangeInteractables.Contains(baseInteractable))
+                    {
+                        baseInteractable.OnPlayerEnter(); // Показать обводку
+                    }
+                }
+            }
+
+            // --- Обработка InspectableOutline ---
+            Collider[] inspectableColliders = Physics.OverlapSphere(transform.position, interactionRange, inspectableMask);
+            foreach (var col in inspectableColliders)
+            {
+                var inspectOutlineComponent = col.GetComponent(typeof(MonoBehaviour)) as MonoBehaviour;
+                if (inspectOutlineComponent != null && inspectOutlineComponent.GetType().Name == "InspectableOutline")
+                {
+                    currentInRangeInspectables.Add(inspectOutlineComponent);
+                    if (!previouslyInRangeInspectables.Contains(inspectOutlineComponent))
+                    {
+                        var showMethod = inspectOutlineComponent.GetType().GetMethod("ShowOutline");
+                        showMethod?.Invoke(inspectOutlineComponent, null); // Показать обводку
+                    }
+                }
+            }
+        }
+
+        // Скрыть обводку для BaseInteractable, которые вышли из зоны
+        foreach (var interactable in previouslyInRangeInteractables)
+        {
+            if (!currentInRangeInteractables.Contains(interactable))
+            {
+                interactable.OnPlayerExit(); // Скрыть обводку
+            }
+        }
+        previouslyInRangeInteractables = currentInRangeInteractables;
+
+        // Скрыть обводку для InspectableOutline, которые вышли из зоны
+        foreach (var inspectable in previouslyInRangeInspectables)
+        {
+            if (!currentInRangeInspectables.Contains(inspectable))
+            {
+                var hideMethod = inspectable.GetType().GetMethod("HideOutline");
+                hideMethod?.Invoke(inspectable, null); // Скрыть обводку
+            }
+        }
+        previouslyInRangeInspectables = currentInRangeInspectables;
     }
     
     private void FixedUpdate()
@@ -264,7 +394,7 @@ public class ConsciousnessController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
         }
 
-        UpdateCameraPosition(false);
+        // UpdateCameraPosition(false); // Убрано, так как вызывается в LateUpdate
     }
 
     private void HandleMovement()
@@ -308,6 +438,35 @@ public class ConsciousnessController : MonoBehaviour
         {
             characterController.Move(moveDirection * dashSpeed * Time.fixedDeltaTime);
             dashTimeLeft -= Time.fixedDeltaTime;
+
+            // Логика атаки во время дэша
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, attackRadius, enemyLayerMask);
+            float damage = dashAttackDamage;
+            if (emotionSystem != null)
+            {
+                damage = emotionSystem.ModifyOutgoingDamage(damage); // Модифицируем урон от дэша эмоциями
+            }
+
+            foreach (var hitCollider in hitColliders)
+            {
+                EnemyHealth enemy = hitCollider.GetComponent<EnemyHealth>();
+                if (enemy == null)
+                    enemy = hitCollider.GetComponentInParent<EnemyHealth>();
+
+                if (enemy != null && !enemiesHitThisDash.Contains(enemy))
+                {
+                    float prevHealth = enemy.GetCurrentHealth();
+                    enemy.TakeDamage(damage);
+                    enemiesHitThisDash.Add(enemy);
+                    float newHealth = enemy.GetCurrentHealth();
+                    Debug.Log($"[Dash Attack] Враг {enemy.gameObject.name}: урон {damage}. Было HP={prevHealth}, стало HP={newHealth}");
+
+                    if (newHealth <= 0 && emotionSystem != null)
+                    {
+                        emotionSystem.OnEnemyDefeated();
+                    }
+                }
+            }
         }
         else
         {
@@ -323,9 +482,10 @@ public class ConsciousnessController : MonoBehaviour
     private void StartDash()
     {
         if (moveDirection == Vector3.zero) return;
-        isDashing = true;
-        dashTimeLeft = dashDuration;
-        lastDashTime = Time.time;
+                isDashing = true;
+                dashTimeLeft = dashDuration;
+                lastDashTime = Time.time;
+        enemiesHitThisDash.Clear(); // Очищаем список атакованных врагов при начале нового дэша
         if (animator != null)
         {
             animator.SetBool("isDashing", true);
@@ -506,43 +666,43 @@ public class ConsciousnessController : MonoBehaviour
         if (useSpringEffect && !instant)
         {
             if (Time.deltaTime > 0f)
+        {
+            // Вычисляем разницу между текущей и предыдущей целевыми позициями
+            Vector3 targetVelocity = (targetPosition - previousTargetPosition) / Time.deltaTime;
+            
+            // Ограничиваем макс. скорость камеры при резких изменениях направления
+            if (isAbruptDirectionChange)
             {
-                // Вычисляем разницу между текущей и предыдущей целевыми позициями
-                Vector3 targetVelocity = (targetPosition - previousTargetPosition) / Time.deltaTime;
-            
-                // Ограничиваем макс. скорость камеры при резких изменениях направления
-                if (isAbruptDirectionChange)
+                // Ограничиваем скорость перемещения камеры при резком изменении направления
+                float maxSpeed = 5.0f + (Time.time - abruptChangeTime) / abruptChangeSmoothing * 15.0f;
+                if (targetVelocity.magnitude > maxSpeed)
                 {
-                    // Ограничиваем скорость перемещения камеры при резком изменении направления
-                    float maxSpeed = 5.0f + (Time.time - abruptChangeTime) / abruptChangeSmoothing * 15.0f;
-                    if (targetVelocity.magnitude > maxSpeed)
-                    {
-                        targetVelocity = targetVelocity.normalized * maxSpeed;
-                    }
+                    targetVelocity = targetVelocity.normalized * maxSpeed;
                 }
+            }
             
-                // Применяем демпфирование к скорости камеры для плавного торможения
-                float dampingFactor = cameraDampingStrength;
-                if (isAbruptDirectionChange)
-                {
-                    // Увеличиваем демпфирование при резком изменении направления
-                    dampingFactor *= 1.5f;
-                }
+            // Применяем демпфирование к скорости камеры для плавного торможения
+            float dampingFactor = cameraDampingStrength;
+            if (isAbruptDirectionChange)
+            {
+                // Увеличиваем демпфирование при резком изменении направления
+                dampingFactor *= 1.5f;
+            }
             
-                cameraVelocity = Vector3.Lerp(cameraVelocity, targetVelocity, Time.deltaTime * dampingFactor);
+            cameraVelocity = Vector3.Lerp(cameraVelocity, targetVelocity, Time.deltaTime * dampingFactor);
             
-                // Добавляем скорость к текущей позиции камеры с одинаковым поведением для всех направлений
-                Vector3 dampedPosition = Vector3.SmoothDamp(
-                    cameraTransform.position,
-                    targetPosition,
-                    ref cameraVelocity,
-                    1f / smoothSpeed,
-                    isAbruptDirectionChange ? 8.0f : Mathf.Infinity,  // Ограничение максимальной скорости при резких изменениях
-                    Time.deltaTime
-                );
+            // Добавляем скорость к текущей позиции камеры с одинаковым поведением для всех направлений
+            Vector3 dampedPosition = Vector3.SmoothDamp(
+                cameraTransform.position,
+                targetPosition,
+                ref cameraVelocity,
+                1f / smoothSpeed,
+                isAbruptDirectionChange ? 8.0f : Mathf.Infinity,  // Ограничение максимальной скорости при резких изменениях
+                Time.deltaTime
+            );
             
-                // Обновляем позицию камеры
-                cameraTransform.position = dampedPosition;
+            // Обновляем позицию камеры
+            cameraTransform.position = dampedPosition;
             }
             // Если Time.deltaTime == 0f (например, в меню паузы),
             // камера не будет обновляться этим блоком кода, предотвращая ошибку NaN.
@@ -573,7 +733,7 @@ public class ConsciousnessController : MonoBehaviour
         if (Time.time < lastAttackTime + attackCooldown)
         {
             Debug.Log($"[Attack] Не атакуем: кулдаун. Time={Time.time:F2}, lastAttackTime={lastAttackTime:F2}, attackCooldown={attackCooldown}");
-            return;
+                    return;
         }
         lastAttackTime = Time.time;
 
@@ -681,6 +841,8 @@ public class ConsciousnessController : MonoBehaviour
 
     private void LateUpdate()
     {
-        UpdateCameraPosition(false);
+        if (PlayerControlManager.Instance.ControlsEnabled) { // Камера обновляется только если контролы включены
+             UpdateCameraPosition(false);
+        }
     }
 } 

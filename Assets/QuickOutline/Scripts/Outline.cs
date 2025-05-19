@@ -16,6 +16,10 @@ using UnityEngine;
 public class Outline : MonoBehaviour {
   private static HashSet<Mesh> registeredMeshes = new HashSet<Mesh>();
 
+  public static void ClearRegisteredMeshes() {
+    registeredMeshes.Clear();
+  }
+
   public enum Mode {
     OutlineAll,
     OutlineVisible,
@@ -81,19 +85,37 @@ public class Outline : MonoBehaviour {
   private bool needsUpdate;
 
   void Awake() {
-
+    Debug.Log($"[Outline] Awake for {gameObject.name}. Initial OutlineMode: {outlineMode}, Color: {outlineColor}, Width: {outlineWidth}");
     // Cache renderers
     renderers = GetComponentsInChildren<Renderer>();
 
     // Instantiate outline materials
-    outlineMaskMaterial = Instantiate(Resources.Load<Material>(@"Materials/OutlineMask"));
-    outlineFillMaterial = Instantiate(Resources.Load<Material>(@"Materials/OutlineFill"));
+    Material maskMat = Resources.Load<Material>(@"Materials/OutlineMask");
+    Material fillMat = Resources.Load<Material>(@"Materials/OutlineFill");
 
-    outlineMaskMaterial.name = "OutlineMask (Instance)";
-    outlineFillMaterial.name = "OutlineFill (Instance)";
+    if (maskMat == null) {
+        Debug.LogError($"[Outline] Failed to load OutlineMask material for {gameObject.name}!");
+    } else {
+        outlineMaskMaterial = Instantiate(maskMat);
+        outlineMaskMaterial.name = "OutlineMask (Instance)";
+    }
+
+    if (fillMat == null) {
+        Debug.LogError($"[Outline] Failed to load OutlineFill material for {gameObject.name}!");
+    } else {
+        outlineFillMaterial = Instantiate(fillMat);
+        outlineFillMaterial.name = "OutlineFill (Instance)";
+    }
+    
+    if (outlineMaskMaterial == null || outlineFillMaterial == null) {
+         Debug.LogError($"[Outline] outlineMaskMaterial or outlineFillMaterial is null AFTER instantiation for {gameObject.name}! This component will be disabled.");
+         enabled = false; 
+         return; 
+    }
 
     // Retrieve or generate smooth normals
     LoadSmoothNormals();
+    Debug.Log($"[Outline] Awake for {gameObject.name} AFTER LoadSmoothNormals. Current OutlineMode: {outlineMode}, Color: {outlineColor}, Width: {outlineWidth}");
 
     // Apply material properties immediately
     needsUpdate = true;

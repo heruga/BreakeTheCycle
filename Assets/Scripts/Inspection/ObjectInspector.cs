@@ -98,6 +98,13 @@ namespace Inspection
         {
             if (inspectionCamera == null || obj == null) return;
 
+            // Блокируем управление игроком НА ВРЕМЯ ОСМОТРА - ДО активации камеры осмотра
+            if (PlayerControlManager.Instance != null)
+            {
+                PlayerControlManager.Instance.SetControlsEnabled(false);
+                Debug.Log("[ObjectInspector] Управление игроком заблокировано");
+            }
+
             currentObject = obj;
             inspectionCamera.StartInspecting(obj);
             Debug.Log($"[ObjectInspector] inspectionCamera активирована: {inspectionCamera.name}");
@@ -121,13 +128,6 @@ namespace Inspection
             }
             
             if (showDebug) Debug.Log($"Started inspecting: {obj.gameObject.name}");
-
-            // Блокируем управление игроком на время осмотра
-            if (PlayerControlManager.Instance != null)
-            {
-                PlayerControlManager.Instance.SetControlsEnabled(false);
-                Debug.Log("[ObjectInspector] Управление игроком заблокировано");
-            }
         }
 
         private void StopInspection()

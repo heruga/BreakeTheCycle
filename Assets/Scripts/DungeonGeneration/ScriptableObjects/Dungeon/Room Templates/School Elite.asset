@@ -14,4 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   templateName: Elite Combat Room
   roomPrefab: {fileID: 3000844315529111293, guid: f1ff103ec26e19248a20b88fad14cbea, type: 3}
+  supportedRoomTypes:
+  - {fileID: 11400000, guid: 46907f22fe954584fa484af7d13105e8, type: 2}
   description: 

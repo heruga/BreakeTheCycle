@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using DungeonGeneration.Scripts.Health;
 using System.Collections;
+using UI;
 
 public class EmotionSystem : MonoBehaviour
 {
@@ -13,7 +14,7 @@ public class EmotionSystem : MonoBehaviour
     public Color inactiveColor = Color.white; // Белый для неактивной эмоции
 
     [Header("Настройки улучшения")]
-    public int baseLevelUpCost = 50; // Базовая стоимость улучшения
+    public int baseLevelUpCost = 60; // Базовая стоимость улучшения
     private int currentMaxEmotionsLevel = 1; // Текущий уровень максимума эмоций
 
     private TextMeshProUGUI levelText;
@@ -61,9 +62,9 @@ public class EmotionSystem : MonoBehaviour
             EmotionType.Compassion,
             new string[]
             {
-                "+5% HP после победы над врагом",
-                "+10% HP после победы над врагом",
-                "+15% HP после победы над врагом"
+                "+2% HP после победы над врагом",
+                "+3% HP после победы над врагом",
+                "+4% HP после победы над врагом"
             }
         },
         {
@@ -109,6 +110,8 @@ public class EmotionSystem : MonoBehaviour
 
     // Dictionary to store progress images for each emotion
     private Dictionary<EmotionType, Image> upgradeProgressImages = new Dictionary<EmotionType, Image>();
+
+    private Dictionary<EmotionType, EmotionButton> emotionButtons = new Dictionary<EmotionType, EmotionButton>();
 
     private void Awake()
     {
@@ -173,35 +176,22 @@ public class EmotionSystem : MonoBehaviour
             playerHealth = FindObjectOfType<PlayerHealth>();
         }
         
-        // Update progress bars for emotions being upgraded
-        foreach (EmotionType emotionType in Enum.GetValues(typeof(EmotionType)))
+        // Update progress for emotions being upgraded
+        foreach (var button in emotionButtons.Values)
         {
-            GameObject emotionObject = GameObject.Find(emotionType.ToString());
+            if (button == null) continue;
+
+            EmotionType emotionType = button.GetEmotionType();
+            GameObject emotionObject = button.gameObject;
             if (emotionObject != null)
             {
                 LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
-                if (longHoldHandler != null && upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
+                if (longHoldHandler != null)
                 {
                     if (longHoldHandler.IsHolding)
                     {
                         float progress = (Time.time - longHoldHandler.HoldStartTime) / longHoldHandler.holdTime;
-                        progressImage.fillAmount = Mathf.Clamp01(progress);
-                        
-                        // Добавляем визуальный эффект пульсации при заполнении
-                        if (progress > 0.9f)
-                        {
-                            float pulse = Mathf.PingPong(Time.time * 4, 0.2f) + 0.8f;
-                            progressImage.color = new Color(1f, 0.8f, 0.2f, pulse);
-                        }
-                    }
-                    else if (progressImage.fillAmount > 0)
-                    {
-                        // Плавное исчезновение полосы прогресса
-                        progressImage.fillAmount = Mathf.Max(0, progressImage.fillAmount - Time.deltaTime * 2);
-                        if (progressImage.fillAmount <= 0)
-                        {
-                            progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-                        }
+                        button.UpdateProgress(progress);
                     }
                 }
             }
@@ -210,98 +200,87 @@ public class EmotionSystem : MonoBehaviour
 
     private void FindUIElements()
     {
+        Debug.Log("[EmotionSystem] Начинаю поиск UI элементов");
+        
         GameObject levelObj = GameObject.Find("Level");
         if (levelObj != null)
         {
             levelText = levelObj.GetComponent<TextMeshProUGUI>();
+            Debug.Log("[EmotionSystem] Найден текст уровня");
+        }
+        else
+        {
+            Debug.LogError("[EmotionSystem] Не найден объект Level!");
         }
 
         GameObject levelUpObj = GameObject.Find("LevelUp");
         if (levelUpObj != null)
         {
             levelUpButton = levelUpObj.GetComponent<Button>();
-            // Ищем текст внутри кнопки
-            levelUpText = levelUpObj.GetComponentInChildren<TextMeshProUGUI>();
+            if (levelUpButton != null)
+            {
+                Debug.Log("[EmotionSystem] Найдена кнопка LevelUp");
+                // Ищем текст внутри кнопки
+                levelUpText = levelUpObj.GetComponentInChildren<TextMeshProUGUI>();
+                if (levelUpText != null)
+                {
+                    Debug.Log("[EmotionSystem] Найден текст кнопки LevelUp");
+                }
+                else
+                {
+                    Debug.LogError("[EmotionSystem] Не найден текст внутри кнопки LevelUp!");
+                }
+            }
+            else
+            {
+                Debug.LogError("[EmotionSystem] На объекте LevelUp нет компонента Button!");
+            }
+        }
+        else
+        {
+            Debug.LogError("[EmotionSystem] Не найден объект LevelUp!");
         }
     }
 
     private void SetupEmotionTooltips()
     {
         Debug.Log("[EmotionSystem] Начинаем установку тултипов");
-        bool allObjectsFound = true;
         
-        foreach (EmotionType emotionType in Enum.GetValues(typeof(EmotionType)))
+        // Находим все кнопки эмоций
+        EmotionButton[] buttons = FindObjectsOfType<EmotionButton>();
+        foreach (var button in buttons)
         {
-            Debug.Log($"[EmotionSystem] Начинаем установку тултипов для {emotionType}");
-            GameObject emotionObject = GameObject.Find(emotionType.ToString());
-            Debug.Log($"[EmotionSystem] Найден объект: {emotionObject != null}");
-            
-            if (emotionObject == null)
-            {
-                allObjectsFound = false;
-                Debug.LogWarning($"[EmotionSystem] Объект {emotionType} не найден!");
-                continue;
-            }
-            
-            // Add tooltip component
-            ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-            if (tooltip == null)
-            {
-                tooltip = emotionObject.AddComponent<ToolTip>();
-            }
-            UpdateEmotionTooltip(emotionType, tooltip);
-            
-            // Add long hold handler for upgrading
-            LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
-            if (longHoldHandler == null)
-            {
-                longHoldHandler = emotionObject.AddComponent<LongHoldHandler>();
-                longHoldHandler.holdTime = 2f;
-                
-                // Create a local copy of emotionType to avoid closure issues
-                EmotionType capturedType = emotionType;
-                longHoldHandler.onLongHold = new UnityEngine.Events.UnityEvent();
-                longHoldHandler.onLongHold.AddListener(() => UpgradeEmotion(capturedType));
-                
-                // Add progress indicator
-                GameObject progressIndicator = new GameObject("UpgradeProgress");
-                progressIndicator.transform.SetParent(emotionObject.transform, false);
-                
-                RectTransform rectTransform = progressIndicator.AddComponent<RectTransform>();
-                rectTransform.anchorMin = new Vector2(0, 0);
-                rectTransform.anchorMax = new Vector2(1, 0);
-                rectTransform.pivot = new Vector2(0, 0);
-                rectTransform.sizeDelta = new Vector2(0, 8);
-                
-                Image progressImage = progressIndicator.AddComponent<Image>();
-                progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-                progressImage.fillMethod = Image.FillMethod.Horizontal;
-                progressImage.type = Image.Type.Filled;
-                progressImage.fillAmount = 0;
-                
-                UnityEngine.UI.Outline outline = progressIndicator.AddComponent<UnityEngine.UI.Outline>();
-                outline.effectColor = new Color(1f, 1f, 0.5f, 0.5f);
-                outline.effectDistance = new Vector2(1, 1);
-                
-                if (!upgradeProgressImages.ContainsKey(capturedType))
-                {
-                    upgradeProgressImages.Add(capturedType, progressImage);
-                }
-            }
+            EmotionType type = button.GetEmotionType();
+            emotionButtons[type] = button;
+            button.Initialize(this);
+            UpdateEmotionTooltip(type, button);
         }
         
-        if (!allObjectsFound)
+        if (emotionButtons.Count == 0)
         {
-            Debug.LogWarning("[EmotionSystem] Не все объекты эмоций были найдены. UI может быть не полностью инициализирован.");
+            Debug.LogWarning("[EmotionSystem] Не найдено ни одной кнопки эмоций!");
         }
     }
 
-    private void UpdateEmotionTooltip(EmotionType emotionType, ToolTip tooltip)
+    private void UpdateEmotionTooltip(EmotionType emotionType, EmotionButton button)
     {
         Debug.Log($"Обновляем тултип для {emotionType}");
-        if (tooltip != null)
+        if (button != null)
         {
-            tooltip.SetTooltipText(GetEmotionDescription(emotionType));
+            button.UpdateTooltip(GetEmotionDescription(emotionType));
+        }
+    }
+
+    private void UpdateEmotionVisual(EmotionType emotionType, bool isActive)
+    {
+        if (emotionButtons.TryGetValue(emotionType, out EmotionButton button))
+        {
+            button.UpdateVisual(isActive, activeColor, inactiveColor);
+            UpdateEmotionTooltip(emotionType, button);
+        }
+        else
+        {
+            Debug.LogWarning($"Не найдена кнопка для эмоции {emotionType}");
         }
     }
 
@@ -336,7 +315,7 @@ public class EmotionSystem : MonoBehaviour
         ToggleEmotion(EmotionType.Denial);
     }
 
-    private void ToggleEmotion(EmotionType emotionType)
+    public void ToggleEmotion(EmotionType emotionType)
     {
         Emotion emotion = emotions.Find(e => e.type == emotionType);
         if (emotion == null) return;
@@ -364,6 +343,23 @@ public class EmotionSystem : MonoBehaviour
         currentActiveEmotions++;
         Debug.Log($"Активирована эмоция: {emotion.type} (Уровень {emotion.level})");
         UpdateEmotionVisual(emotion.type, true);
+
+        // Применяем эффекты эмоции сразу при активации
+        if (playerHealth != null)
+        {
+            switch (emotion.type)
+            {
+                case EmotionType.Anger:
+                    // Уменьшаем HP при активации гнева
+                    float healthPenalty = 0.10f - (emotion.level - 1) * 0.025f; // 10/8/5%
+                    float maxHealth = playerHealth.GetMaxHealth();
+                    float currentHealth = playerHealth.GetCurrentHealth();
+                    float newHealth = currentHealth * (1 - healthPenalty);
+                    playerHealth.SetHealth(newHealth);
+                    Debug.Log($"[EmotionSystem] Гнев активирован: HP уменьшено на {healthPenalty:P0}");
+                    break;
+            }
+        }
     }
 
     private void DeactivateEmotion(Emotion emotion)
@@ -372,47 +368,30 @@ public class EmotionSystem : MonoBehaviour
         currentActiveEmotions--;
         Debug.Log($"Деактивирована эмоция: {emotion.type}");
         UpdateEmotionVisual(emotion.type, false);
+
+        // Отменяем эффекты эмоции при деактивации
+        if (playerHealth != null)
+        {
+            switch (emotion.type)
+            {
+                case EmotionType.Anger:
+                    // Восстанавливаем HP при деактивации гнева
+                    float healthPenalty = 0.10f - (emotion.level - 1) * 0.025f; // 10/8/5%
+                    float maxHealth = playerHealth.GetMaxHealth();
+                    float currentHealth = playerHealth.GetCurrentHealth();
+                    float newHealth = currentHealth / (1 - healthPenalty);
+                    playerHealth.SetHealth(Mathf.Min(newHealth, maxHealth));
+                    Debug.Log($"[EmotionSystem] Гнев деактивирован: HP восстановлено");
+                    break;
+            }
+        }
     }
 
-    private void UpdateEmotionVisual(EmotionType emotionType, bool isActive)
+    private int CalculateEmotionUpgradeCost(Emotion emotion)
     {
-        string objectName = emotionType.ToString();
-        GameObject emotionObject = GameObject.Find(objectName);
-        
-        if (emotionObject != null)
-        {
-            // Пробуем найти Image компонент
-            Image imageComponent = emotionObject.GetComponent<Image>();
-            if (imageComponent != null)
-            {
-                imageComponent.color = isActive ? activeColor : inactiveColor;
-            }
-
-            // Также проверяем, есть ли Image в дочерних объектах
-            Image[] childImages = emotionObject.GetComponentsInChildren<Image>();
-            foreach (Image img in childImages)
-            {
-                img.color = isActive ? activeColor : inactiveColor;
-            }
-
-            // Сброс прогрессбара при деактивации эмоции
-            if (!isActive && upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
-            {
-                progressImage.fillAmount = 0;
-                progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-            }
-            
-            // Обновляем текст тултипа при изменении состояния
-            ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-            if (tooltip != null)
-            {
-                UpdateEmotionTooltip(emotionType, tooltip);
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"Не найден объект с именем {objectName}");
-        }
+        if (emotion == null) return 0; // Or handle error appropriately
+        // Текущая логика расчета стоимости
+        return 30 * emotion.level;
     }
 
     public void UpgradeEmotion(EmotionType emotionType)
@@ -420,7 +399,7 @@ public class EmotionSystem : MonoBehaviour
         Emotion emotion = emotions.Find(e => e.type == emotionType);
         if (emotion == null) return;
 
-        int upgradeCost = 5 * emotion.level;
+        int upgradeCost = CalculateEmotionUpgradeCost(emotion); // Используем новый метод
         if (!CurrencyManager.Instance.SpendCurrency(upgradeCost))
         {
             // Недостаточно валюты, не улучшаем
@@ -435,25 +414,20 @@ public class EmotionSystem : MonoBehaviour
             Debug.Log($"Улучшена эмоция {emotion.type} до уровня {emotion.level}");
             
             // Обновляем тултип после улучшения
-            GameObject emotionObject = GameObject.Find(emotionType.ToString());
-            if (emotionObject != null)
+            if (emotionButtons.TryGetValue(emotionType, out EmotionButton button))
             {
-                ToolTip tooltip = emotionObject.GetComponent<ToolTip>();
-                if (tooltip != null)
-                {
-                    UpdateEmotionTooltip(emotionType, tooltip);
-                }
+                UpdateEmotionTooltip(emotionType, button);
+            }
+            
+            // Добавляем визуальный эффект успешного улучшения
+            if (upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
+            {
+                // Создаем эффект вспышки
+                progressImage.color = Color.white;
+                progressImage.fillAmount = 1;
                 
-                // Добавляем визуальный эффект успешного улучшения
-                if (upgradeProgressImages.TryGetValue(emotionType, out Image progressImage))
-                {
-                    // Создаем эффект вспышки
-                    progressImage.color = Color.white;
-                    progressImage.fillAmount = 1;
-                    
-                    // Анимируем исчезновение через анимацию
-                    StartCoroutine(FadeOutProgressBar(progressImage));
-                }
+                // Анимируем исчезновение через анимацию
+                StartCoroutine(FadeOutProgressBar(progressImage));
             }
         }
         else
@@ -482,24 +456,28 @@ public class EmotionSystem : MonoBehaviour
 
     public void UpgradeMaxActiveEmotions()
     {
+        Debug.Log("[EmotionSystem] Попытка улучшить максимальное количество эмоций");
         int upgradeCost = GetUpgradeCost();
+        Debug.Log($"[EmotionSystem] Стоимость улучшения: {upgradeCost}");
+        
         if (!CurrencyManager.Instance.SpendCurrency(upgradeCost))
         {
-            // Недостаточно валюты, не увеличиваем
+            Debug.Log("[EmotionSystem] Недостаточно валюты для улучшения");
             return;
         }
+        
         if (currentMaxEmotionsLevel < 6) // Максимум 6 уровней
         {
             maxActiveEmotions++;
             currentMaxEmotionsLevel++;
             PlayerPrefs.SetInt("MaxActiveEmotionsLevel", currentMaxEmotionsLevel);
             PlayerPrefs.Save();
-            Debug.Log($"Увеличено максимальное количество активных эмоций до {maxActiveEmotions}");
+            Debug.Log($"[EmotionSystem] Увеличено максимальное количество активных эмоций до {maxActiveEmotions}");
             UpdateUITexts();
         }
         else
         {
-            Debug.Log("Достигнут максимальный уровень!");
+            Debug.Log("[EmotionSystem] Достигнут максимальный уровень!");
         }
     }
 
@@ -513,14 +491,14 @@ public class EmotionSystem : MonoBehaviour
     {
         if (levelText != null)
         {
-            levelText.text = $"Уровень: {currentMaxEmotionsLevel}/6";
+            levelText.text = $"{currentMaxEmotionsLevel}/6";
         }
 
         if (levelUpText != null)
         {
             if (currentMaxEmotionsLevel < 6)
             {
-                levelUpText.text = $"Повысить уровень ({GetUpgradeCost()})";
+                levelUpText.text = $"Повысить\n({GetUpgradeCost()})";
                 if (levelUpButton != null) levelUpButton.interactable = true;
             }
             else
@@ -564,7 +542,7 @@ public class EmotionSystem : MonoBehaviour
         // Добавляем стоимость улучшения и инструкцию, если не максимальный уровень
         if (emotion.level < 3)
         {
-            int upgradeCost = 1 * emotion.level; // Стоимость улучшения (как в UpgradeEmotion)
+            int upgradeCost = CalculateEmotionUpgradeCost(emotion); // Используем новый метод
             result += $"\n\nСтоимость улучшения: {upgradeCost}";
             result += "\nУдерживайте кнопку для улучшения";
         }
@@ -693,7 +671,7 @@ public class EmotionSystem : MonoBehaviour
 
             if (emotion.type == EmotionType.Compassion && playerHealth != null)
             {
-                float healPercent = 0.05f + (emotion.level - 1) * 0.05f; // 5/10/15%
+                float healPercent = 0.02f + (emotion.level - 1) * 0.01f; // 2/3/4%
                 float healAmount = playerHealth.GetMaxHealth() * healPercent;
                 playerHealth.Heal(healAmount);
                 Debug.Log($"[EmotionSystem] Сострадание: восстановлено {healPercent:P0} HP ({healAmount} единиц)");
@@ -817,3 +795,4 @@ public class EmotionSystem : MonoBehaviour
         return totalSpeedModifier;
     }
 }
+ 

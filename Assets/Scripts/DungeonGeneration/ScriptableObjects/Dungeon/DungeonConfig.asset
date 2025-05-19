@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: DungeonConfig
   m_EditorClassIdentifier: 
   minRooms: 4
-  maxRooms: 6
-  roomSpacing: 20
+  maxRooms: 7
+  roomSpacing: 30
   startRoomType: {fileID: 11400000, guid: cd44e7a412c609e49b1080371da7e71e, type: 2}
   basicCombatRoomType: {fileID: 11400000, guid: e1a66fccf461dd9419e7edbe2f68702d, type: 2}
   eliteCombatRoomType: {fileID: 11400000, guid: 46907f22fe954584fa484af7d13105e8, type: 2}
@@ -22,8 +22,9 @@ MonoBehaviour:
   roomTemplates:
   - {fileID: 11400000, guid: c78a770799f122b4b8b38a80bf644fbb, type: 2}
   - {fileID: 11400000, guid: 1788646d634dbdf4ebbd0d2c93e33b2d, type: 2}
-  - {fileID: 11400000, guid: 45398882076791b47b5c774e06a1c814, type: 2}
   - {fileID: 11400000, guid: 85abf8534ed757a49b205f219dea9342, type: 2}
+  - {fileID: 11400000, guid: 45398882076791b47b5c774e06a1c814, type: 2}
+  - {fileID: 11400000, guid: 05372b153fafc3943a6a448bc05e320a, type: 2}
   - {fileID: 11400000, guid: 581ed0b582619a54f899b89ac20f29c1, type: 2}
   ensureBossRoom: 1
   ensureStartRoom: 1

@@ -101,7 +101,21 @@ public class Template_UIManager : MonoBehaviour
         Debug.Log("dialogueContainer active: " + dialogueContainer.activeSelf);
         // Отключаем управление игроком
         if (PlayerControlManager.Instance != null)
-            PlayerControlManager.Instance.SetControlsEnabled(false);
+            PlayerControlManager.Instance.SetUIControlsBlock(true);
+
+        // Управление курсором при начале диалога
+        if (CursorManager.Instance != null)
+        {
+            CursorManager.Instance.SetGameplayState();
+        }
+        else
+        {
+            Debug.LogWarning("[Template_UIManager] CursorManager.Instance is null. Cannot set Gameplay state for cursor.");
+            // Оставляем запасной вариант на случай отсутствия CursorManager
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        Debug.Log("[Begin] Cursor state set for Gameplay (dialogue/monologue started).");
     }
     
     //Calls next node in the dialogue
@@ -146,6 +160,11 @@ public class Template_UIManager : MonoBehaviour
     //Input related stuff (scroll through player choices and update highlight)
     void Update()
     {
+        if (PauseMenuUI.IsPaused)
+        {
+            return; 
+        }
+
         var data = VIDE_Data.VIDE_Data.nodeData;
         if (VIDE_Data.VIDE_Data.isActive)
         {
@@ -390,7 +409,24 @@ public class Template_UIManager : MonoBehaviour
         
         // Включаем управление игроком обратно
         if (PlayerControlManager.Instance != null)
-            PlayerControlManager.Instance.SetControlsEnabled(true);
+        {
+            PlayerControlManager.Instance.SetUIControlsBlock(false);
+            Debug.Log("[EndDialogue] Player controls unblocked.");
+        }
+
+        // Управление на курсора при завършване на диалога
+        if (CursorManager.Instance != null)
+        {
+            CursorManager.Instance.SetGameplayState();
+        }
+        else
+        {
+            Debug.LogWarning("[Template_UIManager] CursorManager.Instance is null. Cannot set Gameplay state for cursor.");
+            // Оставляем запасной вариант на случай отсутствия CursorManager
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        Debug.Log("[EndDialogue] Cursor state set for Gameplay.");
 
         // --- Сохраняем факт проигрывания диалога для playOnce ---
         if (VIDE_Data.VIDE_Data.assigned != null)
