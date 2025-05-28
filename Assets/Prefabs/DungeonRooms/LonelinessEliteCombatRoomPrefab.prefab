@@ -28,7 +28,8 @@ Transform:
   m_LocalPosition: {x: 7, y: 2, z: 7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4451582687060368085}
   m_Father: {fileID: 2675803576561440341}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!1 &5633143399166838699
@@ -67,7 +68,6 @@ Transform:
   - {fileID: 1728900812341844009}
   - {fileID: 8775224315708119228}
   - {fileID: 5448339123116064939}
-  - {fileID: 4451582687060368085}
   - {fileID: 8034873270789419278}
   - {fileID: 6781078615639377612}
   m_Father: {fileID: 0}
@@ -126,9 +126,9 @@ MonoBehaviour:
   m_OverrideTileSize: 0
   m_TileSize: 256
   m_OverrideVoxelSize: 0
-  m_VoxelSize: 0.36666667
+  m_VoxelSize: 0.4333333
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: cb8e042f9f7c1c540acd107868404f4d, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 189e3abbb8a29c949b4e212042cc5def, type: 2}
   m_BuildHeightMesh: 0
 --- !u!114 &1761872984105769882
 MonoBehaviour:
@@ -182,12 +182,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5692122657419383552}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 7, y: 2, z: 7}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2675803576561440341}
+  m_Father: {fileID: 5448339123116064939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!108 &8294360752110946072
 Light:
@@ -201,7 +201,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 2
-  m_Range: 11
+  m_Range: 7
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -528,6 +528,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1191026778868910297, guid: 90a26478ab73eee4b87b3c0f201671d4, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 02a61b437886e3e43a3fd905dbe43a1b, type: 2}
     - target: {fileID: 1550324461250782627, guid: 90a26478ab73eee4b87b3c0f201671d4, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647

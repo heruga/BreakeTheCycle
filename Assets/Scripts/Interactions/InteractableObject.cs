@@ -10,7 +10,6 @@ namespace BreakTheCycle
     public class InteractableObject : BaseInteractable
     {
         private VIDE_Assign videAssign;
-        private Transform playerTransform;
         
         private void Awake()
         {

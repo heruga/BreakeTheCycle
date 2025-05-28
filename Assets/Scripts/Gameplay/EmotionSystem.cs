@@ -53,18 +53,18 @@ public class EmotionSystem : MonoBehaviour
             EmotionType.Determination,
             new string[]
             {
-                "+10% к урону, если HP меньше 50%, +10% к скорости (постоянно)",
-                "+15% к урону, если HP меньше 50%, +15% к скорости (постоянно)",
-                "+20% к урону, если HP меньше 50%, +20% к скорости (постоянно)"
+                "+10% к скорости, +10% к урону, если HP меньше 50%",
+                "+15% к скорости, +15% к урону, если HP меньше 50%",
+                "+20% к скорости, +20% к урону, если HP меньше 50%"
             }
         },
         {
             EmotionType.Compassion,
             new string[]
             {
-                "+2% HP после победы над врагом",
-                "+3% HP после победы над врагом",
-                "+4% HP после победы над врагом"
+                "+3% текущего HP после победы над врагом",
+                "+6% текущего HP после победы над врагом",
+                "+9% текущего HP после победы над врагом"
             }
         },
         {
@@ -89,9 +89,9 @@ public class EmotionSystem : MonoBehaviour
             EmotionType.Anger,
             new string[]
             {
-                "+15% урона, -10% HP",
-                "+20% урона, -8% HP",
-                "+25% урона, -5% HP"
+                "+15% урона, -10% макс. HP",
+                "+20% урона, -8% макс. HP",
+                "+25% урона, -5% макс. HP"
             }
         },
         {
@@ -179,20 +179,16 @@ public class EmotionSystem : MonoBehaviour
         // Update progress for emotions being upgraded
         foreach (var button in emotionButtons.Values)
         {
-            if (button == null) continue;
+            if (button == null || button.gameObject == null) continue;
 
             EmotionType emotionType = button.GetEmotionType();
-            GameObject emotionObject = button.gameObject;
-            if (emotionObject != null)
+            LongHoldHandler longHoldHandler = button.gameObject.GetComponent<LongHoldHandler>();
+            if (longHoldHandler != null)
             {
-                LongHoldHandler longHoldHandler = emotionObject.GetComponent<LongHoldHandler>();
-                if (longHoldHandler != null)
+                if (longHoldHandler.IsHolding)
                 {
-                    if (longHoldHandler.IsHolding)
-                    {
-                        float progress = (Time.time - longHoldHandler.HoldStartTime) / longHoldHandler.holdTime;
-                        button.UpdateProgress(progress);
-                    }
+                    float progress = (Time.time - longHoldHandler.HoldStartTime) / longHoldHandler.holdTime;
+                    button.UpdateProgress(progress);
                 }
             }
         }
@@ -245,6 +241,7 @@ public class EmotionSystem : MonoBehaviour
     private void SetupEmotionTooltips()
     {
         Debug.Log("[EmotionSystem] Начинаем установку тултипов");
+        emotionButtons.Clear(); // Очищаем словарь перед новым заполнением
         
         // Находим все кнопки эмоций
         EmotionButton[] buttons = FindObjectsOfType<EmotionButton>();
@@ -350,13 +347,22 @@ public class EmotionSystem : MonoBehaviour
             switch (emotion.type)
             {
                 case EmotionType.Anger:
-                    // Уменьшаем HP при активации гнева
+                    // Уменьшаем максимальное HP при активации гнева
                     float healthPenalty = 0.10f - (emotion.level - 1) * 0.025f; // 10/8/5%
-                    float maxHealth = playerHealth.GetMaxHealth();
-                    float currentHealth = playerHealth.GetCurrentHealth();
-                    float newHealth = currentHealth * (1 - healthPenalty);
-                    playerHealth.SetHealth(newHealth);
-                    Debug.Log($"[EmotionSystem] Гнев активирован: HP уменьшено на {healthPenalty:P0}");
+                    float originalMaxHealth = playerHealth.GetMaxHealth();
+                    float newMaxHealth = originalMaxHealth * (1 - healthPenalty);
+                    
+                    // Получаем текущий процент здоровья
+                    float healthPercentage = playerHealth.GetCurrentHealth() / originalMaxHealth;
+                    
+                    // Устанавливаем новое максимальное здоровье
+                    playerHealth.SetMaxHealth(newMaxHealth);
+                    
+                    // Устанавливаем текущее здоровье в том же процентном соотношении
+                    float newCurrentHealth = newMaxHealth * healthPercentage;
+                    playerHealth.SetHealth(newCurrentHealth);
+                    
+                    Debug.Log($"[EmotionSystem] Гнев активирован: макс. HP уменьшено на {healthPenalty:P0} (с {originalMaxHealth} до {newMaxHealth})");
                     break;
             }
         }
@@ -375,13 +381,22 @@ public class EmotionSystem : MonoBehaviour
             switch (emotion.type)
             {
                 case EmotionType.Anger:
-                    // Восстанавливаем HP при деактивации гнева
+                    // Восстанавливаем максимальное HP при деактивации гнева
                     float healthPenalty = 0.10f - (emotion.level - 1) * 0.025f; // 10/8/5%
-                    float maxHealth = playerHealth.GetMaxHealth();
-                    float currentHealth = playerHealth.GetCurrentHealth();
-                    float newHealth = currentHealth / (1 - healthPenalty);
-                    playerHealth.SetHealth(Mathf.Min(newHealth, maxHealth));
-                    Debug.Log($"[EmotionSystem] Гнев деактивирован: HP восстановлено");
+                    float currentMaxHealth = playerHealth.GetMaxHealth();
+                    float originalMaxHealth = currentMaxHealth / (1 - healthPenalty);
+                    
+                    // Получаем текущий процент здоровья
+                    float healthPercentage = playerHealth.GetCurrentHealth() / currentMaxHealth;
+                    
+                    // Устанавливаем исходное максимальное здоровье
+                    playerHealth.SetMaxHealth(originalMaxHealth);
+                    
+                    // Устанавливаем текущее здоровье в том же процентном соотношении
+                    float newCurrentHealth = originalMaxHealth * healthPercentage;
+                    playerHealth.SetHealth(newCurrentHealth);
+                    
+                    Debug.Log($"[EmotionSystem] Гнев деактивирован: макс. HP восстановлено до {originalMaxHealth}");
                     break;
             }
         }
@@ -438,6 +453,8 @@ public class EmotionSystem : MonoBehaviour
 
     private System.Collections.IEnumerator FadeOutProgressBar(Image progressImage)
     {
+        if (progressImage == null) yield break; // Проверка на null в начале
+
         float duration = 0.5f;
         float elapsed = 0;
         Color startColor = progressImage.color;
@@ -445,13 +462,17 @@ public class EmotionSystem : MonoBehaviour
         
         while (elapsed < duration)
         {
+            if (progressImage == null) yield break; // Проверка на null в цикле
             progressImage.color = Color.Lerp(startColor, endColor, elapsed / duration);
             elapsed += Time.deltaTime;
             yield return null;
         }
         
-        progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-        progressImage.fillAmount = 0;
+        if (progressImage != null) // Проверка на null перед финальным присвоением
+        {
+            progressImage.color = new Color(1f, 0.8f, 0.2f, 0.9f);
+            progressImage.fillAmount = 0;
+        }
     }
 
     public void UpgradeMaxActiveEmotions()
@@ -498,7 +519,7 @@ public class EmotionSystem : MonoBehaviour
         {
             if (currentMaxEmotionsLevel < 6)
             {
-                levelUpText.text = $"Повысить\n({GetUpgradeCost()})";
+                levelUpText.text = $"Просветиться\n({GetUpgradeCost()})";
                 if (levelUpButton != null) levelUpButton.interactable = true;
             }
             else
@@ -671,10 +692,15 @@ public class EmotionSystem : MonoBehaviour
 
             if (emotion.type == EmotionType.Compassion && playerHealth != null)
             {
-                float healPercent = 0.02f + (emotion.level - 1) * 0.01f; // 2/3/4%
-                float healAmount = playerHealth.GetMaxHealth() * healPercent;
+                float healPercent = 0.03f + (emotion.level - 1) * 0.03f; // 3/6/9%
+                float currentHealth = playerHealth.GetCurrentHealth();
+                float healAmount = currentHealth * healPercent;
+                
+                // Округляем до ближайшего целого и гарантируем минимум 1 единицу восстановления здоровья
+                healAmount = Mathf.Max(1f, Mathf.Round(healAmount));
+                
                 playerHealth.Heal(healAmount);
-                Debug.Log($"[EmotionSystem] Сострадание: восстановлено {healPercent:P0} HP ({healAmount} единиц)");
+                Debug.Log($"[EmotionSystem] Сострадание: восстановлено {healAmount:F0} HP (округлено, минимум 1, {healPercent:P0} от текущего HP)");
             }
         }
     }
@@ -776,23 +802,28 @@ public class EmotionSystem : MonoBehaviour
     /// <returns>Модификатор скорости (например, 0.1f для +10%).</returns>
     public float GetEmotionSpeedModifier()
     {
-        float totalSpeedModifier = 0f;
-        foreach (var emotion in emotions)
+        float modifier = 0f;
+        // Логика расчета модификатора скорости
+        if (IsEmotionActive(EmotionType.Determination))
         {
-            if (!emotion.isActive) continue;
-
-            if (emotion.type == EmotionType.Determination)
+            Emotion determination = emotions.Find(e => e.type == EmotionType.Determination);
+            if (determination != null)
             {
-                switch (emotion.level)
-                {
-                    case 1: totalSpeedModifier += 0.10f; break; // +10%
-                    case 2: totalSpeedModifier += 0.15f; break; // +15%
-                    case 3: totalSpeedModifier += 0.20f; break; // +20%
-                }
+                modifier += (0.10f + (determination.level - 1) * 0.05f); // +10/15/20% скорости
             }
-            // Здесь можно будет добавить другие эмоции, влияющие на скорость
         }
-        return totalSpeedModifier;
+        return modifier;
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+        // Тут можно добавить отписку от глобальных событий, если EmotionSystem на них подписывается
+        // Например, если бы он подписывался на какое-то событие GameManager'а:
+        // if (GameManager.Instance != null) 
+        // { 
+        //     GameManager.Instance.OnSomeGlobalEvent -= HandleGlobalEvent; 
+        // }
     }
 }
  

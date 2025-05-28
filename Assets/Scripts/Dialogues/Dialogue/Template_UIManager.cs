@@ -319,7 +319,7 @@ public class Template_UIManager : MonoBehaviour
             if (!string.IsNullOrEmpty(data.tag))
                 NPC_label.text = data.tag;
             else
-                NPC_label.text = "NPC";
+                NPC_label.text = "Внутренний голос"; // Ваше новое стандартное имя для NPC
             Debug.Log($"[UpdateUI] NPC_label.text = {NPC_label.text}");
                 }
                 else Debug.LogWarning("[UpdateUI] NPC_label is null!");
@@ -367,7 +367,7 @@ public class Template_UIManager : MonoBehaviour
             if (!string.IsNullOrEmpty(data.tag))
                 playerLabel.text = data.tag;
             else
-                playerLabel.text = "Игрок";
+                playerLabel.text = "Потерянный"; // Ваше новое стандартное имя для игрока
             Debug.Log($"[UpdateUI] playerLabel.text = {playerLabel.text}");
                 } else Debug.LogWarning("[UpdateUI] playerLabel is null!");
             }
@@ -398,7 +398,6 @@ public class Template_UIManager : MonoBehaviour
         // --- ОТПИСКА ОТ СОБЫТИЙ --- 
         VIDE_Data.VIDE_Data.OnNodeChange -= UpdateUI;
         VIDE_Data.VIDE_Data.OnEnd -= EndDialogue;
-        // VIDE_Data.OnActionNode -= ActionHandler; // Если бы использовали
 
         // --- ДОБАВЛЕНО: Проверка ссылок перед использованием --- 
         if (dialogueContainer != null && dialogueContainer.gameObject != null) 
@@ -447,6 +446,14 @@ public class Template_UIManager : MonoBehaviour
                     // Ключ теперь использует overrideStartNode или последний nodeID
                     string playedKey = $"RoomDialogue_{npcId}_{nodeId}_Played"; 
                     PlayerPrefs.SetInt(playedKey, 1);
+                    
+                    // НОВОЕ: Добавляем ID диалога в очередь после завершения диалога
+                    if (BreakTheCycle.Dialogue.DialogueStartNodeQueue.Instance != null)
+                    {
+                        BreakTheCycle.Dialogue.DialogueStartNodeQueue.Instance.EnqueueStartNode(npcId, nodeId);
+                        Debug.Log($"[Template_UIManager] Добавлен в очередь ID {nodeId} для NPC {npcId} после завершения диалога");
+                    }
+                    
                     PlayerPrefs.Save();
                     Debug.Log($"[Template_UIManager] Сохранили факт проигрывания диалога: {playedKey}");
                 }

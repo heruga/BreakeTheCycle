@@ -45,7 +45,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 2
-  m_Range: 11
+  m_Range: 7
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -353,9 +353,9 @@ MonoBehaviour:
   m_OverrideTileSize: 0
   m_TileSize: 256
   m_OverrideVoxelSize: 0
-  m_VoxelSize: 0.32333335
+  m_VoxelSize: 0.45000002
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 571ed8bf0629b0a418f18d86638f7156, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 222f5cb2ed799c6479d6035f61d912cb, type: 2}
   m_BuildHeightMesh: 0
 --- !u!114 &5573240356103923390
 MonoBehaviour:
@@ -941,6 +941,38 @@ PrefabInstance:
     - target: {fileID: 3187381953979611415, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.000000030705152
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0000000084988505
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.35355335
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.35355335
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.61237246
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.61237246
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3579586170136493545, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 6153734816748963325, guid: f561cfa34d3a3604aa219ce0ef7ac90b, type: 3}
       propertyPath: m_StaticEditorFlags

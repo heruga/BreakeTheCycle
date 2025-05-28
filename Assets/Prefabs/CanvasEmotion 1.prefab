@@ -137,6 +137,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tooltipText: Hello world
   showDelay: 0.5
+  showOnStart: 0
 --- !u!114 &3404632368486676736
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -528,8 +529,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1507,6 +1508,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tipText: {fileID: 6570056272800916325}
   tipWindow: {fileID: 6160642992165775415}
+  parentCanvas: {fileID: 0}
 --- !u!1 &3220587863174262042
 GameObject:
   m_ObjectHideFlags: 0
@@ -2071,8 +2073,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 681.13477, y: -638}
-  m_SizeDelta: {x: 280, y: 100}
+  m_AnchoredPosition: {x: 667.937, y: -754.77344}
+  m_SizeDelta: {x: 253.6045, y: 333.5468}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4328937805318108936
 CanvasRenderer:

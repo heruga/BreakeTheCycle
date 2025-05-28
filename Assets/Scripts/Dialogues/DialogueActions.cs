@@ -115,20 +115,6 @@ namespace BreakTheCycle.Actions
             PlayerPrefs.Save(); // Сохраняем изменение сразу
         }
         
-        // Вспомогательный метод для получения RoomManager. Может потребовать адаптации,
-        // если DungeonGenerator хранит ссылки иначе.
-        private List<RoomManager> GetRoomManagers(DungeonGenerator generator)
-        {
-            if (generator.transform != null) // Используем transform генератора как родителя
-            {
-                return generator.transform.GetComponentsInChildren<RoomManager>().ToList();
-            }
-            
-            // Запасной вариант: найти все RoomManager на сцене
-             Debug.LogWarning("[DialogueActions] Не удалось найти контейнер подземелья, ищем все RoomManager на сцене.");
-             return FindObjectsOfType<RoomManager>().ToList();
-        }
-
         /// <summary>
         /// Вызывается из Action Node.
         /// Начисляет указанное количество валюты игроку.

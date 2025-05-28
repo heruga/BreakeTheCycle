@@ -84,7 +84,6 @@ MonoBehaviour:
   deathEffectPrefab: {fileID: 0}
   isBoss: 0
   currencyDropAmount: 2
-  bossMultiplier: 1
   healthBarPrefab: {fileID: 5781516032655189868, guid: 574da03ab1afb7041ad66acf7b6cce14, type: 3}
 --- !u!114 &8671881401524962815
 MonoBehaviour:
@@ -102,7 +101,7 @@ MonoBehaviour:
   rotationSpeed: 5
   minPathUpdateDistance: 1
   attackRange: 3
-  attackDamage: 1
+  attackDamage: 5
   attackCooldown: 1
   aggroRange: 4.7
   updateIntervalOutsideView: 1

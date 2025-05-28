@@ -5,7 +5,7 @@ using DungeonGeneration;
 using DungeonGeneration.Scripts;
 using UnityEngine.UI;
 using System;
-using BreakTheCycle.Dialogue; // Добавляем неймспейс для MonologueManager
+using BreakTheCycle.Dialogue; // Добавляем неймспейс для DialogueStartNodeQueue
 
 /// Менеджер игры, управляющий состояниями и переходами между "Реальностью" и "Сознанием"
 public class GameManager : MonoBehaviour
@@ -19,17 +19,18 @@ public class GameManager : MonoBehaviour
     [Header("Transition Settings")]
     public float transitionDuration = 1f;
     public Color fadeColor = Color.black;
-
-    [Header("Managers")]
-    [SerializeField] private bool initCurrencyManagerOnStart = true;
-
+    
     [Header("UI References")]
-    [SerializeField] private GameObject currencyUIPanel;
     [SerializeField] private GameObject endScreenPrefab; // Ссылка на префаб финального экрана
+
+    [Header("Currency System")]
+    [SerializeField] private bool initCurrencyManagerOnStart = true; // Инициализировать Currency Manager при старте
 
     [Header("Monologue Settings")]
     [SerializeField] public int bossReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после убийства босса
     [SerializeField] public int deathReturnMonologueID = 0; // ID монолога для показа при возвращении в реальность после смерти в сознании
+    [SerializeField] public int altFinalMonologueID = 0; // ID альтернативного финального монолога
+    [SerializeField] public int requiredDiscussedPoints = 5; // Сколько очков нужно для "полного" финала
 
     [SerializeField] private bool isTransitioning = false;
     private bool isInReality = true;
@@ -41,6 +42,8 @@ public class GameManager : MonoBehaviour
     // Поля для отслеживания финального монолога
     private int listeningForMonologueID = -1;
     private MonologueManager monologueManagerInstance; // Кэшируем ссылку
+
+    private int discussedWithNPCPoints = 0;
 
     /// Возможные состояния игры
     public enum GameState
@@ -57,10 +60,8 @@ public class GameManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log("[GameManager] Instance создан и сохранен");
-            if (initCurrencyManagerOnStart)
-            {
-                InitializeCurrencyManager();
-            }
+            // --- Загрузка очков общения с NPC ---
+            discussedWithNPCPoints = PlayerPrefs.GetInt("DiscussedWithNPCPoints", 0);
         }
         else
         {
@@ -89,15 +90,7 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log($"[GameManager] Уже находимся в сцене {currentScene}");
             isInReality = currentScene == realitySceneName;
-            
-            // Создаем UI валюты, если мы в сознании
-            if (!isInReality)
-            {
-                SetupCurrencyUI();
-            }
         }
-
-        UpdateUIState();
     }
     
     private void OnEnable()
@@ -116,6 +109,7 @@ public class GameManager : MonoBehaviour
         if (monologueManagerInstance != null)
         {
             monologueManagerInstance.OnMonologueComplete -= HandleFinalMonologueCompletion;
+            monologueManagerInstance.OnMonologueComplete -= HandleMonologueCompletion;
         }
     }
     
@@ -130,37 +124,16 @@ public class GameManager : MonoBehaviour
         }
         if (newScene.name == consciousnessSceneName)
         {
-            Debug.Log("[GameManager] Загружена сцена Consciousness, настраиваем UI валюты");
-            SetupCurrencyUI();
-        }
-    }
-    
-    /// Инициализирует CurrencyManager
-    public void InitializeCurrencyManager()
-    {
-        if (CurrencyManager.Instance == null)
-        {
-            GameObject currencyManagerObj = new GameObject("CurrencyManager");
-            currencyManagerObj.AddComponent<CurrencyManager>();
-        }
-    }
-    
-    /// Настраивает UI валюты
-    private void SetupCurrencyUI()
-    {
-        // Создаем UI валюты только если мы в режиме Consciousness
-        if (GetCurrentState() == GameState.Consciousness)
-        {
-            if (CurrencyManager.Instance == null)
+            Debug.Log("[GameManager] Загружена сцена Consciousness");
+            
+            // Инициализируем Currency Manager если нужно
+            if (initCurrencyManagerOnStart)
             {
                 InitializeCurrencyManager();
             }
-            
-            CurrencyPrefab.CreateCurrencyUI();
-            Debug.Log("[GameManager] UI валюты настроен");
         }
     }
-
+    
     private void Update()
     {
         // Переключение по клавише R - ТОЛЬКО если игрок в РЕАЛЬНОСТИ и в зоне перехода
@@ -174,6 +147,20 @@ public class GameManager : MonoBehaviour
     public void SwitchWorld()
     {
         Debug.Log("[GameManager] SwitchWorld вызван");
+
+        string currentSceneName = SceneManager.GetActiveScene().name; // Получаем имя текущей сцены
+        bool currentlyInReality = currentSceneName == realitySceneName;
+
+        if (currentlyInReality) // Проверяем, что мы в Реальности
+        {
+            bool isBossDefeated = PlayerPrefs.GetInt("BossDefeated", 0) == 1;
+            if (isBossDefeated)
+            {
+                Debug.Log("[GameManager] Босс уже побежден. Переход в Сознание заблокирован.");
+                return; // Прерываем переход
+            }
+        }
+
         if (isTransitioning)
         {
             Debug.Log("[GameManager] Переключение уже выполняется, игнорируем запрос");
@@ -190,8 +177,8 @@ public class GameManager : MonoBehaviour
         SaveSceneState(SceneManager.GetActiveScene().name);
 
         // Получаем актуальное имя текущей сцены
-        string currentSceneName = SceneManager.GetActiveScene().name;
-        bool currentlyInReality = (currentSceneName == realitySceneName);
+        // string currentSceneName = SceneManager.GetActiveScene().name; // Уже определено выше
+        // bool currentlyInReality = currentSceneName == realitySceneName; // Уже определено выше
 
         // Проверка на рассогласование состояния (опционально, но полезно для отладки)
         if (currentlyInReality != isInReality)
@@ -207,8 +194,10 @@ public class GameManager : MonoBehaviour
 
     public IEnumerator SwitchWorldCoroutine(string targetScene)
     {
-        Debug.Log($"[GameManager] SwitchWorldCoroutine стартует для сцены: {targetScene}, вызывая LoadSceneInternalCoroutine");
+        Debug.Log($"[GameManager] SwitchWorldCoroutine стартует для сцены: {targetScene}. Текущий wasDeathInConsciousness = {wasDeathInConsciousness}");
         yield return StartCoroutine(LoadSceneInternalCoroutine(targetScene, true));
+
+        Debug.Log($"[GameManager] SwitchWorldCoroutine: После LoadSceneInternalCoroutine. targetScene = {targetScene}, realitySceneName = {realitySceneName}, wasDeathInConsciousness = {wasDeathInConsciousness}");
 
         // Если мы возвращаемся в Реальность после смерти в Сознании
         if (targetScene == realitySceneName && wasDeathInConsciousness)
@@ -226,6 +215,21 @@ public class GameManager : MonoBehaviour
             if (monologueManagerInstance != null)
             {
                 Debug.Log("[GameManager] MonologueManager найден, запускаем монолог");
+                
+                // Проверяем, был ли уже проигран этот монолог
+                string monologueKey = $"Monologue_{deathReturnMonologueID}_Played";
+                bool wasPlayed = PlayerPrefs.GetInt(monologueKey, 0) == 1;
+                
+                // Если монолог уже был проигран и у нас есть DialogueStartNodeQueue
+                if (wasPlayed && DialogueStartNodeQueue.Instance != null)
+                {
+                    // Проверяем, есть ли этот ID в очереди завершенных диалогов
+                    const string SYSTEM_NPC_ID = "SYSTEM_MONOLOGUE";
+                    // Просто добавляем ID в очередь, метод EnqueueStartNode сам проверит уникальность
+                    DialogueStartNodeQueue.Instance.EnqueueStartNode(SYSTEM_NPC_ID, deathReturnMonologueID);
+                    Debug.Log($"[GameManager] Монолог {deathReturnMonologueID} уже был проигран, добавлен в очередь.");
+                }
+                
                 monologueManagerInstance.PlayMonologue(deathReturnMonologueID);
             }
             else
@@ -235,11 +239,37 @@ public class GameManager : MonoBehaviour
             wasDeathInConsciousness = false; // Сбрасываем флаг
             Debug.Log("[GameManager] Флаг wasDeathInConsciousness сброшен");
         }
+        else
+        {
+            // <--- НОВЫЙ БЛОК ДЛЯ ЛОГИРОВАНИЯ ---
+            if (targetScene == realitySceneName)
+            {
+                Debug.Log($"[GameManager] SwitchWorldCoroutine: Условие для монолога смерти НЕ выполнено. targetScene ({targetScene}) == realitySceneName ({realitySceneName}), НО wasDeathInConsciousness = {wasDeathInConsciousness}");
+            }
+            else
+            {
+                Debug.Log($"[GameManager] SwitchWorldCoroutine: Условие для монолога смерти НЕ выполнено. targetScene ({targetScene}) != realitySceneName ({realitySceneName}). wasDeathInConsciousness = {wasDeathInConsciousness}");
+            }
+            // --- КОНЕЦ НОВОГО БЛОКА ---
+        }
+
+        // Восстанавливаем нормальное течение времени после завершения перехода
+        Time.timeScale = 1;
+        Debug.Log("[GameManager] SwitchWorldCoroutine: Восстановлено нормальное течение времени (Time.timeScale = 1)");
     }
 
     public IEnumerator LoadSceneAsync(string sceneName)
     {
         Debug.Log($"[GameManager] LoadSceneAsync стартует для сцены: {sceneName}, вызывая LoadSceneInternalCoroutine");
+        
+        // Сохраняем текущее состояние игры перед загрузкой новой сцены
+        // только если мы не в процессе начала новой игры
+        if (PlayerPrefs.GetInt("IsNewGame", 0) == 0)
+        {
+            SaveGame(); // Выполняем полное сохранение
+            Debug.Log("[GameManager] Состояние игры сохранено перед загрузкой новой сцены");
+        }
+        
         yield return StartCoroutine(LoadSceneInternalCoroutine(sceneName, false));
     }
 
@@ -335,11 +365,8 @@ public class GameManager : MonoBehaviour
         Debug.Log($"[GameManager] ExecuteLoadingSequence: Флаг isInReality установлен: {isInReality} (на основе сцены '{sceneToLoad}')");
         // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
-        Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов UpdateUIState и SaveGame...");
-        UpdateUIState(); 
         PlayerPrefs.SetString("LastScene", sceneToLoad); 
         PlayerPrefs.Save();
-        Debug.Log("[GameManager] ExecuteLoadingSequence: UpdateUIState и SaveGame завершены.");
 
         Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов RestoreSceneState...");
         RestoreSceneState(sceneToLoad);
@@ -402,8 +429,20 @@ public class GameManager : MonoBehaviour
                  var monologueManager = FindObjectOfType<BreakTheCycle.Dialogue.MonologueManager>();
                 if (monologueManager != null)
                 {
-                    Debug.Log("[GameManager] ExecuteLoadingSequence: Показываем монолог после убийства босса (первый раз)");
-                    monologueManager.PlayMonologue(bossReturnMonologueID);
+                    // Проверка достаточности очков для "полного" финала
+                    int discussedPoints = GetDiscussedWithNPCPoints();
+                    int requiredPoints = requiredDiscussedPoints;
+                    
+                    // Выбор ID монолога в зависимости от количества очков
+                    int monologueToPlay = discussedPoints >= requiredPoints ? 
+                                         bossReturnMonologueID : 
+                                         altFinalMonologueID;
+                    
+                    Debug.Log($"[GameManager] ExecuteLoadingSequence: Очки общения: {discussedPoints}/{requiredPoints}. " +
+                             $"Показываем монолог после убийства босса (ID: {monologueToPlay})");
+                    
+                    monologueManager.PlayMonologue(monologueToPlay);
+                    
                     // Устанавливаем флаг, что монолог проигран
                     PlayerPrefs.SetInt("PlayedBossReturnMonologue", 1);
                     PlayerPrefs.Save(); // Сохраняем изменение флага
@@ -485,24 +524,33 @@ public class GameManager : MonoBehaviour
         SwitchWorld();
     }
 
-    private void UpdateUIState()
-    {
-        if (currencyUIPanel != null)
-        {
-            currencyUIPanel.SetActive(GetCurrentState() == GameState.Consciousness);
-        }
-    }
-
     /// Обработка смерти игрока
     public void HandlePlayerDeath()
     {
-        Debug.Log("[GameManager] HandlePlayerDeath вызван");
+        Debug.Log("[GameManager] HandlePlayerDeath вызван.");
+        Debug.Log($"[GameManager] HandlePlayerDeath: Текущее состояние isInReality = {isInReality}");
+
         if (!isInReality)
         {
-            Debug.Log("[GameManager] Смерть произошла в Сознании");
+            Debug.Log("[GameManager] Смерть произошла в Сознании. Устанавливаем wasDeathInConsciousness = true.");
             wasDeathInConsciousness = true;
             Debug.Log($"[GameManager] Установлен флаг wasDeathInConsciousness = {wasDeathInConsciousness}");
+            
+            // НЕ восстанавливаем нормальное течение времени перед переходом
+            // Time.timeScale останется на 0 до конца перехода
+            // Time.timeScale = 1; <-- Удаляем эту строку
+            Debug.Log("[GameManager] Сохраняем Time.timeScale = 0 во время перехода после смерти");
+            
+            Debug.Log("[GameManager] HandlePlayerDeath: Вызов SwitchWorld().");
             SwitchWorld(); // Переключаемся обратно в Реальность
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] HandlePlayerDeath: Смерть произошла В РЕАЛЬНОСТИ или isInReality некорректен. Флаг wasDeathInConsciousness НЕ установлен.");
+            
+            // Восстанавливаем нормальное течение времени в любом случае
+            // Time.timeScale = 1; <-- Удаляем эту строку
+            Debug.Log("[GameManager] Сохраняем Time.timeScale = 0 после смерти в реальности");
         }
     }
 
@@ -512,20 +560,52 @@ public class GameManager : MonoBehaviour
         Debug.Log("[GameManager] StartNewGame: очистка всех PlayerPrefs и запуск новой игры");
         PlayerPrefs.DeleteAll();
         PlayerPrefs.SetInt("IsNewGame", 1);
+        
+        // Сбрасываем очки общения с NPC
+        discussedWithNPCPoints = 0;
+        
+        // Очищаем сохраненные данные диалогов
+        if (DialogueStartNodeQueue.Instance != null)
+        {
+            DialogueStartNodeQueue.Instance.ClearAllData();
+            Debug.Log("[GameManager] StartNewGame: Очищены данные диалогов");
+        }
+        
         PlayerPrefs.Save();
+        Debug.Log("[GameManager] StartNewGame: Очистка PlayerPrefs выполнена, запускаем сцену: " + realitySceneName);
+        
         if (!isTransitioning)
         {
             StartCoroutine(LoadSceneAsync(realitySceneName));
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] StartNewGame: Попытка запустить новую игру во время другого перехода. Запрос проигнорирован.");
         }
     }
 
     public void ContinueGame()
     {
-        Debug.Log("[GameManager] ContinueGame: загрузка сохранённой игры");
-        string lastScene = PlayerPrefs.GetString("LastScene", realitySceneName);
+        Debug.Log("[GameManager] ContinueGame: попытка загрузки сохранённой игры"); // Изменено сообщение для ясности
+    
+        // --- НАЧАЛО ПРЕДЛАГАЕМЫХ ИЗМЕНЕНИЙ ---
+        if (!PlayerPrefs.HasKey("LastScene"))
+        {
+            Debug.Log("[GameManager] ContinueGame: Сохранения не найдены (отсутствует ключ 'LastScene'). Действие отменено.");
+            return; // Ничего не делаем, если сохранений нет
+        }
+        // --- КОНЕЦ ПРЕДЛАГАЕМЫХ ИЗМЕНЕНИЙ ---
+    
+        string lastScene = PlayerPrefs.GetString("LastScene", realitySceneName); // Теперь эта строка вызовется, только если ключ есть
+        Debug.Log($"[GameManager] ContinueGame: Загрузка сцены '{lastScene}'"); // Добавим лог с именем сцены
+
         if (!isTransitioning)
         {
             StartCoroutine(LoadSceneAsync(lastScene));
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] ContinueGame: Попытка загрузить сцену во время другого перехода. Запрос проигнорирован.");
         }
     }
 
@@ -755,10 +835,34 @@ public class GameManager : MonoBehaviour
 
     public void SaveGame()
     {
-        Debug.Log("[GameManager] SaveGame: автосохранение состояния");
+        Debug.Log("[GameManager] SaveGame: сохранение состояния игры");
+        
         // Сохраняем имя текущей сцены
         PlayerPrefs.SetString("LastScene", SceneManager.GetActiveScene().name);
+        
+        // Сохраняем состояние текущей сцены (позиция игрока и т.д.)
+        SaveSceneState(SceneManager.GetActiveScene().name);
+        
+        // Сохраняем очки общения с NPC
+        PlayerPrefs.SetInt("DiscussedWithNPCPoints", discussedWithNPCPoints);
+        
+        // Принудительно сохраняем данные диалогов, если система инициализирована
+        if (DialogueStartNodeQueue.Instance != null)
+        {
+            // Метод SaveEnqueuedNodesToPrefs вызывается внутри DialogueStartNodeQueue
+            // при добавлении новых узлов и при уничтожении объекта
+            // Но на всякий случай вызываем метод сохранения явно
+            DialogueStartNodeQueue.Instance.SaveEnqueuedNodesToPrefs();
+            Debug.Log("[GameManager] Данные диалогов сохранены через DialogueStartNodeQueue");
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] DialogueStartNodeQueue.Instance == null, данные диалогов не сохранены");
+        }
+        
+        // Сохраняем все изменения
         PlayerPrefs.Save();
+        Debug.Log("[GameManager] Все данные сохранены в PlayerPrefs");
     }
 
     // Универсальный поиск объекта по имени, включая неактивные
@@ -787,10 +891,32 @@ public class GameManager : MonoBehaviour
             if (monologueManagerInstance != null)
             {
                 Debug.Log("[GameManager] MonologueManager успешно найден");
+                
+                // Подписываемся на событие завершения монолога
+                monologueManagerInstance.OnMonologueComplete += HandleMonologueCompletion;
+                Debug.Log("[GameManager] Подписались на событие OnMonologueComplete");
             }
             else
             {
                 Debug.LogError("[GameManager] MonologueManager не найден в сцене!");
+            }
+        }
+    }
+
+    // Обработчик события завершения монолога
+    private void HandleMonologueCompletion(int completedMonologueID)
+    {
+        Debug.Log($"[GameManager] Получено событие завершения монолога с ID: {completedMonologueID}");
+        
+        // Если это не монолог, который нам нужно отслеживать для финальной последовательности
+        if (completedMonologueID != listeningForMonologueID)
+        {
+            // Добавляем ID монолога в очередь завершенных диалогов
+            if (DialogueStartNodeQueue.Instance != null && completedMonologueID >= 0)
+            {
+                const string SYSTEM_NPC_ID = "SYSTEM_MONOLOGUE";
+                DialogueStartNodeQueue.Instance.EnqueueStartNode(SYSTEM_NPC_ID, completedMonologueID);
+                Debug.Log($"[GameManager] Монолог {completedMonologueID} добавлен в очередь завершенных диалогов");
             }
         }
     }
@@ -873,5 +999,36 @@ public class GameManager : MonoBehaviour
     {
         isPlayerInTransitionZone = isInZone;
         Debug.Log($"[GameManager] Игрок {(isInZone ? "вошел в" : "вышел из")} зоны перехода. isPlayerInTransitionZone = {isPlayerInTransitionZone}");
+    }
+
+    public void AddDiscussedWithNPCPoints(int amount)
+    {
+        discussedWithNPCPoints += amount;
+        PlayerPrefs.SetInt("DiscussedWithNPCPoints", discussedWithNPCPoints);
+        PlayerPrefs.Save();
+        Debug.Log($"[GameManager] Очки общения с NPC увеличены на {amount}, теперь: {discussedWithNPCPoints}");
+    }
+
+    public int GetDiscussedWithNPCPoints()
+    {
+        return discussedWithNPCPoints;
+    }
+
+    /// <summary>
+    /// Инициализирует Currency Manager в сцене Сознания
+    /// </summary>
+    public void InitializeCurrencyManager()
+    {
+        // Ищем Currency Manager в сцене
+        var currencyManager = FindObjectOfType<CurrencyManager>();
+        if (currencyManager != null)
+        {
+            Debug.Log("[GameManager] Currency Manager найден и инициализирован в сцене Сознания");
+            // Здесь можно добавить дополнительную логику инициализации если нужно
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] Currency Manager не найден в сцене Сознания!");
+        }
     }
 } 

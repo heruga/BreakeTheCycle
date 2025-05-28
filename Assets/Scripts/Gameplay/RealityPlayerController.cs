@@ -11,8 +11,6 @@ public class RealityPlayerController : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float speed = 5.0f;
-    [SerializeField] private float gravity = -9.81f;
-    [SerializeField] private float jumpHeight = 1.5f;
 
     [Header("Interaction")]
     [SerializeField] private float interactionRange = 2.0f;
@@ -157,7 +155,7 @@ public class RealityPlayerController : MonoBehaviour
         IInteractable foundInteractable = null;
         BaseInteractable foundBaseInteractable = null;
         GameObject foundInspectableGameObject = null;
-        MonoBehaviour foundInspectableOutlineComponent = null;
+        Inspection.InspectableOutline foundInspectableOutlineComponent = null;
         bool canInteractWithFound = false;
         bool newObjectDetectedThisFrame = (previousHitObject == null); // Определяем сразу, если до этого ничего не было
 
@@ -172,21 +170,14 @@ public class RealityPlayerController : MonoBehaviour
             previousHitObject = hit.collider.gameObject;
             foundInspectableGameObject = hit.collider.gameObject;
 
-            // Пытаемся получить все MonoBehaviour компоненты и найти среди них InspectableOutline
-            var allComponents = hit.collider.GetComponents<MonoBehaviour>();
-            bool foundOurOutline = false;
-            foreach (var component in allComponents)
+            // Пытаемся получить InspectableOutline
+            foundInspectableOutlineComponent = hit.collider.GetComponent<Inspection.InspectableOutline>();
+            if (foundInspectableOutlineComponent != null)
             {
-                if (component.GetType().Name == "InspectableOutline")
-                {
-                    if (newObjectDetectedThisFrame || foundInspectableOutlineComponent != component) 
-                        Debug.Log($"[RealityPlayerController] Found InspectableOutline component on {hit.collider.name}: {component.GetType().FullName}");
-                    foundInspectableOutlineComponent = component;
-                    foundOurOutline = true;
-                    break; // Нашли нужный, выходим из цикла
-                }
+                if (newObjectDetectedThisFrame) 
+                    Debug.Log($"[RealityPlayerController] Found InspectableOutline component on {hit.collider.name}");
             }
-            if (!foundOurOutline && newObjectDetectedThisFrame)
+            else if (newObjectDetectedThisFrame) // Если попали в слой, но компонент не найден
             {
                  Debug.LogWarning($"[RealityPlayerController] Did NOT find 'InspectableOutline' component on {hit.collider.name}, though it was hit by inspectable raycast.");
             }
@@ -259,27 +250,20 @@ public class RealityPlayerController : MonoBehaviour
         {
             if (lastInspectableObject != null)
             {
-                // Ищем именно InspectableOutline на старом объекте для скрытия
-                var componentsOnOld = lastInspectableObject.GetComponents<MonoBehaviour>();
-                foreach(var comp in componentsOnOld)
+                Inspection.InspectableOutline oldOutline = lastInspectableObject.GetComponent<Inspection.InspectableOutline>();
+                if (oldOutline != null)
                 {
-                    if (comp.GetType().Name == "InspectableOutline")
-                    {
-                        Debug.Log($"[RealityPlayerController] Hiding InspectableOutline on {lastInspectableObject.name}");
-                        var hideMethod = comp.GetType().GetMethod("HideOutline");
-                        hideMethod?.Invoke(comp, null);
-                        break;
-                    }
+                    Debug.Log($"[RealityPlayerController] Hiding InspectableOutline on {lastInspectableObject.name}");
+                    oldOutline.HideOutline();
                 }
             }
             lastInspectableObject = foundInspectableGameObject;
         }
 
-        if (foundInspectableOutlineComponent != null) // Теперь эта переменная содержит именно InspectableOutline
+        if (foundInspectableOutlineComponent != null) 
         {
             Debug.Log($"[RealityPlayerController] Showing InspectableOutline on {foundInspectableGameObject.name}");
-            var showMethod = foundInspectableOutlineComponent.GetType().GetMethod("ShowOutline");
-            showMethod?.Invoke(foundInspectableOutlineComponent, null);
+            foundInspectableOutlineComponent.ShowOutline();
         }
 
         // --- Управление обводкой для BaseInteractable ---
@@ -316,12 +300,11 @@ public class RealityPlayerController : MonoBehaviour
     {
         if (lastInspectableObject != null)
         {
-            var lastOutline = lastInspectableObject.GetComponent(typeof(MonoBehaviour)) as MonoBehaviour;
-            if (lastOutline != null && lastOutline.GetType().Name == "InspectableOutline")
+            Inspection.InspectableOutline outlineComponent = lastInspectableObject.GetComponent<Inspection.InspectableOutline>();
+            if (outlineComponent != null)
             {
                 Debug.Log($"[RealityPlayerController] ClearAllOutlines: Hiding InspectableOutline on {lastInspectableObject.name}");
-                var hideMethod = lastOutline.GetType().GetMethod("HideOutline");
-                hideMethod?.Invoke(lastOutline, null);
+                outlineComponent.HideOutline();
             }
             lastInspectableObject = null;
         }
@@ -337,8 +320,5 @@ public class RealityPlayerController : MonoBehaviour
     private void OnDestroy()
     {
         ClearAllOutlines();
-        // Отписываемся от событий, если это не сделано в OnDisable (на всякий случай)
-         if (PlayerControlManager.Instance != null)
-            PlayerControlManager.Instance.OnControlStateChanged -= OnControlStateChanged;
     }
 } 

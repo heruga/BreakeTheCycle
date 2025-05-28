@@ -13,9 +13,6 @@ namespace DungeonGeneration
         [SerializeField] private DungeonConfigSO dungeonConfig;
         [SerializeField] private Transform dungeonContainer;
         [SerializeField] private GameObject playerPrefab;
-        [SerializeField] private float generationDelay = 0.5f;
-        [SerializeField] private bool showDebugGizmos = true;
-        [SerializeField] private Color debugLineColor = Color.yellow;
 
         // --- ДОБАВЛЕНО: Глобальный флаг для очистки всех комнат ---
         public bool forceAllRoomsCleared = false;
@@ -212,15 +209,15 @@ namespace DungeonGeneration
             {
                 Debug.Log($"[DungeonGenerator] Создаю стартовую комнату {startRoomNode.Id}");
                 CreateRoomInstance(startRoomNode);
-                yield return new WaitForSeconds(generationDelay);
-                            }
-                            else
-                            {
+            }
+            else
+            {
                 Debug.LogError("[DungeonGenerator] startRoomNode is null в CreateRooms!");
             }
             
             Debug.Log($"[DungeonGenerator] В конце GenerateRooms: startRoomNode = {(startRoomNode == null ? "null" : startRoomNode.Id)}");
             Debug.Log($"[DungeonGenerator] В конце GenerateRooms: startRoomNode.RoomInstance = {(startRoomNode?.RoomInstance == null ? "null" : startRoomNode.RoomInstance.name)}");
+            yield return null;
         }
 
         private IEnumerator CreateBossRoom()

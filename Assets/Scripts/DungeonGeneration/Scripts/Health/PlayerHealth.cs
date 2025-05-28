@@ -89,12 +89,36 @@ namespace DungeonGeneration.Scripts.Health
             float prevHealth = currentHealth;
             currentHealth = Mathf.Clamp(health, 0, maxHealth);
             Debug.Log($"[PlayerHealth] Установлено здоровье: {currentHealth:F1} (было: {prevHealth:F1})");
+            InvokeHealthChanged();
+        }
+
+        /// <summary>
+        /// Устанавливает максимальное здоровье напрямую
+        /// </summary>
+        /// <param name="newMaxHealth">Новое значение максимального здоровья</param>
+        public void SetMaxHealth(float newMaxHealth)
+        {
+            float prevMaxHealth = maxHealth;
+            maxHealth = Mathf.Max(1, newMaxHealth); // Минимум 1 HP
+            
+            // Ограничиваем текущее здоровье новым максимумом
+            if (currentHealth > maxHealth)
+            {
+                currentHealth = maxHealth;
+            }
+            
+            Debug.Log($"[PlayerHealth] Установлено макс. здоровье: {maxHealth:F1} (было: {prevMaxHealth:F1})");
+            InvokeHealthChanged();
         }
 
         protected override void Die()
         {
             if (isDead) return;
             isDead = true;
+            
+            // Останавливаем время сразу после установки флага смерти
+            Time.timeScale = 0;
+            
             if (animator != null)
             {
                 animator.SetTrigger("isDead");
@@ -109,20 +133,25 @@ namespace DungeonGeneration.Scripts.Health
             {
                 Debug.Log("[PlayerHealth] Игрок воскрешен через систему эмоций");
                 isDead = false;
+                // Возвращаем нормальное течение времени, если игрок был воскрешен
+                Time.timeScale = 1;
                 return;
             }
 
             // base.Die(); // <-- ВРЕМЕННО ЗАКОММЕНТИРОВАНО ДЛЯ ТЕСТА
             
-            Debug.Log("[PlayerHealth] Игрок умер, загружаем сцену Reality");
+            Debug.Log("[PlayerHealth] Игрок умер. Обращаемся к GameManager для обработки смерти.");
             if (GameManager.Instance != null)
             {
                 // Явно переходим в реальность, а не просто инвертируем состояние
-                GameManager.Instance.StartCoroutine(GameManager.Instance.LoadSceneAsync(GameManager.Instance.realitySceneName));
+                // GameManager.Instance.StartCoroutine(GameManager.Instance.LoadSceneAsync(GameManager.Instance.realitySceneName)); // <--- ЭТУ СТРОКУ УДАЛЯЕМ/КОММЕНТИРУЕМ
+                GameManager.Instance.HandlePlayerDeath(); // <--- ВОТ ЭТА СТРОКА ДОБАВЛЕНА
             }
             else
             {
-                Debug.LogError("[PlayerHealth] GameManager не найден! Переход в сцену Reality невозможен. Исправьте архитектуру переходов!");
+                Debug.LogError("[PlayerHealth] GameManager не найден! Не могу корректно обработать смерть и переход в сцену Reality. Исправьте архитектуру переходов!");
+                // В качестве крайней меры, можно попробовать загрузить сцену напрямую, но это не идеальный вариант
+                // SceneManager.LoadScene("Reality"); 
             }
         }
     }

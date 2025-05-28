@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DungeonConfig
   m_EditorClassIdentifier: 
   minRooms: 4
-  maxRooms: 7
+  maxRooms: 6
   roomSpacing: 30
   startRoomType: {fileID: 11400000, guid: cd44e7a412c609e49b1080371da7e71e, type: 2}
   basicCombatRoomType: {fileID: 11400000, guid: e1a66fccf461dd9419e7edbe2f68702d, type: 2}

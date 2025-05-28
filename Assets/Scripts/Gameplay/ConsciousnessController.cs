@@ -8,6 +8,7 @@ using DungeonGeneration.Scripts.Health;
 using UnityEngine.EventSystems;
 using Inspection;
 using System.Collections.Generic;
+using BreakTheCycle.Dialogue;
 
 /// <summary>
 /// Контроллер игрока для режима "Сознание" с изометрическим видом
@@ -29,34 +30,6 @@ public class ConsciousnessController : MonoBehaviour
     
     [Header("Камера")]
     [SerializeField] private Transform cameraTransform;
-    [Tooltip("Высота камеры над игроком")]
-    [SerializeField] private float cameraHeight = 15f;
-    [Tooltip("Угол наклона камеры (X-ось)")]
-    [SerializeField] private float cameraAngleX = 45f;
-    [Tooltip("Угол поворота камеры (Y-ось)")]
-    [SerializeField] private float cameraAngleY = 45f;
-    [Tooltip("Скорость перемещения камеры")]
-    [SerializeField] private float cameraSmoothSpeed = 3.5f;
-    [Tooltip("Стандартное смещение камеры относительно игрока")]
-    [SerializeField] private Vector3 cameraOffset = new Vector3(0f, 15f, -15f);
-    [Tooltip("Включить смещение камеры в направлении движения")]
-    [SerializeField] private bool adjustCameraDirection = true;
-    [Tooltip("Сила смещения камеры в направлении движения")]
-    [SerializeField] private float directionAdjustmentStrength = 5f;
-    [Tooltip("Время возврата камеры в стандартное положение после остановки игрока")]
-    [SerializeField] private float cameraReturnTime = 2.2f;
-    [Tooltip("Сила демпфирования для плавного торможения камеры")]
-    [SerializeField] private float cameraDampingStrength = 0.85f;
-    [Tooltip("Скорость реакции на изменение направления движения")]
-    [SerializeField] private float directionChangeResponsiveness = 1.2f;
-    [Tooltip("Максимальное расстояние опережения камеры")]
-    [SerializeField] private float maxLookAheadDistance = 7f;
-    [Tooltip("Применить эффект 'пружины' к движению камеры")]
-    [SerializeField] private bool useSpringEffect = true;
-    [Tooltip("Порог для определения резкого изменения направления")]
-    [SerializeField] private float directionChangeDotThreshold = 0.4f;
-    [Tooltip("Время сглаживания резкого изменения направления")]
-    [SerializeField] private float abruptChangeSmoothing = 0.8f;
     
     [Header("Взаимодействие")]
     [SerializeField] private float interactionRange = 2f;
@@ -76,34 +49,24 @@ public class ConsciousnessController : MonoBehaviour
     [SerializeField] private Color attackGizmoColor = Color.yellow;
     
     private Vector3 moveDirection;
-    private Vector3 lastMoveDirection;
-    private Vector3 smoothedMoveDirection;
-    private Vector3 targetCameraPosition;
-    private Vector3 cameraVelocity = Vector3.zero;
-    private Vector3 previousTargetPosition;
     private CharacterController characterController;
-    private float timeSinceLastMovement = 0f;
-    private bool isReturningToStandardPosition = false;
-    private float directionChangeTime = 0f;
-    private bool isAbruptDirectionChange = false;
-    private float abruptChangeTime = 0f;
-    private GameObject createdCamera;
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
     private EmotionSystem emotionSystem;
     private Animator animator;
 
+    // Публичное свойство для доступа к направлению движения
+    public Vector3 MoveDirection => moveDirection;
+
     // Поля для отслеживания объектов с активной обводкой
     private HashSet<BaseInteractable> previouslyInRangeInteractables = new HashSet<BaseInteractable>();
-    private HashSet<MonoBehaviour> previouslyInRangeInspectables = new HashSet<MonoBehaviour>();
+    private HashSet<Inspection.InspectableOutline> previouslyInRangeInspectables = new HashSet<Inspection.InspectableOutline>();
     private HashSet<EnemyHealth> enemiesHitThisDash = new HashSet<EnemyHealth>();
     
     private void Awake()
     {
         SetupPhysics();
         SetupCamera();
-        lastMoveDirection = transform.forward;
-        enemyLayerMask = 256; // Layer 8 = 256 (1 << 8)
         animator = GetComponentInChildren<Animator>();
         Debug.Log($"[ConsciousnessController] Animator component: {(animator == null ? "NOT FOUND" : "FOUND")}");
         
@@ -146,24 +109,20 @@ public class ConsciousnessController : MonoBehaviour
     
     private void SetupCamera()
     {
+        // Базовая настройка камеры - основная логика теперь в CameraController
         if (cameraTransform == null)
         {
             Camera mainCamera = Camera.main;
             if (mainCamera != null)
             {
                 cameraTransform = mainCamera.transform;
+                Debug.Log("[ConsciousnessController] Использую основную камеру");
             }
             else
             {
-                createdCamera = new GameObject("IsometricCamera");
-                cameraTransform = createdCamera.transform;
-                Camera newCamera = createdCamera.AddComponent<Camera>();
-                newCamera.nearClipPlane = 0.1f;
-                createdCamera.AddComponent<AudioListener>();
+                Debug.LogWarning("[ConsciousnessController] Основная камера не найдена! Убедитесь, что в сцене есть камера с тегом MainCamera.");
             }
         }
-        
-        UpdateCameraPosition(true);
     }
     
     private void OnEnable()
@@ -295,17 +254,16 @@ public class ConsciousnessController : MonoBehaviour
             // Проверяем, является ли объект осматриваемым
             // Используем GameObject.GetComponent вместо прямого вызова для избежания проблем с типом
             var inspectableObject = col.gameObject;
-            var inspectOutlineComponent = inspectableObject.GetComponent(typeof(MonoBehaviour)) as MonoBehaviour;
+            Inspection.InspectableOutline inspectOutlineComponentTyped = inspectableObject.GetComponent<Inspection.InspectableOutline>();
             
-            // Проверяем по имени типа, чтобы избежать проблем с сборкой
-            if (inspectOutlineComponent != null && 
-                inspectOutlineComponent.GetType().Name == "InspectableOutline" && 
+            // Проверяем по имени типа, чтобы избежать проблем с сборкой - теперь прямой тип
+            if (inspectOutlineComponentTyped != null && 
                 mask == inspectableMask) // Убедимся что это именно для Inspectable объектов (клавиша E)
             {
                 // Само взаимодействие (осмотр) должно быть частью IInteractable или отдельным методом
                 // Здесь мы только пытаемся инициировать взаимодействие. Обводка управляется в UpdateOutlines.
                 // Например, если InspectableObject реализует IInteractable:
-                (inspectOutlineComponent.GetComponent<IInteractable>())?.OnInteract();
+                (inspectOutlineComponentTyped.GetComponent<IInteractable>())?.OnInteract(); // или col.GetComponent<IInteractable>()?.OnInteract();
                 break; 
             }
         }
@@ -315,7 +273,7 @@ public class ConsciousnessController : MonoBehaviour
     private void UpdateOutlines(bool clearAll)
     {
         HashSet<BaseInteractable> currentInRangeInteractables = new HashSet<BaseInteractable>();
-        HashSet<MonoBehaviour> currentInRangeInspectables = new HashSet<MonoBehaviour>();
+        HashSet<Inspection.InspectableOutline> currentInRangeInspectables = new HashSet<Inspection.InspectableOutline>();
 
         if (!clearAll) // Если контролы включены, ищем объекты в зоне
         {
@@ -338,14 +296,13 @@ public class ConsciousnessController : MonoBehaviour
             Collider[] inspectableColliders = Physics.OverlapSphere(transform.position, interactionRange, inspectableMask);
             foreach (var col in inspectableColliders)
             {
-                var inspectOutlineComponent = col.GetComponent(typeof(MonoBehaviour)) as MonoBehaviour;
-                if (inspectOutlineComponent != null && inspectOutlineComponent.GetType().Name == "InspectableOutline")
+                Inspection.InspectableOutline inspectOutlineTyped = col.GetComponent<Inspection.InspectableOutline>();
+                if (inspectOutlineTyped != null)
                 {
-                    currentInRangeInspectables.Add(inspectOutlineComponent);
-                    if (!previouslyInRangeInspectables.Contains(inspectOutlineComponent))
+                    currentInRangeInspectables.Add(inspectOutlineTyped);
+                    if (!previouslyInRangeInspectables.Contains(inspectOutlineTyped))
                     {
-                        var showMethod = inspectOutlineComponent.GetType().GetMethod("ShowOutline");
-                        showMethod?.Invoke(inspectOutlineComponent, null); // Показать обводку
+                        inspectOutlineTyped.ShowOutline(); // Прямой вызов
                     }
                 }
             }
@@ -354,7 +311,7 @@ public class ConsciousnessController : MonoBehaviour
         // Скрыть обводку для BaseInteractable, которые вышли из зоны
         foreach (var interactable in previouslyInRangeInteractables)
         {
-            if (!currentInRangeInteractables.Contains(interactable))
+            if (interactable != null && !currentInRangeInteractables.Contains(interactable))
             {
                 interactable.OnPlayerExit(); // Скрыть обводку
             }
@@ -362,12 +319,11 @@ public class ConsciousnessController : MonoBehaviour
         previouslyInRangeInteractables = currentInRangeInteractables;
 
         // Скрыть обводку для InspectableOutline, которые вышли из зоны
-        foreach (var inspectable in previouslyInRangeInspectables)
+        foreach (Inspection.InspectableOutline inspectableTyped in previouslyInRangeInspectables)
         {
-            if (!currentInRangeInspectables.Contains(inspectable))
+            if (inspectableTyped != null && !currentInRangeInspectables.Contains(inspectableTyped))
             {
-                var hideMethod = inspectable.GetType().GetMethod("HideOutline");
-                hideMethod?.Invoke(inspectable, null); // Скрыть обводку
+                inspectableTyped.HideOutline(); // Прямой вызов
             }
         }
         previouslyInRangeInspectables = currentInRangeInspectables;
@@ -493,243 +449,16 @@ public class ConsciousnessController : MonoBehaviour
         }
     }
     
-    private void UpdateCameraPosition(bool instant)
-    {
-        // Обновляем таймер движения
-        if (moveDirection != Vector3.zero)
-        {
-            // Определяем изменение направления движения
-            float directionDot = Vector3.Dot(moveDirection.normalized, lastMoveDirection.normalized);
-            bool hasChangedDirection = directionDot < 0.7f && lastMoveDirection != Vector3.zero;
-            
-            // Определяем резкое/противоположное изменение направления (почти противоположное направление)
-            if (directionDot < -directionChangeDotThreshold && lastMoveDirection != Vector3.zero)
-            {
-                isAbruptDirectionChange = true;
-                abruptChangeTime = Time.time;
-            }
-            
-            if (hasChangedDirection)
-            {
-                directionChangeTime = Time.time;
-            }
-
-            // Сохраняем последнее ненулевое направление движения
-            lastMoveDirection = moveDirection;
-            timeSinceLastMovement = 0f;
-            isReturningToStandardPosition = false;
-            
-            // Применяем сглаживание направления, особенно для резких изменений
-            if (isAbruptDirectionChange && Time.time - abruptChangeTime < abruptChangeSmoothing)
-            {
-                // Плавный переход для резких изменений направления
-                float abruptChangeFactor = (Time.time - abruptChangeTime) / abruptChangeSmoothing;
-                smoothedMoveDirection = Vector3.Slerp(
-                    smoothedMoveDirection,
-                    moveDirection,
-                    Time.deltaTime * (2.0f + abruptChangeFactor * 5.0f)
-                );
-            }
-            else
-            {
-                // Обычный плавный переход для стандартного движения
-                smoothedMoveDirection = Vector3.Slerp(
-                    smoothedMoveDirection, 
-                    moveDirection, 
-                    Time.deltaTime * 8.0f
-                );
-                isAbruptDirectionChange = false;
-            }
-        }
-        else
-        {
-            // Увеличиваем таймер, когда игрок не движется
-            timeSinceLastMovement += Time.deltaTime;
-            
-            // Быстрое сглаживание направления к нулю, когда игрок не движется
-            smoothedMoveDirection = Vector3.Lerp(smoothedMoveDirection, Vector3.zero, Time.deltaTime * 5.0f);
-            isAbruptDirectionChange = false;
-        }
-        
-        // Вычисляем желаемую позицию камеры относительно позиции игрока
-        float yOffset = cameraHeight; // Абсолютная высота над землей
-        
-        // Начинаем с позиции игрока
-        Vector3 basePosition = transform.position;
-        
-        // Вычисляем направление вперёд камеры в мировых координатах (игнорируя Y)
-        Vector3 cameraForward = Quaternion.Euler(0, cameraAngleY, 0) * Vector3.forward;
-        cameraForward.y = 0;
-        cameraForward.Normalize();
-        
-        // Получаем стандартное смещение для изометрической камеры
-        Vector3 standardOffset = Quaternion.Euler(cameraAngleX, cameraAngleY, 0) * new Vector3(0, 0, -Mathf.Abs(cameraOffset.z));
-        Vector3 cameraPositionOffset = standardOffset;
-        
-        // Определяем, нужно ли возвращать камеру к стандартному положению
-        bool shouldReturnToStandard = timeSinceLastMovement > cameraReturnTime * 0.25f; // Начинаем возвращать камеру после небольшой задержки
-        
-        // Если игрок не движется и нужно вернуть камеру, плавно возвращаем к стандартному положению
-        if (shouldReturnToStandard)
-        {
-            isReturningToStandardPosition = true;
-            
-            // Вычисляем фактор плавного возврата (0 = начало возврата, 1 = полностью вернулись)
-            // Используем плавную Smoothstep интерполяцию для более естественного возврата
-            float returnProgress = (timeSinceLastMovement - cameraReturnTime * 0.25f) / (cameraReturnTime * 0.75f);
-            float returnFactor = Mathf.SmoothStep(0, 1, Mathf.Clamp01(returnProgress));
-            
-            // Вычисляем текущее смещение камеры от игрока (в локальных координатах относительно направления камеры)
-            Vector3 currentOffset = cameraTransform.position - transform.position;
-            currentOffset.y -= yOffset; // Убираем высоту, чтобы работать только с горизонтальным смещением
-            
-            // Интерполируем между текущим смещением и стандартным смещением
-            cameraPositionOffset = Vector3.Lerp(currentOffset, standardOffset, returnFactor);
-            cameraPositionOffset.y = 0; // Сбрасываем Y-компонент, так как высоту мы устанавливаем отдельно
-        }
-        
-        // Применяем рассчитанное смещение к базовой позиции
-        basePosition += cameraPositionOffset;
-        
-        // Теперь устанавливаем абсолютную высоту
-        basePosition.y = yOffset;
-        
-        Vector3 targetPosition = basePosition;
-        
-        // Добавляем общее смещение камеры в направлении движения с улучшенной отзывчивостью
-        if (adjustCameraDirection && smoothedMoveDirection != Vector3.zero && !isReturningToStandardPosition)
-        {
-            // Определяем, нужно ли уменьшить отзывчивость при резких изменениях
-            float responsivenessFactor = 1f;
-            
-            // При резком изменении направления уменьшаем силу смещения
-            if (isAbruptDirectionChange && Time.time - abruptChangeTime < abruptChangeSmoothing)
-            {
-                // Постепенно увеличиваем силу смещения по мере завершения сглаживания
-                float smoothProgress = (Time.time - abruptChangeTime) / abruptChangeSmoothing;
-                responsivenessFactor = Mathf.SmoothStep(0.2f, 1.0f, smoothProgress);
-            }
-            // Обычное поведение при смене направления
-            else if (Time.time - directionChangeTime < 0.5f)
-            {
-                // Усиливаем эффект на короткое время после обычной смены направления
-                responsivenessFactor = Mathf.Lerp(directionChangeResponsiveness, 1f, 
-                    (Time.time - directionChangeTime) / 0.5f);
-            }
-            
-            // Используем одинаковую силу смещения для всех направлений движения
-            float adjustmentStrength = directionAdjustmentStrength * responsivenessFactor;
-            
-            // Ограничиваем максимальное расстояние смещения
-            float lookAheadFactor = Mathf.Min(adjustmentStrength, maxLookAheadDistance);
-            
-            // Используем сглаженное направление для расчета опережения камеры
-            Vector3 lookAheadOffset = new Vector3(
-                smoothedMoveDirection.x * lookAheadFactor,
-                0,
-                smoothedMoveDirection.z * lookAheadFactor
-            );
-            
-            targetPosition += lookAheadOffset;
-        }
-        
-        // Сохраняем предыдущую целевую позицию, если это первый кадр
-        if (previousTargetPosition == Vector3.zero)
-        {
-            previousTargetPosition = targetPosition;
-        }
-        
-        // Определяем скорость плавности в зависимости от ситуации
-        float smoothSpeed;
-        if (isReturningToStandardPosition)
-        {
-            // Более медленный и плавный возврат к стандартному положению
-            smoothSpeed = cameraSmoothSpeed * 0.6f;
-        }
-        else if (isAbruptDirectionChange && Time.time - abruptChangeTime < abruptChangeSmoothing * 0.7f)
-        {
-            // Медленнее и плавнее при резком изменении направления
-            smoothSpeed = cameraSmoothSpeed * 0.85f;
-        }
-        else if (Time.time - directionChangeTime < 0.3f && !isAbruptDirectionChange)
-        {
-            // Быстрая реакция при плавном изменении направления движения
-            smoothSpeed = cameraSmoothSpeed * 1.5f;
-        }
-        else
-        {
-            // Стандартная скорость для всех направлений движения
-            smoothSpeed = cameraSmoothSpeed;
-        }
-        
-        // Применяем эффект плавного ускорения и торможения камеры (эффект пружины)
-        if (useSpringEffect && !instant)
-        {
-            if (Time.deltaTime > 0f)
-        {
-            // Вычисляем разницу между текущей и предыдущей целевыми позициями
-            Vector3 targetVelocity = (targetPosition - previousTargetPosition) / Time.deltaTime;
-            
-            // Ограничиваем макс. скорость камеры при резких изменениях направления
-            if (isAbruptDirectionChange)
-            {
-                // Ограничиваем скорость перемещения камеры при резком изменении направления
-                float maxSpeed = 5.0f + (Time.time - abruptChangeTime) / abruptChangeSmoothing * 15.0f;
-                if (targetVelocity.magnitude > maxSpeed)
-                {
-                    targetVelocity = targetVelocity.normalized * maxSpeed;
-                }
-            }
-            
-            // Применяем демпфирование к скорости камеры для плавного торможения
-            float dampingFactor = cameraDampingStrength;
-            if (isAbruptDirectionChange)
-            {
-                // Увеличиваем демпфирование при резком изменении направления
-                dampingFactor *= 1.5f;
-            }
-            
-            cameraVelocity = Vector3.Lerp(cameraVelocity, targetVelocity, Time.deltaTime * dampingFactor);
-            
-            // Добавляем скорость к текущей позиции камеры с одинаковым поведением для всех направлений
-            Vector3 dampedPosition = Vector3.SmoothDamp(
-                cameraTransform.position,
-                targetPosition,
-                ref cameraVelocity,
-                1f / smoothSpeed,
-                isAbruptDirectionChange ? 8.0f : Mathf.Infinity,  // Ограничение максимальной скорости при резких изменениях
-                Time.deltaTime
-            );
-            
-            // Обновляем позицию камеры
-            cameraTransform.position = dampedPosition;
-            }
-            // Если Time.deltaTime == 0f (например, в меню паузы),
-            // камера не будет обновляться этим блоком кода, предотвращая ошибку NaN.
-            // Она сохранит свою последнюю валидную позицию.
-        }
-        else if (instant)
-        {
-            cameraTransform.position = targetPosition;
-            cameraVelocity = Vector3.zero;
-        }
-        else
-        {
-            cameraTransform.position = Vector3.Lerp(
-                cameraTransform.position,
-                targetPosition,
-                Time.deltaTime * smoothSpeed
-            );
-        }
-        
-        // Сохраняем целевую позицию для следующего кадра
-        previousTargetPosition = targetPosition;
-        
-        cameraTransform.rotation = Quaternion.Euler(cameraAngleX, cameraAngleY, 0);
-    }
-    
     private void Attack()
     {
+        // Проверяем, открыт ли монолог - в этом случае блокируем атаку
+        MonologueManager monologueManager = FindObjectOfType<MonologueManager>();
+        if (monologueManager != null && monologueManager.IsMonologueActive)
+        {
+            Debug.Log("[ConsciousnessController] Атака заблокирована: открыт монолог");
+            return;
+        }
+        
         if (Time.time < lastAttackTime + attackCooldown)
         {
             Debug.Log($"[Attack] Не атакуем: кулдаун. Time={Time.time:F2}, lastAttackTime={lastAttackTime:F2}, attackCooldown={attackCooldown}");
@@ -795,15 +524,6 @@ public class ConsciousnessController : MonoBehaviour
     }
     #endif
 
-    private void OnDestroy()
-    {
-        // Очищаем созданные объекты
-        if (createdCamera != null)
-        {
-            Destroy(createdCamera);
-        }
-    }
-
     // Методы для интеграции с системой эмоций
     
     /// Обрабатывает получение урона с учетом эмоций
@@ -837,12 +557,5 @@ public class ConsciousnessController : MonoBehaviour
     public bool TryRevive()
     {
         return false;
-    }
-
-    private void LateUpdate()
-    {
-        if (PlayerControlManager.Instance.ControlsEnabled) { // Камера обновляется только если контролы включены
-             UpdateCameraPosition(false);
-        }
     }
 } 

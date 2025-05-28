@@ -18,12 +18,17 @@ namespace DungeonGeneration.Scripts.Health
             currentHealth = maxHealth;
         }
 
+        protected virtual void InvokeHealthChanged()
+        {
+            OnHealthChanged?.Invoke(currentHealth);
+        }
+
         public virtual void TakeDamage(float damage)
         {
             if (damage <= 0) return;
 
             currentHealth = Mathf.Max(0, currentHealth - damage);
-            OnHealthChanged?.Invoke(currentHealth);
+            InvokeHealthChanged();
 
             if (currentHealth <= 0)
             {

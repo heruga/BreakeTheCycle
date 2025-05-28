@@ -1,6 +1,8 @@
 using UnityEngine;
 using BreakTheCycle;
 using UnityEngine.UI;
+using System.Collections.Generic; // Добавил для List<T>
+using System; // Для Action
 
 public class EmotionPanelInteractable : BaseInteractable
 {
@@ -8,6 +10,12 @@ public class EmotionPanelInteractable : BaseInteractable
     [SerializeField] private EmotionSystem emotionSystem; // Reference to EmotionSystem
     [SerializeField] private Button closeButton; // Кнопка закрытия
     private bool isPanelOpen = false;
+
+    // Поля для хранения действий для кнопок
+    private UnityEngine.Events.UnityAction closeButtonAction;
+    private UnityEngine.Events.UnityAction levelUpAction;
+    private Dictionary<string, UnityEngine.Events.UnityAction> emotionButtonActions = new Dictionary<string, UnityEngine.Events.UnityAction>();
+    private List<Tuple<Button, UnityEngine.Events.UnityAction>> registeredButtonListeners = new List<Tuple<Button, UnityEngine.Events.UnityAction>>();
 
     private void Start()
     {
@@ -132,7 +140,7 @@ public class EmotionPanelInteractable : BaseInteractable
                     else
                     {
                         Debug.LogError("[EmotionPanelInteractable] emotionSystem is null when trying to upgrade!");
-            }
+                    }
                 });
                 
                 // Проверяем, что обработчик действительно добавился
@@ -147,6 +155,95 @@ public class EmotionPanelInteractable : BaseInteractable
         {
             Debug.LogError("[EmotionPanelInteractable] Не найдена кнопка LevelUp в панели эмоций!");
         }
+
+        SetupButtonListeners();
+    }
+
+    private void SetupButtonListeners()
+    {
+        // Очищаем предыдущие регистрации на случай повторного вызова
+        ClearAllButtonListeners(); 
+        registeredButtonListeners.Clear();
+        emotionButtonActions.Clear();
+
+        // Кнопка закрытия
+        if (closeButton == null)
+        {
+            Transform closeButtonTransform = emotionPanel.transform.Find("Close");
+            if (closeButtonTransform != null) closeButton = closeButtonTransform.GetComponent<Button>();
+        }
+        if (closeButton != null)
+        {
+            closeButtonAction = CloseEmotionPanel;
+            closeButton.onClick.AddListener(closeButtonAction);
+            registeredButtonListeners.Add(Tuple.Create(closeButton, closeButtonAction));
+        }
+        else
+        {
+            Debug.LogWarning("Close button not found on EmotionPanel or not assigned.");
+        }
+
+        // Кнопки эмоций
+        string[] emotionNames = { "Determination", "Compassion", "Fear", "Acceptance", "Anger", "Denial" };
+        foreach (string emotionName in emotionNames)
+        {
+            Transform btnTransform = emotionPanel.transform.Find(emotionName);
+            if (btnTransform != null)
+            {
+                Button btn = btnTransform.GetComponent<Button>();
+                if (btn != null && emotionSystem != null)
+                {
+                    UnityEngine.Events.UnityAction specificAction = null;
+                    switch (emotionName) // Используем локальную переменную или прямое значение
+                    {
+                        case "Determination": specificAction = () => emotionSystem.ToggleDetermination(); break;
+                        case "Compassion":    specificAction = () => emotionSystem.ToggleCompassion(); break;
+                        case "Fear":          specificAction = () => emotionSystem.ToggleFear(); break;
+                        case "Acceptance":    specificAction = () => emotionSystem.ToggleAcceptance(); break;
+                        case "Anger":         specificAction = () => emotionSystem.ToggleAnger(); break;
+                        case "Denial":        specificAction = () => emotionSystem.ToggleDenial(); break;
+                    }
+                    if (specificAction != null)
+                    {
+                        emotionButtonActions[emotionName] = specificAction;
+                        btn.onClick.AddListener(specificAction);
+                        registeredButtonListeners.Add(Tuple.Create(btn, specificAction));
+                    }
+                }
+            }
+        }
+
+        // Кнопка LevelUp
+        Transform levelUpTransform = emotionPanel.transform.Find("LevelUp");
+        if (levelUpTransform != null)
+        {
+            Button levelUpBtn = levelUpTransform.GetComponent<Button>();
+            if (levelUpBtn != null && emotionSystem != null)
+            {
+                levelUpAction = () => 
+                {
+                    Debug.Log("[EmotionPanelInteractable] Кнопка LevelUp нажата");
+                    if (emotionSystem != null) emotionSystem.UpgradeMaxActiveEmotions();
+                    else Debug.LogError("[EmotionPanelInteractable] emotionSystem is null when trying to upgrade!");
+                };
+                levelUpBtn.onClick.AddListener(levelUpAction);
+                registeredButtonListeners.Add(Tuple.Create(levelUpBtn, levelUpAction));
+            }
+            else if (levelUpBtn == null) Debug.LogError("[EmotionPanelInteractable] Кнопка LevelUp найдена, но на ней нет компонента Button!");
+        }
+        else Debug.LogError("[EmotionPanelInteractable] Не найдена кнопка LevelUp в панели эмоций!");
+    }
+
+    private void ClearAllButtonListeners()
+    {
+        foreach (var pair in registeredButtonListeners)
+        {
+            if (pair.Item1 != null) // Проверяем, что кнопка еще существует
+            {
+                pair.Item1.onClick.RemoveListener(pair.Item2);
+            }
+        }
+        // registeredButtonListeners.Clear(); // Не здесь, а в SetupButtonListeners
     }
 
     public override void OnPlayerEnter()
@@ -228,7 +325,7 @@ public class EmotionPanelInteractable : BaseInteractable
             // Опционально: отключаем управление персонажем
             if (PlayerControlManager.Instance != null)
             {
-                PlayerControlManager.Instance.SetControlsEnabled(false);
+                PlayerControlManager.Instance.SetUIControlsBlock(true);
             }
         }
     }
@@ -256,7 +353,7 @@ public class EmotionPanelInteractable : BaseInteractable
             // Опционально: включаем управление персонажем
             if (PlayerControlManager.Instance != null)
             {
-                PlayerControlManager.Instance.SetControlsEnabled(true);
+                PlayerControlManager.Instance.SetUIControlsBlock(false);
             }
         }
     }
@@ -285,5 +382,10 @@ public class EmotionPanelInteractable : BaseInteractable
             }
             isPanelOpen = false; // Сбрасываем флаг
         }
+    }
+
+    private void OnDestroy()
+    {
+        ClearAllButtonListeners();
     }
 } 

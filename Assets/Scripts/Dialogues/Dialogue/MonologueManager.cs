@@ -21,6 +21,9 @@ namespace BreakTheCycle.Dialogue
         private bool isMonologueActive = false; // Флаг активности монолога
         private int currentMonologueID = -1; // ID текущего монолога
         private int currentCommentIndex = 0;
+        
+        // Публичное свойство для проверки активности монолога
+        public bool IsMonologueActive => isMonologueActive;
 
         void Awake()
         {
@@ -255,6 +258,14 @@ namespace BreakTheCycle.Dialogue
                 Cursor.visible = false;
             }
 
+            // НОВОЕ: Добавляем ID завершенного монолога в очередь с специальным "системным" NPC ID
+            if (completedID >= 0 && DialogueStartNodeQueue.Instance != null)
+            {
+                const string SYSTEM_NPC_ID = "SYSTEM_MONOLOGUE";
+                DialogueStartNodeQueue.Instance.EnqueueStartNode(SYSTEM_NPC_ID, completedID);
+                Debug.Log($"[MonologueManager] Добавлен в очередь ID {completedID} для системных монологов после завершения");
+            }
+
             OnMonologueComplete?.Invoke(completedID);
             Debug.Log($"[MonologueManager] Monologue {completedID} completed and event invoked.");
         }
@@ -292,6 +303,13 @@ namespace BreakTheCycle.Dialogue
             //     VIDE_Data.VIDE_Data.EndDialogue();
             // }
             currentMonologueID = -1; // Сбрасываем ID
+        }
+
+        // Добавляем OnDestroy для очистки подписчиков события
+        void OnDestroy()
+        {
+            OnMonologueComplete = null;
+            Debug.Log("[MonologueManager] OnMonologueComplete event cleared in OnDestroy.");
         }
     }
 } 

@@ -1,0 +1,213 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" version="27.0.9">
+  <diagram name="BreakTheCycle Game Loop" id="game-loop-diagram">
+    <mxGraphModel dx="1507" dy="671" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="start" value="Начало" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=12;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="520" y="40" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="reality" value="Режим «Реальность»" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=12;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="495" y="130" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="decision_transition" value="Переход&#xa;в «Сознание»?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="520" y="220" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="transition" value="Загрузить&#xa;«Сознание»" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="520" y="340" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="start_room" value="Стартовая комната&#xa;(см. детализацию А)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="505" y="430" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="decision_action" value="Выбор&#xa;направления?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="530" y="520" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="generation" value="Сгенерировать&#xa;уровень" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="515" y="630" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="core_loop_start" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;strokeColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="573" y="710" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="core_loop_frame" value="CORE-LOOP" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=2;dashed=1;fontFamily=Times New Roman;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="415" y="740" width="240" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="room_process" value="Пройти комнату&#xa;(см. детализацию Б)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="485" y="770" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="decision_end" value="Забег&#xa;завершен?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="510" y="840" width="90" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="save_currency" value="Сохранить валюту" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="515" y="950" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="npc_dialog" value="Диалог с НПС" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="515" y="1040" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="decision_boss" value="Игра&#xa;завершена?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="530" y="1130" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="check_ending" value="Определить концовку" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=11;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="515" y="1240" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="Конец" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=12;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="520" y="1330" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_frame_a" value="ДЕТАЛИЗАЦИЯ А: СТАРТОВАЯ КОМНАТА" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=2;dashed=1;fontFamily=Times New Roman;fontSize=11;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="80" y="540" width="280" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="a1_npc" value="1. Диалог с НПС" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="570" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a2_upgrades" value="2. Выбрать усиления" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="630" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a3_portal" value="3. Выбор портала?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="180" y="690" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a4_reality" value="4а. В Реальность" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="120" y="780" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a5_combat" value="4б. В сражения" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="240" y="780" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_frame_b" value="ДЕТАЛИЗАЦИЯ Б: ПРОХОЖДЕНИЕ КОМНАТЫ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=2;dashed=1;fontFamily=Times New Roman;fontSize=11;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="720" y="540" width="280" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="b1_enter" value="1. Войти в комнату" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="800" y="570" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b2_interact" value="2. Взаимодействовать&#xa;с объектами" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="800" y="630" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b3_combat" value="3. Бой?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="830" y="690" width="60" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="b4_fight" value="4а. Сражение" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="760" y="760" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b5_peaceful" value="4б. Пройти мирно" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="880" y="760" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b6_reward" value="5. Получить награду" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontFamily=Times New Roman;fontSize=10;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="810" y="820" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="start" target="reality" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="reality" target="decision_transition" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" value="да" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_transition" target="transition" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" value="нет" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_transition" target="reality" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="505" y="260" />
+              <mxPoint x="415" y="260" />
+              <mxPoint x="415" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="transition" target="start_room" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="start_room" target="decision_action" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" value="сражения" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_action" target="generation" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" value="реальность" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_action" target="reality" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="555" />
+              <mxPoint x="380" y="555" />
+              <mxPoint x="380" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="generation" target="core_loop_start" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="core_loop_start" target="room_process" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="room_process" target="decision_end" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge12" value="нет" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=2;" parent="1" source="decision_end" target="room_process" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="455" y="875" />
+              <mxPoint x="455" y="795" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge13" value="да" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_end" target="save_currency" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="save_currency" target="npc_dialog" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="npc_dialog" target="decision_boss" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge16" value="нет" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_boss" target="start_room" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="350" y="1165" />
+              <mxPoint x="350" y="455" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge17" value="да" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=10;strokeColor=#000000;strokeWidth=1;" parent="1" source="decision_boss" target="check_ending" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="check_ending" target="end" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_a1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="a1_npc" target="a2_upgrades" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_a2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="a2_upgrades" target="a3_portal" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_a3" value="реальность" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=9;strokeColor=#000000;strokeWidth=1;" parent="1" source="a3_portal" target="a4_reality" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_a4" value="сражения" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=9;strokeColor=#000000;strokeWidth=1;" parent="1" source="a3_portal" target="a5_combat" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_b1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="b1_enter" target="b2_interact" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_b2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="b2_interact" target="b3_combat" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_b3" value="да" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=9;strokeColor=#000000;strokeWidth=1;" parent="1" source="b3_combat" target="b4_fight" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_b4" value="нет" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontFamily=Times New Roman;fontSize=9;strokeColor=#000000;strokeWidth=1;" parent="1" source="b3_combat" target="b5_peaceful" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_b5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="b4_fight" target="b6_reward" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="840" />
+              <mxPoint x="860" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_b6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeColor=#000000;strokeWidth=1;" parent="1" source="b5_peaceful" target="b6_reward" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="920" y="840" />
+              <mxPoint x="860" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

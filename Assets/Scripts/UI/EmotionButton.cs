@@ -18,6 +18,11 @@ namespace UI
         private EmotionSystem emotionSystemInstance;
         private Color baseColor;
 
+        // Поля для хранения ссылок на делегаты для отписки
+        private UnityEngine.Events.UnityAction onLevelUpButtonClickAction;
+        private UnityEngine.Events.UnityAction onEmotionButtonClickAction;
+        private UnityEngine.Events.UnityAction onLongHoldAction;
+
         private void Awake()
         {
             button = GetComponent<Button>();
@@ -46,22 +51,34 @@ namespace UI
         {
             this.emotionSystemInstance = emotionSystem;
 
+            // Удаляем предыдущие слушатели, если есть (на случай повторной инициализации)
+            if (onLevelUpButtonClickAction != null) button.onClick.RemoveListener(onLevelUpButtonClickAction);
+            if (onEmotionButtonClickAction != null) button.onClick.RemoveListener(onEmotionButtonClickAction);
+            if (longHoldHandler != null && longHoldHandler.onLongHold != null && onLongHoldAction != null) longHoldHandler.onLongHold.RemoveListener(onLongHoldAction);
+
             if (isLevelUpButton)
             {
-                button.onClick.AddListener(() => {
+                onLevelUpButtonClickAction = () => {
                     Debug.Log("[EmotionButton] LevelUp button clicked");
                     emotionSystem.UpgradeMaxActiveEmotions();
-                });
+                };
+                button.onClick.AddListener(onLevelUpButtonClickAction);
             }
             else
             {
-                longHoldHandler.onLongHold = new UnityEngine.Events.UnityEvent();
-                longHoldHandler.onLongHold.AddListener(() => {
+                onLongHoldAction = () => {
                     emotionSystem.UpgradeEmotion(emotionType);
                     UpdateVisual(emotionSystem.IsEmotionActive(emotionType), emotionSystem.activeColor, emotionSystem.inactiveColor);
-                });
+                };
+                // Убедимся что onLongHold существует, если он мог быть не создан в Awake
+                if (longHoldHandler.onLongHold == null) 
+                {
+                    longHoldHandler.onLongHold = new UnityEngine.Events.UnityEvent();
+                }
+                longHoldHandler.onLongHold.AddListener(onLongHoldAction);
 
-                button.onClick.AddListener(() => emotionSystem.ToggleEmotion(emotionType));
+                onEmotionButtonClickAction = () => emotionSystem.ToggleEmotion(emotionType);
+                button.onClick.AddListener(onEmotionButtonClickAction);
             }
         }
 
@@ -104,5 +121,25 @@ namespace UI
         }
 
         public EmotionSystem.EmotionType GetEmotionType() => emotionType;
+
+        private void OnDestroy()
+        {
+            if (button != null)
+            {
+                if (onLevelUpButtonClickAction != null)
+                {
+                    button.onClick.RemoveListener(onLevelUpButtonClickAction);
+                }
+                if (onEmotionButtonClickAction != null)
+                {
+                    button.onClick.RemoveListener(onEmotionButtonClickAction);
+                }
+            }
+
+            if (longHoldHandler != null && longHoldHandler.onLongHold != null && onLongHoldAction != null)
+            {
+                longHoldHandler.onLongHold.RemoveListener(onLongHoldAction);
+            }
+        }
     }
 } 
