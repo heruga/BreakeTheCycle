@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
     [Header("Transition Settings")]
     public float transitionDuration = 1f;
     public Color fadeColor = Color.black;
-    
+
     [Header("UI References")]
     [SerializeField] private GameObject endScreenPrefab; // Ссылка на префаб финального экрана
 
@@ -90,7 +90,7 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log($"[GameManager] Уже находимся в сцене {currentScene}");
             isInReality = currentScene == realitySceneName;
-        }
+            }
     }
     
     private void OnEnable()
@@ -133,7 +133,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
+
     private void Update()
     {
         // Переключение по клавише R - ТОЛЬКО если игрок в РЕАЛЬНОСТИ и в зоне перехода
@@ -302,14 +302,14 @@ public class GameManager : MonoBehaviour
         Debug.Log("[GameManager] LoadSceneInternalCoroutine: StartFadeIn ЗАВЕРШЕН."); // <-- Важный лог
 
         Debug.Log("[GameManager] LoadSceneInternalCoroutine: Шаг 5 - Установка isTransitioning = false...");
-            isTransitioning = false;
+        isTransitioning = false;
         Debug.Log(errorOccurred
             ? $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} ПРЕРВАН (после FadeIn)."
             : $"[GameManager] LoadSceneInternalCoroutine: Переход на сцену {sceneToLoad} УСПЕШНО ЗАВЕРШЕН (после FadeIn).");
-
+        
         if (errorOccurred) 
         {
-            yield break;
+            yield break; 
         }
     }
 
@@ -323,7 +323,7 @@ public class GameManager : MonoBehaviour
         if (cleanupPreviousScene)
         {
             Debug.Log("[GameManager] ExecuteLoadingSequence: Вызов CleanupCurrentScene...");
-        CleanupCurrentScene();
+            CleanupCurrentScene();
             Debug.Log("[GameManager] ExecuteLoadingSequence: CleanupCurrentScene завершен.");
         }
 
@@ -347,7 +347,7 @@ public class GameManager : MonoBehaviour
             _loadingErrorOccurred = true;
             yield break;
         }
-
+        
         operation.allowSceneActivation = false;
         Debug.Log("[GameManager] ExecuteLoadingSequence: Ожидание загрузки (allowSceneActivation = false)...");
         while (operation.progress < 0.9f)
@@ -381,8 +381,8 @@ public class GameManager : MonoBehaviour
         }
         
         Debug.Log("[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера...");
-        if (sceneToLoad == realitySceneName)
-        {
+            if (sceneToLoad == realitySceneName)
+            {
             yield return null; 
             var triggerObj = FindObjectByNameIncludingInactive("SceneTransitionTrigger");
             var player = FindObjectOfType<RealityPlayerController>();
@@ -398,9 +398,9 @@ public class GameManager : MonoBehaviour
                         bool isInside = triggerCollider.bounds.Contains(player.transform.position);
                         SetPlayerInTransitionZone(isInside);
                         Debug.Log($"[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера. Игрок {(isInside ? "ВНУТРИ" : "СНАРУЖИ")}. Позиция игрока: {player.transform.position}, Границы триггера: {triggerCollider.bounds}");
-                    }
-                    else
-                    {
+            }
+            else
+            {
                         // Если триггер или коллайдер неактивны, считаем, что игрок не в зоне
                         SetPlayerInTransitionZone(false);
                         Debug.LogWarning($"[GameManager] ExecuteLoadingSequence: Явная проверка зоны триггера. Триггер ({triggerObj.activeInHierarchy}) или его коллайдер ({triggerCollider.enabled}) неактивны. Установлено isPlayerInTransitionZone = false.");
@@ -773,7 +773,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Wait a frame for the CharacterController to be fully disabled and transform to be freely modifiable
-        yield return null; 
+        yield return null;
 
         player.transform.position = pos;
         player.transform.eulerAngles = rot;

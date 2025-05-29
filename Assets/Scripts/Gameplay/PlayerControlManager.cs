@@ -16,6 +16,12 @@ namespace BreakTheCycle
         private bool justBecameEnabledThisFrame = false;
         public bool JustBecameEnabledThisFrame => justBecameEnabledThisFrame;
 
+        // Новые поля для предотвращения атак после диалогов
+        private float lastControlsEnabledTime = -10f;
+        private const float ATTACK_DELAY_AFTER_DIALOGUE = 0.2f; // 200мс задержка
+        
+        public bool CanAttack => Time.time >= lastControlsEnabledTime + ATTACK_DELAY_AFTER_DIALOGUE;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -55,7 +61,8 @@ namespace BreakTheCycle
                 if (_controlsEnabled)
                 {
                     justBecameEnabledThisFrame = true;
-                    Debug.Log("[PlayerControlManager] justBecameEnabledThisFrame set to true");
+                    lastControlsEnabledTime = Time.time; // Запоминаем время разблокировки
+                    Debug.Log($"[PlayerControlManager] justBecameEnabledThisFrame set to true, lastControlsEnabledTime = {lastControlsEnabledTime}");
                 }
             }
         }
@@ -83,6 +90,14 @@ namespace BreakTheCycle
             {
                 justBecameEnabledThisFrame = false;
             }
+        }
+
+        // Метод для отладки - принудительный сброс задержки атаки
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        public void ResetAttackDelay()
+        {
+            lastControlsEnabledTime = -10f;
+            Debug.Log("[PlayerControlManager] Attack delay reset for debugging");
         }
     }
 } 

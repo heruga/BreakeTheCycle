@@ -63,6 +63,9 @@ public class ConsciousnessController : MonoBehaviour
     private HashSet<Inspection.InspectableOutline> previouslyInRangeInspectables = new HashSet<Inspection.InspectableOutline>();
     private HashSet<EnemyHealth> enemiesHitThisDash = new HashSet<EnemyHealth>();
     
+    // Кэшируем ссылку на MonologueManager для оптимизации
+    private MonologueManager cachedMonologueManager;
+
     private void Awake()
     {
         SetupPhysics();
@@ -81,7 +84,7 @@ public class ConsciousnessController : MonoBehaviour
         {
             characterController = gameObject.AddComponent<CharacterController>();
         }
-        
+ 
         // Устанавливаем позицию персонажа на правильную высоту
         Vector3 position = transform.position;
         // position.y = 1f; // Эту строку тоже стоит проверить, нужна ли она, если центр берется из инспектора
@@ -105,6 +108,13 @@ public class ConsciousnessController : MonoBehaviour
             PlayerControlManager.Instance.SetControlsEnabled(true);
         Debug.Log($"[ConsciousnessController] Start: controlsEnabled = {PlayerControlManager.Instance?.ControlsEnabled}");
         emotionSystem = FindObjectOfType<EmotionSystem>();
+        
+        // Кэшируем MonologueManager
+        cachedMonologueManager = FindObjectOfType<MonologueManager>();
+        if (cachedMonologueManager == null)
+        {
+            Debug.LogWarning("[ConsciousnessController] MonologueManager не найден в сцене!");
+        }
     }
     
     private void SetupCamera()
@@ -203,6 +213,22 @@ public class ConsciousnessController : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             bool blockAttack = false;
+            
+            // Дополнительное логирование для отладки
+            if (cachedMonologueManager != null)
+            {
+                Debug.Log($"[ConsciousnessController] MonologueManager found, IsMonologueActive = {cachedMonologueManager.IsMonologueActive}");
+            }
+            else
+            {
+                Debug.Log("[ConsciousnessController] MonologueManager is null!");
+                // Пытаемся найти MonologueManager снова (на случай если он был создан позже)
+                cachedMonologueManager = FindObjectOfType<MonologueManager>();
+                if (cachedMonologueManager != null)
+                {
+                    Debug.Log("[ConsciousnessController] MonologueManager найден при повторном поиске!");
+                }
+            }
 
             // 1. Сначала проверяем, не был ли клик на активном элементе UI
             if (EventSystem.current.IsPointerOverGameObject()) 
@@ -210,10 +236,22 @@ public class ConsciousnessController : MonoBehaviour
                 Debug.Log("[ConsciousnessController] Attack prevented: Click was on an active UI element.");
                 blockAttack = true;
             }
-            // 2. Если не на активном UI, проверяем, не включилось ли управление только что
+            // 2. Проверяем, открыт ли монолог - блокируем атаку
+            else if (cachedMonologueManager != null && cachedMonologueManager.IsMonologueActive)
+            {
+                Debug.Log("[ConsciousnessController] Attack prevented: Monologue is active.");
+                blockAttack = true;
+            }
+            // 3. Если не на активном UI, проверяем, не включилось ли управление только что
             else if (PlayerControlManager.Instance != null && PlayerControlManager.Instance.JustBecameEnabledThisFrame)
             {
                 Debug.Log("[ConsciousnessController] Attack prevented: Controls were just enabled this frame.");
+                blockAttack = true;
+            }
+            // 4. НОВАЯ ПРОВЕРКА: Проверяем, прошло ли достаточно времени после разблокировки управления
+            else if (PlayerControlManager.Instance != null && !PlayerControlManager.Instance.CanAttack)
+            {
+                Debug.Log("[ConsciousnessController] Attack prevented: Not enough time passed since dialogue/monologue ended.");
                 blockAttack = true;
             }
 
@@ -225,6 +263,10 @@ public class ConsciousnessController : MonoBehaviour
             {
                 Debug.Log("[ConsciousnessController] Попытка атаки (нажатие ЛКМ)");
                 Attack();
+            }
+            else
+            {
+                Debug.Log("[ConsciousnessController] Attack blocked for one of the above reasons.");
             }
         }
     }
@@ -438,9 +480,9 @@ public class ConsciousnessController : MonoBehaviour
     private void StartDash()
     {
         if (moveDirection == Vector3.zero) return;
-                isDashing = true;
-                dashTimeLeft = dashDuration;
-                lastDashTime = Time.time;
+        isDashing = true;
+        dashTimeLeft = dashDuration;
+        lastDashTime = Time.time;
         enemiesHitThisDash.Clear(); // Очищаем список атакованных врагов при начале нового дэша
         if (animator != null)
         {
@@ -452,8 +494,7 @@ public class ConsciousnessController : MonoBehaviour
     private void Attack()
     {
         // Проверяем, открыт ли монолог - в этом случае блокируем атаку
-        MonologueManager monologueManager = FindObjectOfType<MonologueManager>();
-        if (monologueManager != null && monologueManager.IsMonologueActive)
+        if (cachedMonologueManager != null && cachedMonologueManager.IsMonologueActive)
         {
             Debug.Log("[ConsciousnessController] Атака заблокирована: открыт монолог");
             return;
@@ -462,7 +503,7 @@ public class ConsciousnessController : MonoBehaviour
         if (Time.time < lastAttackTime + attackCooldown)
         {
             Debug.Log($"[Attack] Не атакуем: кулдаун. Time={Time.time:F2}, lastAttackTime={lastAttackTime:F2}, attackCooldown={attackCooldown}");
-                    return;
+            return;
         }
         lastAttackTime = Time.time;
 

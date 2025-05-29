@@ -122,7 +122,7 @@ MonoBehaviour:
   pathUpdateInterval: 0.5
   rotationSpeed: 5
   minPathUpdateDistance: 1
-  attackRange: 3.5
+  attackRange: 2.5
   attackDamage: 15
   attackCooldown: 2
   aggroRange: 7

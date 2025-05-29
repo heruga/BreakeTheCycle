@@ -81,6 +81,12 @@ namespace BreakTheCycle.Dialogue
                     return;
                 }
 
+                // Поглощаем клик мыши, чтобы предотвратить атаку
+                Debug.Log("[MonologueManager] Mouse click consumed by monologue system");
+                
+                // Дополнительно сбрасываем состояние мыши для предотвращения передачи события
+                Input.ResetInputAxes();
+
                 if (VIDE_Data.VIDE_Data.nodeData != null && VIDE_Data.VIDE_Data.nodeData.comments != null && currentCommentIndex < VIDE_Data.VIDE_Data.nodeData.comments.Length - 1)
                 {
                     currentCommentIndex++;
@@ -90,6 +96,9 @@ namespace BreakTheCycle.Dialogue
                 {
                     HideMonologue();
                 }
+                
+                // Возвращаемся сразу после обработки клика
+                return;
             }
         }
 

@@ -172,6 +172,13 @@ public class Template_UIManager : MonoBehaviour
             if (!data.pausedAction && !animatingText && !data.isPlayer && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0)))
             {
                 Debug.Log("[UI] Вызов Next() для NPC-узла (переключение комментария или переход)");
+                
+                // Поглощаем клик мыши, чтобы предотвратить атаку
+                if (Input.GetMouseButtonDown(0))
+                {
+                    Debug.Log("[Template_UIManager] Mouse click consumed by dialogue system");
+                }
+                
                 VIDE_Data.VIDE_Data.Next();
                 return; // Важно!
             }
@@ -204,6 +211,13 @@ public class Template_UIManager : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0))
                 {
                     Debug.Log($"[UI] Выбрана реплика игрока: {data.commentIndex} — {data.comments[data.commentIndex]}");
+                    
+                    // Поглощаем клик мыши, чтобы предотвратить атаку
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        Debug.Log("[Template_UIManager] Mouse click consumed by player choice selection");
+                    }
+                    
                     SelectChoice(data.commentIndex); // Вызываем SelectChoice для player-узлов
                     return; // Важно!
                 }

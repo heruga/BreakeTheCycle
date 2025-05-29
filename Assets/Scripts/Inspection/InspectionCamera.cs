@@ -53,8 +53,8 @@ public class InspectionCamera : MonoBehaviour
             else
             {
                 Debug.LogWarning("[InspectionCamera] CursorManager.Instance is null in Awake. Using fallback cursor state.");
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
             }
 
             cam = GetComponent<Camera>();
@@ -258,7 +258,7 @@ public class InspectionCamera : MonoBehaviour
                 Cursor.lockState = CursorLockMode.Locked;
                 Debug.Log($"[InspectionCamera StopInspecting] Cursor state AFTER FALLBACK: LockState={Cursor.lockState}, Visible={Cursor.visible}");
             }
-
+            
             if (showDebug) Debug.Log("Осмотр завершен, возвращено исходное состояние");
         }
     
